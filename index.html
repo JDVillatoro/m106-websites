@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Theory Player</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Game Theory</h1>
+        
+        <div class="mode-selector">
+            <button id="mode-play" class="mode-btn active">Play</button>
+            <button id="mode-training" class="mode-btn">Best Response</button>
+            <button id="mode-dominance" class="mode-btn">Dominance Relations</button>
+            <button id="mode-nash" class="mode-btn">Nash Equilibriums</button>
+        </div>
+        
+        <div class="game-info">
+            <p id="mode-description">Play against the opponent by choosing your strategy. Edit the payoff matrix to try different games!</p>
+        </div>
+
+        <div class="matrix-controls">
+            <h2>Matrix Configuration</h2>
+            <div class="dimension-controls">
+                <label for="matrix-rows">Your Strategies:</label>
+                <input type="number" id="matrix-rows" min="2" max="5" value="2">
+                <label for="matrix-cols">Opponent Strategies:</label>
+                <input type="number" id="matrix-cols" min="2" max="5" value="2">
+                <button id="update-dimensions">Update Dimensions</button>
+            </div>
+        </div>
+
+        <div class="payoff-matrix">
+            <h2>Payoff Matrix</h2>
+            <p class="matrix-label">Format: (Your payoff, Opponent's payoff)</p>
+            
+            <button id="toggle-edit" class="edit-button">Edit Payoff Matrix</button>
+            
+            <div id="matrix-container"></div>
+            
+            <div class="preset-buttons">
+                <button id="preset-prisoners">Prisoner's Dilemma</button>
+                <button id="preset-chicken">Chicken</button>
+                <button id="preset-stag-hunt">Stag Hunt</button>
+                <button id="preset-rps">Rock Paper Scissors</button>
+            </div>
+        </div>
+
+        <div class="actions">
+            <h2>Choose Your Strategy</h2>
+            <div class="action-buttons" id="strategy-buttons"></div>
+        </div>
+
+        <div class="results" id="results">
+            <h2>Results</h2>
+            <p id="result-text">Choose a strategy to start playing!</p>
+            <div id="score-display">
+                <p>Your Score: <span id="your-score">0</span></p>
+                <p>Opponent Score: <span id="opp-score">0</span></p>
+            </div>
+        </div>
+
+        <div class="history">
+            <h2>Game History</h2>
+            <button id="clear-history">Clear History</button>
+            <div id="history-list"></div>
+        </div>
+        
+        <div class="training-section" id="training-section" style="display: none;">
+            <button id="training-reset" class="reset-session-btn">Reset</button>
+            
+            <div class="training-matrix">
+                <h2>Payoff Matrix</h2>
+                <p class="matrix-label" id="training-prompt">Find the best response!</p>
+                <div id="training-matrix-container"></div>
+            </div>
+            
+            <div class="training-actions">
+                <h2 id="training-action-title">Select Best Responses</h2>
+                <div class="action-buttons" id="training-buttons"></div>
+                <button id="training-submit" class="submit-btn">Submit Answer</button>
+            </div>
+            
+            <div class="training-feedback" id="training-feedback" style="display: none;">
+                <h2>Feedback</h2>
+                <p id="feedback-text">Select one or more strategies, then submit.</p>
+                <button id="training-next" class="submit-btn">Try Again</button>
+            </div>
+            
+            <div class="training-stats">
+                <h2>Statistics</h2>
+                <div class="stats-display">
+                    <p>Correct: <span id="correct-count">0</span></p>
+                    <p>Incorrect: <span id="incorrect-count">0</span></p>
+                    <p>Accuracy: <span id="accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dominance-section" id="dominance-section" style="display: none;">
+            <button id="dominance-reset" class="reset-session-btn">Reset</button>
+
+            <div class="dominance-matrix">
+                <h2>Payoff Matrix</h2>
+                <p class="matrix-label" id="dominance-prompt">Identify dominance relations for each strategy pair.</p>
+                <div id="dominance-matrix-container"></div>
+            </div>
+
+            <div class="dominance-questions">
+                <h2>Dominance Relations</h2>
+                <div id="dominance-questions-container"></div>
+                <button id="dominance-check" class="submit-btn">Submit Answer</button>
+            </div>
+
+            <div class="dominance-feedback" id="dominance-feedback" style="display: none;">
+                <h2>Feedback</h2>
+                <p id="dominance-feedback-text">Select an option for each pair, then check your answers.</p>
+                <button id="dominance-next" class="submit-btn">Try Again</button>
+            </div>
+
+            <div class="dominance-stats">
+                <h2>Statistics</h2>
+                <div class="stats-display">
+                    <p>Correct: <span id="dominance-correct">0</span></p>
+                    <p>Incorrect: <span id="dominance-incorrect">0</span></p>
+                    <p>Accuracy: <span id="dominance-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="nash-section" id="nash-section" style="display: none;">
+            <button id="nash-reset" class="reset-session-btn">Reset</button>
+
+            <div class="nash-matrix">
+                <h2>Payoff Matrix</h2>
+                <p class="matrix-label" id="nash-prompt">Select all pure Nash Equilibriums. (Click on the corresponding outcomes.)</p>
+                <div id="nash-matrix-container"></div>
+            </div>
+
+            <div class="nash-actions">
+                <h2>Select Equilibriums</h2>
+                <div class="nash-buttons">
+                    <button id="nash-submit" class="submit-btn">Submit Answer</button>
+                </div>
+            </div>
+
+            <div class="nash-feedback" id="nash-feedback" style="display: none;">
+                <h2>Feedback</h2>
+                <p id="nash-feedback-text">Select all pure Nash Equilibriums. (Click on the corresponding outcomes.)</p>
+                <button id="nash-next" class="submit-btn">Try Again</button>
+            </div>
+
+            <div class="nash-stats">
+                <h2>Statistics</h2>
+                <div class="stats-display">
+                    <p>Correct: <span id="nash-correct">0</span></p>
+                    <p>Incorrect: <span id="nash-incorrect">0</span></p>
+                    <p>Accuracy: <span id="nash-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="gameTheoryUtils.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
