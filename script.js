@@ -2070,7 +2070,7 @@ function generateIndiffQuestion() {
     
     questionText.innerHTML = `
         Find the mixed strategy for <strong>${mixingPlayerName}</strong> that makes <strong>${indifferentPlayerName}</strong> 
-        indifferent between their two strategies (i.e., both strategies give the same expected value).<br><br>
+        indifferent between their two strategies (i.e., both strategies give the same expected payoff).<br><br>
         Enter the probabilities as fractions (must sum to 1):
     `;
     
