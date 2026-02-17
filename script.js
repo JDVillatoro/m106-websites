@@ -1737,35 +1737,78 @@ function generateEVMatrix() {
     const container = document.getElementById('ev-matrix-container');
     if (!container) return;
     
-    let html = '<table class="game-table">';
+    container.innerHTML = '';
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'matrix-wrapper';
+    
+    const player2Label = document.createElement('div');
+    player2Label.className = 'player-label player2-label';
+    player2Label.textContent = 'Player 2';
+    wrapper.appendChild(player2Label);
+    
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+    
+    const player1Label = document.createElement('div');
+    player1Label.className = 'player-label player1-label';
+    player1Label.textContent = 'Player 1';
+    tableContainer.appendChild(player1Label);
+    
+    const table = document.createElement('table');
     
     // Header row
-    html += '<tr><th></th>';
-    for (let j = 0; j < evCols; j++) {
-        html += `<th>${getEVStrategyLabel(j, 2)}</th>`;
-    }
-    html += '</tr>';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const emptyHeader = document.createElement('th');
+    headerRow.appendChild(emptyHeader);
     
-    // Payoff rows
+    for (let j = 0; j < evCols; j++) {
+        const th = document.createElement('th');
+        th.innerHTML = getEVStrategyLabel(j, 2);
+        headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    // Body rows
+    const tbody = document.createElement('tbody');
     for (let i = 0; i < evRows; i++) {
-        html += '<tr>';
-        html += `<th>${getEVStrategyLabel(i, 1)}</th>`;
+        const row = document.createElement('tr');
+        
+        const labelCell = document.createElement('td');
+        labelCell.className = 'row-label';
+        labelCell.innerHTML = getEVStrategyLabel(i, 1);
+        row.appendChild(labelCell);
+        
         for (let j = 0; j < evCols; j++) {
+            const cell = document.createElement('td');
+            cell.className = 'matrix-cell';
+            
             const key = `${i}-${j}`;
             const p1 = evPayoffs[key].p1;
             const p2 = evPayoffs[key].p2;
-            html += `<td class="ev-cell">
-                <div class="payoff-cell">
-                    <span class="p1-payoff">${p1}</span>,
-                    <span class="p2-payoff">${p2}</span>
-                </div>
-            </td>`;
+            
+            const p1Display = document.createElement('span');
+            p1Display.className = 'payoff-display';
+            p1Display.textContent = p1;
+            
+            const p2Display = document.createElement('span');
+            p2Display.className = 'payoff-display';
+            p2Display.textContent = p2;
+            
+            cell.appendChild(p1Display);
+            cell.appendChild(p2Display);
+            row.appendChild(cell);
         }
-        html += '</tr>';
+        
+        tbody.appendChild(row);
     }
+    table.appendChild(tbody);
     
-    html += '</table>';
-    container.innerHTML = html;
+    tableContainer.appendChild(table);
+    wrapper.appendChild(tableContainer);
+    container.appendChild(wrapper);
 }
 
 function generateEVQuestion() {
@@ -1939,34 +1982,78 @@ function generateIndiffMatrix() {
     const container = document.getElementById('indiff-matrix-container');
     if (!container) return;
     
-    let html = '<table class="game-table">';
+    container.innerHTML = '';
+    
+    const wrapper = document.createElement('div');
+    wrapper.className = 'matrix-wrapper';
+    
+    const player2Label = document.createElement('div');
+    player2Label.className = 'player-label player2-label';
+    player2Label.textContent = 'Player 2';
+    wrapper.appendChild(player2Label);
+    
+    const tableContainer = document.createElement('div');
+    tableContainer.className = 'table-container';
+    
+    const player1Label = document.createElement('div');
+    player1Label.className = 'player-label player1-label';
+    player1Label.textContent = 'Player 1';
+    tableContainer.appendChild(player1Label);
+    
+    const table = document.createElement('table');
     
     // Header row
-    html += '<tr><th></th>';
-    html += `<th>${getIndiffStrategyLabel(0, 2)}</th>`;
-    html += `<th>${getIndiffStrategyLabel(1, 2)}</th>`;
-    html += '</tr>';
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    const emptyHeader = document.createElement('th');
+    headerRow.appendChild(emptyHeader);
     
-    // Payoff rows
+    for (let j = 0; j < 2; j++) {
+        const th = document.createElement('th');
+        th.innerHTML = getIndiffStrategyLabel(j, 2);
+        headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    
+    // Body rows
+    const tbody = document.createElement('tbody');
     for (let i = 0; i < 2; i++) {
-        html += '<tr>';
-        html += `<th>${getIndiffStrategyLabel(i, 1)}</th>`;
+        const row = document.createElement('tr');
+        
+        const labelCell = document.createElement('td');
+        labelCell.className = 'row-label';
+        labelCell.innerHTML = getIndiffStrategyLabel(i, 1);
+        row.appendChild(labelCell);
+        
         for (let j = 0; j < 2; j++) {
+            const cell = document.createElement('td');
+            cell.className = 'matrix-cell';
+            
             const key = `${i}-${j}`;
             const p1 = indiffPayoffs[key].p1;
             const p2 = indiffPayoffs[key].p2;
-            html += `<td class="indiff-cell">
-                <div class="payoff-cell">
-                    <span class="p1-payoff">${p1}</span>,
-                    <span class="p2-payoff">${p2}</span>
-                </div>
-            </td>`;
+            
+            const p1Display = document.createElement('span');
+            p1Display.className = 'payoff-display';
+            p1Display.textContent = p1;
+            
+            const p2Display = document.createElement('span');
+            p2Display.className = 'payoff-display';
+            p2Display.textContent = p2;
+            
+            cell.appendChild(p1Display);
+            cell.appendChild(p2Display);
+            row.appendChild(cell);
         }
-        html += '</tr>';
+        
+        tbody.appendChild(row);
     }
+    table.appendChild(tbody);
     
-    html += '</table>';
-    container.innerHTML = html;
+    tableContainer.appendChild(table);
+    wrapper.appendChild(tableContainer);
+    container.appendChild(wrapper);
 }
 
 function generateIndiffQuestion() {

@@ -797,11 +797,6 @@ button:active {
     margin-bottom: 30px;
 }
 
-.ev-cell {
-    background: white;
-    transition: background 0.2s ease;
-}
-
 /* Indifference mode styles */
 .indifference-section {
     margin-top: 30px;
@@ -890,11 +885,6 @@ button:active {
     padding: 20px;
     border-radius: 5px;
     margin-bottom: 30px;
-}
-
-.indiff-cell {
-    background: white;
-    transition: background 0.2s ease;
 }
 
 
