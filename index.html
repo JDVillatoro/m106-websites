@@ -17,10 +17,12 @@
             <button id="mode-training" class="mode-btn">Best Response</button>
             <button id="mode-dominance" class="mode-btn">Dominance Relations</button>
             <button id="mode-nash" class="mode-btn">Nash Equilibriums</button>
+            <button id="mode-expected-value" class="mode-btn">Expected Value</button>
+            <button id="mode-indifference" class="mode-btn">Indifference</button>
         </div>
         
         <div class="game-info">
-            <p id="mode-description">Play against the opponent by choosing your strategy. Edit the payoff matrix to try different games!</p>
+            <p id="mode-description">Play against the opponent by choosing your strategy.</p>
         </div>
 
         <div class="matrix-controls">
@@ -35,7 +37,6 @@
         </div>
 
         <div class="payoff-matrix">
-            <h2>Payoff Matrix</h2>
             
             <button id="toggle-edit" class="edit-button">Edit Payoff Matrix</button>
             
@@ -50,7 +51,7 @@
         </div>
 
         <div class="actions">
-            <h2>Choose Your Strategy</h2>
+            <h2>What strategy will you choose?</h2>
             <div class="action-buttons" id="strategy-buttons"></div>
         </div>
 
@@ -158,6 +159,82 @@
                     <p>Correct: <span id="nash-correct">0</span></p>
                     <p>Incorrect: <span id="nash-incorrect">0</span></p>
                     <p>Accuracy: <span id="nash-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="expected-value-section" id="expected-value-section" style="display: none;">
+            <button id="ev-reset" class="reset-session-btn">Reset</button>
+
+            <div class="ev-matrix">
+                <h2>Payoff Matrix</h2>
+                <p class="matrix-label" id="ev-prompt">Calculate the expected value.</p>
+                <div id="ev-matrix-container"></div>
+            </div>
+
+            <div class="ev-question">
+                <h2>Question</h2>
+                <p id="ev-question-text"></p>
+                <div class="ev-input-group">
+                    <label for="ev-answer-input">Your Answer:</label>
+                    <input type="number" id="ev-answer-input" step="0.01" placeholder="Enter expected value">
+                    <button id="ev-submit" class="submit-btn">Submit Answer</button>
+                </div>
+            </div>
+
+            <div class="ev-feedback" id="ev-feedback" style="display: none;">
+                <h2>Feedback</h2>
+                <p id="ev-feedback-text">Enter your answer and submit.</p>
+                <button id="ev-next" class="submit-btn">Try Again</button>
+            </div>
+
+            <div class="ev-stats">
+                <h2>Statistics</h2>
+                <div class="stats-display">
+                    <p>Correct: <span id="ev-correct">0</span></p>
+                    <p>Incorrect: <span id="ev-incorrect">0</span></p>
+                    <p>Accuracy: <span id="ev-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="indifference-section" id="indifference-section" style="display: none;">
+            <button id="indiff-reset" class="reset-session-btn">Reset</button>
+
+            <div class="indiff-matrix">
+                <h2>Payoff Matrix</h2>
+                <p class="matrix-label" id="indiff-prompt">Find the indifference strategy.</p>
+                <div id="indiff-matrix-container"></div>
+            </div>
+
+            <div class="indiff-question">
+                <h2>Question</h2>
+                <p id="indiff-question-text"></p>
+                <div class="indiff-input-container">
+                    <div class="indiff-input-row">
+                        <label for="indiff-answer-input-1" id="indiff-label-1">Probability for Strategy 1:</label>
+                        <input type="text" id="indiff-answer-input-1" placeholder="e.g., 1/2">
+                    </div>
+                    <div class="indiff-input-row">
+                        <label for="indiff-answer-input-2" id="indiff-label-2">Probability for Strategy 2:</label>
+                        <input type="text" id="indiff-answer-input-2" placeholder="e.g., 1/2">
+                    </div>
+                    <button id="indiff-submit" class="submit-btn">Submit Answer</button>
+                </div>
+            </div>
+
+            <div class="indiff-feedback" id="indiff-feedback" style="display: none;">
+                <h2>Feedback</h2>
+                <p id="indiff-feedback-text">Enter your answer and submit.</p>
+                <button id="indiff-next" class="submit-btn">Try Again</button>
+            </div>
+
+            <div class="indiff-stats">
+                <h2>Statistics</h2>
+                <div class="stats-display">
+                    <p>Correct: <span id="indiff-correct">0</span></p>
+                    <p>Incorrect: <span id="indiff-incorrect">0</span></p>
+                    <p>Accuracy: <span id="indiff-accuracy">0%</span></p>
                 </div>
             </div>
         </div>

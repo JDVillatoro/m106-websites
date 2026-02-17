@@ -205,12 +205,136 @@ const GameTheory = (() => {
         return equilibria;
     }
 
+    function generateMixedStrategy(numStrategies) {
+        // Generate a mixed strategy with probabilities in multiples of 10%
+        // that sum to 100%
+        const probabilities = [];
+        let remaining = 10; // We work in tenths (10 = 100%)
+        
+        for (let i = 0; i < numStrategies - 1; i++) {
+            if (remaining === 0) {
+                probabilities.push(0);
+            } else {
+                // Random number of tenths, but leave at least one for remaining strategies
+                const maxAllocation = remaining - (numStrategies - i - 1);
+                const allocation = Math.floor(Math.random() * (maxAllocation + 1));
+                probabilities.push(allocation / 10);
+                remaining -= allocation;
+            }
+        }
+        
+        // Last strategy gets the remainder
+        probabilities.push(remaining / 10);
+        
+        return probabilities;
+    }
+
+    function calculateExpectedValue(payoffs, rows, cols, playerId, strategyIndex, mixedStrategy) {
+        // Calculate expected value for a player's pure strategy against opponent's mixed strategy
+        let expectedValue = 0;
+        
+        if (playerId === 1) {
+            // Player 1's strategy (row) against Player 2's mixed strategy (columns)
+            for (let j = 0; j < cols; j++) {
+                const payoff = payoffs[`${strategyIndex}-${j}`].p1;
+                expectedValue += payoff * mixedStrategy[j];
+            }
+        } else {
+            // Player 2's strategy (column) against Player 1's mixed strategy (rows)
+            for (let i = 0; i < rows; i++) {
+                const payoff = payoffs[`${i}-${strategyIndex}`].p2;
+                expectedValue += payoff * mixedStrategy[i];
+            }
+        }
+        
+        return expectedValue;
+    }
+
+    function calculateIndifferenceProbability(payoffs, mixingPlayer) {
+        // For a 2x2 game, calculate the probability p such that the opponent is indifferent
+        // mixingPlayer = 1: Player 1 mixes between rows (A, B) with probability (p, 1-p)
+        //                   Makes Player 2 indifferent between columns (X, Y)
+        // mixingPlayer = 2: Player 2 mixes between columns (X, Y) with probability (q, 1-q)
+        //                   Makes Player 1 indifferent between rows (A, B)
+        
+        if (mixingPlayer === 1) {
+            // Player 1 plays (p, 1-p), making Player 2 indifferent
+            // EV for P2 playing X: p * payoffs['0-0'].p2 + (1-p) * payoffs['1-0'].p2
+            // EV for P2 playing Y: p * payoffs['0-1'].p2 + (1-p) * payoffs['1-1'].p2
+            // Set them equal and solve for p:
+            // p * payoffs['0-0'].p2 + (1-p) * payoffs['1-0'].p2 = p * payoffs['0-1'].p2 + (1-p) * payoffs['1-1'].p2
+            // p * (payoffs['0-0'].p2 - payoffs['1-0'].p2 - payoffs['0-1'].p2 + payoffs['1-1'].p2) = payoffs['1-1'].p2 - payoffs['1-0'].p2
+            
+            const a = payoffs['0-0'].p2;
+            const b = payoffs['1-0'].p2;
+            const c = payoffs['0-1'].p2;
+            const d = payoffs['1-1'].p2;
+            
+            const denominator = a - b - c + d;
+            if (Math.abs(denominator) < 0.0001) {
+                return null; // No unique solution
+            }
+            
+            const p = (d - b) / denominator;
+            return p;
+        } else {
+            // Player 2 plays (q, 1-q), making Player 1 indifferent
+            // EV for P1 playing A: q * payoffs['0-0'].p1 + (1-q) * payoffs['0-1'].p1
+            // EV for P1 playing B: q * payoffs['1-0'].p1 + (1-q) * payoffs['1-1'].p1
+            // Set them equal and solve for q:
+            
+            const a = payoffs['0-0'].p1;
+            const b = payoffs['0-1'].p1;
+            const c = payoffs['1-0'].p1;
+            const d = payoffs['1-1'].p1;
+            
+            const denominator = a - b - c + d;
+            if (Math.abs(denominator) < 0.0001) {
+                return null; // No unique solution
+            }
+            
+            const q = (d - b) / denominator;
+            return q;
+        }
+    }
+
+    function generate2x2WithoutPureNash() {
+        // Generate a 2x2 matrix with no pure Nash equilibria
+        let payoffs;
+        let equilibria;
+        let attempts = 0;
+        const maxAttempts = 100;
+        
+        do {
+            payoffs = generateRandomPayoffs(2, 2, -5, 5);
+            equilibria = calculateNashEquilibria(payoffs, 2, 2);
+            attempts++;
+        } while (equilibria.size > 0 && attempts < maxAttempts);
+        
+        if (equilibria.size > 0) {
+            // Fallback: manually create a game with no pure Nash equilibrium
+            // A simple matching pennies-like game
+            payoffs = {
+                '0-0': { p1: 1, p2: -1 },
+                '0-1': { p1: -1, p2: 1 },
+                '1-0': { p1: -1, p2: 1 },
+                '1-1': { p1: 1, p2: -1 }
+            };
+        }
+        
+        return payoffs;
+    }
+
     return {
         generateRandomPayoffs,
         calculateBestResponses,
         getDominanceCompare,
         getDominanceRelation,
         hasStrictDominance,
-        calculateNashEquilibria
+        calculateNashEquilibria,
+        generateMixedStrategy,
+        calculateExpectedValue,
+        calculateIndifferenceProbability,
+        generate2x2WithoutPureNash
     };
 })();

@@ -38,6 +38,26 @@ let nashSelected = new Set();
 let nashCorrectCount = 0;
 let nashIncorrectCount = 0;
 
+// Expected Value mode state
+let evRows = 2;
+let evCols = 2;
+let evPayoffs = {};
+let evMixedPlayer = 1; // Which player is using the mixed strategy
+let evMixedStrategy = [];
+let evQuestionPlayer = 2; // Which player we're asking about
+let evQuestionStrategy = 0; // Which strategy index to calculate EV for
+let evCorrectAnswer = 0;
+let evCorrectCount = 0;
+let evIncorrectCount = 0;
+
+// Indifference mode state
+let indiffPayoffs = {};
+let indiffMixingPlayer = 1; // Which player is mixing to make opponent indifferent
+let indiffCorrectProbability = 0;
+let indiffCorrectCount = 0;
+let indiffIncorrectCount = 0;
+let indiffLastWasValidationError = false; // Track if last error was validation only
+
 // Get strategy labels (returns LaTeX formatted string WITH delimiters)
 function getStrategyLabel(index, player) {
     // Check if custom names are set
@@ -737,6 +757,8 @@ document.getElementById('mode-play').addEventListener('click', () => switchMode(
 document.getElementById('mode-training').addEventListener('click', () => switchMode('training'));
 document.getElementById('mode-dominance').addEventListener('click', () => switchMode('dominance'));
 document.getElementById('mode-nash').addEventListener('click', () => switchMode('nash'));
+document.getElementById('mode-expected-value').addEventListener('click', () => switchMode('expected-value'));
+document.getElementById('mode-indifference').addEventListener('click', () => switchMode('indifference'));
 
 function switchMode(mode) {
     currentMode = mode;
@@ -746,6 +768,8 @@ function switchMode(mode) {
     document.getElementById('mode-training').classList.toggle('active', mode === 'training');
     document.getElementById('mode-dominance').classList.toggle('active', mode === 'dominance');
     document.getElementById('mode-nash').classList.toggle('active', mode === 'nash');
+    document.getElementById('mode-expected-value').classList.toggle('active', mode === 'expected-value');
+    document.getElementById('mode-indifference').classList.toggle('active', mode === 'indifference');
     
     // Toggle sections
     const playElements = [
@@ -779,17 +803,33 @@ function switchMode(mode) {
         nashSection.style.display = mode === 'nash' ? 'block' : 'none';
     }
     
+    const evSection = document.getElementById('expected-value-section');
+    if (evSection) {
+        evSection.style.display = mode === 'expected-value' ? 'block' : 'none';
+    }
+    
+    const indiffSection = document.getElementById('indifference-section');
+    if (indiffSection) {
+        indiffSection.style.display = mode === 'indifference' ? 'block' : 'none';
+    }
+    
     // Update description
     const description = document.getElementById('mode-description');
     if (mode === 'training') {
-        description.textContent = 'Practice identifying best responses! One player picks a strategy and the other responds.';
+        description.textContent = 'Practice identifying best responses!';
         generateTrainingProblem();
     } else if (mode === 'dominance') {
-        description.textContent = 'Identify dominance relations between strategy pairs for both players.';
+        description.textContent = 'Identify dominance relations!';
         generateDominanceProblem();
     } else if (mode === 'nash') {
-        description.textContent = 'Identify all pure Nash equilibriums in the payoff matrix.';
+        description.textContent = 'Identify all pure Nash equilibriums!';
         generateNashProblem();
+    } else if (mode === 'expected-value') {
+        description.textContent = 'Calculate expected values for mixed strategies!';
+        generateEVProblem();
+    } else if (mode === 'indifference') {
+        description.textContent = 'Find the indifference probability for mixed strategies!';
+        generateIndiffProblem();
     } else {
         description.textContent = 'Play against the opponent by choosing your strategy. Edit the payoff matrix to try different games!';
     }
@@ -1383,6 +1423,12 @@ function generateNashProblem() {
 
     generateNashMatrix();
     
+    // Show submit button
+    const submitButton = document.getElementById('nash-submit');
+    if (submitButton) {
+        submitButton.style.display = 'block';
+    }
+    
     // Hide feedback
     const feedbackBox = document.getElementById('nash-feedback');
     if (feedbackBox) {
@@ -1502,7 +1548,13 @@ function toggleNashSelection(cell) {
 function submitNashAnswer() {
     const feedbackText = document.getElementById('nash-feedback-text');
     const feedbackBox = document.getElementById('nash-feedback');
+    const submitButton = document.getElementById('nash-submit');
     const hasEquilibria = nashEquilibria.size > 0;
+
+    // Hide submit button
+    if (submitButton) {
+        submitButton.style.display = 'none';
+    }
 
     // Show feedback box
     if (feedbackBox) {
@@ -1603,3 +1655,520 @@ function resetNashSession() {
 document.getElementById('nash-reset').addEventListener('click', resetNashSession);
 document.getElementById('nash-next').addEventListener('click', generateNashProblem);
 document.getElementById('nash-submit').addEventListener('click', submitNashAnswer);
+
+// Expected Value mode functions
+function getEVStrategyLabel(index, player) {
+    const maxStrategies = player === 1 ? evRows : evCols;
+    
+    if (player === 1) {
+        if (maxStrategies <= 3) {
+            if (index === 0) return '\\(A\\)';
+            if (index === 1) return '\\(B\\)';
+            if (index === 2) return '\\(C\\)';
+        }
+        return `\\(A_{${index + 1}}\\)`;
+    } else {
+        if (maxStrategies <= 3) {
+            if (index === 0) return '\\(X\\)';
+            if (index === 1) return '\\(Y\\)';
+            if (index === 2) return '\\(Z\\)';
+        }
+        return `\\(X_{${index + 1}}\\)`;
+    }
+}
+
+function generateEVProblem() {
+    // Generate random dimensions
+    evRows = Math.floor(Math.random() * 2) + 2; // 2 or 3
+    evCols = Math.floor(Math.random() * 2) + 2; // 2 or 3
+    
+    // Generate random payoffs
+    evPayoffs = GameTheory.generateRandomPayoffs(evRows, evCols);
+    
+    // Randomly select which player uses mixed strategy
+    evMixedPlayer = Math.random() < 0.5 ? 1 : 2;
+    evQuestionPlayer = evMixedPlayer === 1 ? 2 : 1;
+    
+    // Generate mixed strategy for the mixed player
+    const numStrategies = evMixedPlayer === 1 ? evRows : evCols;
+    evMixedStrategy = GameTheory.generateMixedStrategy(numStrategies);
+    
+    // Select which strategy to ask about for the other player
+    const numQuestionStrategies = evQuestionPlayer === 1 ? evRows : evCols;
+    evQuestionStrategy = Math.floor(Math.random() * numQuestionStrategies);
+    
+    // Calculate correct answer
+    evCorrectAnswer = GameTheory.calculateExpectedValue(
+        evPayoffs,
+        evRows,
+        evCols,
+        evQuestionPlayer,
+        evQuestionStrategy,
+        evMixedStrategy
+    );
+    
+    // Display matrix
+    generateEVMatrix();
+    
+    // Generate question text
+    generateEVQuestion();
+    
+    // Clear input and hide feedback
+    const answerInput = document.getElementById('ev-answer-input');
+    if (answerInput) {
+        answerInput.value = '';
+    }
+    
+    const submitButton = document.getElementById('ev-submit');
+    if (submitButton) {
+        submitButton.style.display = 'block';
+    }
+    
+    const feedbackBox = document.getElementById('ev-feedback');
+    if (feedbackBox) {
+        feedbackBox.style.display = 'none';
+        feedbackBox.classList.remove('correct', 'incorrect');
+    }
+    
+    renderMath();
+}
+
+function generateEVMatrix() {
+    const container = document.getElementById('ev-matrix-container');
+    if (!container) return;
+    
+    let html = '<table class="game-table">';
+    
+    // Header row
+    html += '<tr><th></th>';
+    for (let j = 0; j < evCols; j++) {
+        html += `<th>${getEVStrategyLabel(j, 2)}</th>`;
+    }
+    html += '</tr>';
+    
+    // Payoff rows
+    for (let i = 0; i < evRows; i++) {
+        html += '<tr>';
+        html += `<th>${getEVStrategyLabel(i, 1)}</th>`;
+        for (let j = 0; j < evCols; j++) {
+            const key = `${i}-${j}`;
+            const p1 = evPayoffs[key].p1;
+            const p2 = evPayoffs[key].p2;
+            html += `<td class="ev-cell">
+                <div class="payoff-cell">
+                    <span class="p1-payoff">${p1}</span>,
+                    <span class="p2-payoff">${p2}</span>
+                </div>
+            </td>`;
+        }
+        html += '</tr>';
+    }
+    
+    html += '</table>';
+    container.innerHTML = html;
+}
+
+function generateEVQuestion() {
+    const questionText = document.getElementById('ev-question-text');
+    if (!questionText) return;
+    
+    // Build mixed strategy string
+    let mixedStrategyStr = '';
+    const numStrategies = evMixedPlayer === 1 ? evRows : evCols;
+    const strategyLabels = [];
+    
+    for (let i = 0; i < numStrategies; i++) {
+        const prob = evMixedStrategy[i];
+        if (prob > 0) {
+            const label = getEVStrategyLabel(i, evMixedPlayer);
+            // Convert probability to percentage
+            const percentage = Math.round(prob * 100);
+            strategyLabels.push(`${percentage}% ${label}`);
+        }
+    }
+    
+    mixedStrategyStr = strategyLabels.join(', ');
+    
+    const mixedPlayerName = evMixedPlayer === 1 ? 'Player 1' : 'Player 2';
+    const questionPlayerName = evQuestionPlayer === 1 ? 'Player 1' : 'Player 2';
+    const questionStrategyLabel = getEVStrategyLabel(evQuestionStrategy, evQuestionPlayer);
+    
+    questionText.innerHTML = `
+        <strong>${mixedPlayerName}</strong> is using a mixed strategy: <strong>${mixedStrategyStr}</strong>.<br><br>
+        What is <strong>${questionPlayerName}</strong>'s expected value if they play strategy <strong>${questionStrategyLabel}</strong>?
+    `;
+}
+
+function submitEVAnswer() {
+    const answerInput = document.getElementById('ev-answer-input');
+    const feedbackBox = document.getElementById('ev-feedback');
+    const feedbackText = document.getElementById('ev-feedback-text');
+    const submitButton = document.getElementById('ev-submit');
+    
+    if (!answerInput || !feedbackBox || !feedbackText) return;
+    
+    const userAnswer = parseFloat(answerInput.value);
+    
+    if (isNaN(userAnswer)) {
+        feedbackText.textContent = 'Please enter a valid number.';
+        feedbackBox.style.display = 'block';
+        feedbackBox.classList.remove('correct', 'incorrect');
+        return;
+    }
+    
+    // Hide submit button
+    if (submitButton) {
+        submitButton.style.display = 'none';
+    }
+    
+    // Check if answer is correct (allow small floating point error)
+    const tolerance = 0.01;
+    const isCorrect = Math.abs(userAnswer - evCorrectAnswer) < tolerance;
+    
+    feedbackBox.style.display = 'block';
+    
+    if (isCorrect) {
+        evCorrectCount++;
+        feedbackBox.classList.add('correct');
+        feedbackBox.classList.remove('incorrect');
+        feedbackText.textContent = `Correct! The expected value is ${evCorrectAnswer.toFixed(2)}.`;
+    } else {
+        evIncorrectCount++;
+        feedbackBox.classList.add('incorrect');
+        feedbackBox.classList.remove('correct');
+        feedbackText.textContent = `Incorrect. The correct expected value is ${evCorrectAnswer.toFixed(2)}.`;
+    }
+    
+    updateEVStats();
+}
+
+function updateEVStats() {
+    const correctEl = document.getElementById('ev-correct');
+    const incorrectEl = document.getElementById('ev-incorrect');
+    const accuracyEl = document.getElementById('ev-accuracy');
+    
+    if (!correctEl || !incorrectEl || !accuracyEl) return;
+    
+    correctEl.textContent = evCorrectCount;
+    incorrectEl.textContent = evIncorrectCount;
+    
+    const total = evCorrectCount + evIncorrectCount;
+    const accuracy = total > 0 ? Math.round((evCorrectCount / total) * 100) : 0;
+    accuracyEl.textContent = `${accuracy}%`;
+}
+
+function resetEVSession() {
+    evCorrectCount = 0;
+    evIncorrectCount = 0;
+    updateEVStats();
+    generateEVProblem();
+}
+
+document.getElementById('ev-reset').addEventListener('click', resetEVSession);
+document.getElementById('ev-next').addEventListener('click', generateEVProblem);
+document.getElementById('ev-submit').addEventListener('click', submitEVAnswer);
+
+// Allow Enter key to submit answer
+document.getElementById('ev-answer-input').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        submitEVAnswer();
+    }
+});
+
+// Indifference mode functions
+function getIndiffStrategyLabel(index, player) {
+    if (player === 1) {
+        if (index === 0) return '\\(A\\)';
+        if (index === 1) return '\\(B\\)';
+    } else {
+        if (index === 0) return '\\(X\\)';
+        if (index === 1) return '\\(Y\\)';
+    }
+}
+
+function generateIndiffProblem() {
+    // Generate a 2x2 matrix with no pure Nash equilibria
+    indiffPayoffs = GameTheory.generate2x2WithoutPureNash();
+    
+    // Randomly select which player we ask about
+    indiffMixingPlayer = Math.random() < 0.5 ? 1 : 2;
+    
+    // Calculate the correct indifference probability
+    indiffCorrectProbability = GameTheory.calculateIndifferenceProbability(indiffPayoffs, indiffMixingPlayer);
+    
+    // If calculation failed, regenerate
+    if (indiffCorrectProbability === null || indiffCorrectProbability < 0 || indiffCorrectProbability > 1) {
+        generateIndiffProblem();
+        return;
+    }
+    
+    // Reset validation error flag for new problem
+    indiffLastWasValidationError = false;
+    
+    // Display matrix
+    generateIndiffMatrix();
+    
+    // Generate question text
+    generateIndiffQuestion();
+    
+    // Clear input and hide feedback
+    const answerInput1 = document.getElementById('indiff-answer-input-1');
+    const answerInput2 = document.getElementById('indiff-answer-input-2');
+    if (answerInput1) {
+        answerInput1.value = '';
+    }
+    if (answerInput2) {
+        answerInput2.value = '';
+    }
+    
+    const submitButton = document.getElementById('indiff-submit');
+    if (submitButton) {
+        submitButton.style.display = 'block';
+    }
+    
+    const feedbackBox = document.getElementById('indiff-feedback');
+    if (feedbackBox) {
+        feedbackBox.style.display = 'none';
+        feedbackBox.classList.remove('correct', 'incorrect');
+    }
+    
+    renderMath();
+}
+
+function generateIndiffMatrix() {
+    const container = document.getElementById('indiff-matrix-container');
+    if (!container) return;
+    
+    let html = '<table class="game-table">';
+    
+    // Header row
+    html += '<tr><th></th>';
+    html += `<th>${getIndiffStrategyLabel(0, 2)}</th>`;
+    html += `<th>${getIndiffStrategyLabel(1, 2)}</th>`;
+    html += '</tr>';
+    
+    // Payoff rows
+    for (let i = 0; i < 2; i++) {
+        html += '<tr>';
+        html += `<th>${getIndiffStrategyLabel(i, 1)}</th>`;
+        for (let j = 0; j < 2; j++) {
+            const key = `${i}-${j}`;
+            const p1 = indiffPayoffs[key].p1;
+            const p2 = indiffPayoffs[key].p2;
+            html += `<td class="indiff-cell">
+                <div class="payoff-cell">
+                    <span class="p1-payoff">${p1}</span>,
+                    <span class="p2-payoff">${p2}</span>
+                </div>
+            </td>`;
+        }
+        html += '</tr>';
+    }
+    
+    html += '</table>';
+    container.innerHTML = html;
+}
+
+function generateIndiffQuestion() {
+    const questionText = document.getElementById('indiff-question-text');
+    const label1 = document.getElementById('indiff-label-1');
+    const label2 = document.getElementById('indiff-label-2');
+    if (!questionText || !label1 || !label2) return;
+    
+    const mixingPlayerName = indiffMixingPlayer === 1 ? 'Player 1' : 'Player 2';
+    const indifferentPlayerName = indiffMixingPlayer === 1 ? 'Player 2' : 'Player 1';
+    
+    const strategy1Label = getIndiffStrategyLabel(0, indiffMixingPlayer);
+    const strategy2Label = getIndiffStrategyLabel(1, indiffMixingPlayer);
+    
+    questionText.innerHTML = `
+        Find the mixed strategy for <strong>${mixingPlayerName}</strong> that makes <strong>${indifferentPlayerName}</strong> 
+        indifferent between their two strategies (i.e., both strategies give the same expected value).<br><br>
+        Enter the probabilities as fractions (must sum to 1):
+    `;
+    
+    // Update input labels with strategy names
+    label1.innerHTML = `Probability for ${strategy1Label}:`;
+    label2.innerHTML = `Probability for ${strategy2Label}:`;
+}
+
+function parseFraction(str) {
+    // Parse a fraction string like "1/2" or "3/4"
+    // Returns the decimal value or null if invalid
+    str = str.trim();
+    
+    // Check if it contains a slash
+    if (!str.includes('/')) {
+        return null;
+    }
+    
+    const parts = str.split('/');
+    if (parts.length !== 2) {
+        return null;
+    }
+    
+    const numerator = parseFloat(parts[0].trim());
+    const denominator = parseFloat(parts[1].trim());
+    
+    if (isNaN(numerator) || isNaN(denominator) || denominator === 0) {
+        return null;
+    }
+    
+    return numerator / denominator;
+}
+
+function decimalToFraction(decimal) {
+    // Convert decimal to simple fraction
+    // Use common denominators up to 100
+    const tolerance = 0.01;
+    
+    for (let denom = 1; denom <= 100; denom++) {
+        for (let numer = 0; numer <= denom; numer++) {
+            if (Math.abs(numer / denom - decimal) < tolerance) {
+                // Simplify if possible
+                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+                const divisor = gcd(numer, denom);
+                return `${numer / divisor}/${denom / divisor}`;
+            }
+        }
+    }
+    
+    // Fallback
+    return decimal.toFixed(2);
+}
+
+function submitIndiffAnswer() {
+    const answerInput1 = document.getElementById('indiff-answer-input-1');
+    const answerInput2 = document.getElementById('indiff-answer-input-2');
+    const feedbackBox = document.getElementById('indiff-feedback');
+    const feedbackText = document.getElementById('indiff-feedback-text');
+    const submitButton = document.getElementById('indiff-submit');
+    
+    if (!answerInput1 || !answerInput2 || !feedbackBox || !feedbackText) return;
+    
+    const userFraction1 = answerInput1.value;
+    const userFraction2 = answerInput2.value;
+    
+    // Parse fractions
+    const userAnswer1 = parseFraction(userFraction1);
+    const userAnswer2 = parseFraction(userFraction2);
+    
+    if (userAnswer1 === null || userAnswer2 === null) {
+        feedbackText.textContent = 'Please enter valid fractions (e.g., 1/2) for both probabilities.';
+        feedbackBox.style.display = 'block';
+        feedbackBox.classList.remove('correct', 'incorrect');
+        indiffLastWasValidationError = true;
+        return;
+    }
+    
+    // Check if probabilities sum to 1
+    const sum = userAnswer1 + userAnswer2;
+    if (Math.abs(sum - 1) > 0.02) {
+        feedbackText.textContent = `The probabilities must sum to 1. Your sum is ${sum.toFixed(2)}.`;
+        feedbackBox.style.display = 'block';
+        feedbackBox.classList.remove('correct', 'incorrect');
+        indiffLastWasValidationError = true;
+        return;
+    }
+    
+    // Hide submit button
+    if (submitButton) {
+        submitButton.style.display = 'none';
+    }
+    
+    // If we got here, it's a real answer attempt (not a validation error)
+    indiffLastWasValidationError = false;
+    
+    // Check if answer is correct (allow 2% tolerance for fractions)
+    const tolerance = 0.02;
+    const isCorrect = Math.abs(userAnswer1 - indiffCorrectProbability) < tolerance;
+    
+    feedbackBox.style.display = 'block';
+    
+    const correctFraction1 = decimalToFraction(indiffCorrectProbability);
+    const correctFraction2 = decimalToFraction(1 - indiffCorrectProbability);
+    
+    const strategy1Label = getIndiffStrategyLabel(0, indiffMixingPlayer);
+    const strategy2Label = getIndiffStrategyLabel(1, indiffMixingPlayer);
+    
+    if (isCorrect) {
+        indiffCorrectCount++;
+        feedbackBox.classList.add('correct');
+        feedbackBox.classList.remove('incorrect');
+        feedbackText.innerHTML = `Correct! The mixed strategy is ${correctFraction1} ${strategy1Label}, ${correctFraction2} ${strategy2Label}.`;
+    } else {
+        indiffIncorrectCount++;
+        feedbackBox.classList.add('incorrect');
+        feedbackBox.classList.remove('correct');
+        feedbackText.innerHTML = `Incorrect. The correct mixed strategy is ${correctFraction1} ${strategy1Label}, ${correctFraction2} ${strategy2Label}.`;
+    }
+    
+    updateIndiffStats();
+    renderMath();
+}
+
+function updateIndiffStats() {
+    const correctEl = document.getElementById('indiff-correct');
+    const incorrectEl = document.getElementById('indiff-incorrect');
+    const accuracyEl = document.getElementById('indiff-accuracy');
+    
+    if (!correctEl || !incorrectEl || !accuracyEl) return;
+    
+    correctEl.textContent = indiffCorrectCount;
+    incorrectEl.textContent = indiffIncorrectCount;
+    
+    const total = indiffCorrectCount + indiffIncorrectCount;
+    const accuracy = total > 0 ? Math.round((indiffCorrectCount / total) * 100) : 0;
+    accuracyEl.textContent = `${accuracy}%`;
+}
+
+function resetIndiffSession() {
+    indiffCorrectCount = 0;
+    indiffIncorrectCount = 0;
+    updateIndiffStats();
+    generateIndiffProblem();
+}
+
+function handleIndiffTryAgain() {
+    const submitButton = document.getElementById('indiff-submit');
+    
+    if (indiffLastWasValidationError) {
+        // Just clear inputs and hide feedback, keep the same problem
+        const answerInput1 = document.getElementById('indiff-answer-input-1');
+        const answerInput2 = document.getElementById('indiff-answer-input-2');
+        const feedbackBox = document.getElementById('indiff-feedback');
+        
+        if (answerInput1) answerInput1.value = '';
+        if (answerInput2) answerInput2.value = '';
+        if (feedbackBox) {
+            feedbackBox.style.display = 'none';
+            feedbackBox.classList.remove('correct', 'incorrect');
+        }
+        if (submitButton) {
+            submitButton.style.display = 'block';
+        }
+        indiffLastWasValidationError = false;
+    } else {
+        // Generate a new problem
+        generateIndiffProblem();
+    }
+}
+
+document.getElementById('indiff-reset').addEventListener('click', resetIndiffSession);
+document.getElementById('indiff-next').addEventListener('click', handleIndiffTryAgain);
+document.getElementById('indiff-submit').addEventListener('click', submitIndiffAnswer);
+
+// Allow Enter key to submit answer from either input
+document.getElementById('indiff-answer-input-1').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        submitIndiffAnswer();
+    }
+});
+
+document.getElementById('indiff-answer-input-2').addEventListener('keypress', function(event) {
+    if (event.key === 'Enter') {
+        submitIndiffAnswer();
+    }
+});
+
+
