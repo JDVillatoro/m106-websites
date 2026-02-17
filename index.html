@@ -17,7 +17,7 @@
             <button id="mode-training" class="mode-btn">Best Response</button>
             <button id="mode-dominance" class="mode-btn">Dominance Relations</button>
             <button id="mode-nash" class="mode-btn">Nash Equilibriums</button>
-            <button id="mode-expected-value" class="mode-btn">Expected Value</button>
+            <button id="mode-expected-payoff" class="mode-btn">Expected Payoff</button>
             <button id="mode-indifference" class="mode-btn">Indifference</button>
         </div>
         
@@ -163,37 +163,37 @@
             </div>
         </div>
 
-        <div class="expected-value-section" id="expected-value-section" style="display: none;">
-            <button id="ev-reset" class="reset-session-btn">Reset</button>
+        <div class="expected-payoff-section" id="expected-payoff-section" style="display: none;">
+            <button id="ep-reset" class="reset-session-btn">Reset</button>
 
-            <div class="ev-matrix">
+            <div class="ep-matrix">
                 <h2>Payoff Matrix</h2>
-                <p class="matrix-label" id="ev-prompt">Calculate the expected value.</p>
-                <div id="ev-matrix-container"></div>
+                <p class="matrix-label" id="ep-prompt">Calculate the expected payoff.</p>
+                <div id="ep-matrix-container"></div>
             </div>
 
-            <div class="ev-question">
+            <div class="ep-question">
                 <h2>Question</h2>
-                <p id="ev-question-text"></p>
-                <div class="ev-input-group">
-                    <label for="ev-answer-input">Your Answer:</label>
-                    <input type="number" id="ev-answer-input" step="0.01" placeholder="Enter expected value">
-                    <button id="ev-submit" class="submit-btn">Submit Answer</button>
+                <p id="ep-question-text"></p>
+                <div class="ep-input-group">
+                    <label for="ep-answer-input">Your Answer:</label>
+                    <input type="number" id="ep-answer-input" step="0.01" placeholder="Enter expected payoff">
+                    <button id="ep-submit" class="submit-btn">Submit Answer</button>
                 </div>
             </div>
 
-            <div class="ev-feedback" id="ev-feedback" style="display: none;">
+            <div class="ep-feedback" id="ep-feedback" style="display: none;">
                 <h2>Feedback</h2>
-                <p id="ev-feedback-text">Enter your answer and submit.</p>
-                <button id="ev-next" class="submit-btn">Try Again</button>
+                <p id="ep-feedback-text">Enter your answer and submit.</p>
+                <button id="ep-next" class="submit-btn">Try Again</button>
             </div>
 
-            <div class="ev-stats">
+            <div class="ep-stats">
                 <h2>Statistics</h2>
                 <div class="stats-display">
-                    <p>Correct: <span id="ev-correct">0</span></p>
-                    <p>Incorrect: <span id="ev-incorrect">0</span></p>
-                    <p>Accuracy: <span id="ev-accuracy">0%</span></p>
+                    <p>Correct: <span id="ep-correct">0</span></p>
+                    <p>Incorrect: <span id="ep-incorrect">0</span></p>
+                    <p>Accuracy: <span id="ep-accuracy">0%</span></p>
                 </div>
             </div>
         </div>

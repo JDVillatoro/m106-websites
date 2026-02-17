@@ -38,17 +38,17 @@ let nashSelected = new Set();
 let nashCorrectCount = 0;
 let nashIncorrectCount = 0;
 
-// Expected Value mode state
-let evRows = 2;
-let evCols = 2;
-let evPayoffs = {};
-let evMixedPlayer = 1; // Which player is using the mixed strategy
-let evMixedStrategy = [];
-let evQuestionPlayer = 2; // Which player we're asking about
-let evQuestionStrategy = 0; // Which strategy index to calculate EV for
-let evCorrectAnswer = 0;
-let evCorrectCount = 0;
-let evIncorrectCount = 0;
+// Expected Payoff mode state
+let epRows = 2;
+let epCols = 2;
+let epPayoffs = {};
+let epMixedPlayer = 1; // Which player is using the mixed strategy
+let epMixedStrategy = [];
+let epQuestionPlayer = 2; // Which player we're asking about
+let epQuestionStrategy = 0; // Which strategy index to calculate EP for
+let epCorrectAnswer = 0;
+let epCorrectCount = 0;
+let epIncorrectCount = 0;
 
 // Indifference mode state
 let indiffPayoffs = {};
@@ -757,7 +757,7 @@ document.getElementById('mode-play').addEventListener('click', () => switchMode(
 document.getElementById('mode-training').addEventListener('click', () => switchMode('training'));
 document.getElementById('mode-dominance').addEventListener('click', () => switchMode('dominance'));
 document.getElementById('mode-nash').addEventListener('click', () => switchMode('nash'));
-document.getElementById('mode-expected-value').addEventListener('click', () => switchMode('expected-value'));
+document.getElementById('mode-expected-payoff').addEventListener('click', () => switchMode('expected-payoff'));
 document.getElementById('mode-indifference').addEventListener('click', () => switchMode('indifference'));
 
 function switchMode(mode) {
@@ -768,7 +768,7 @@ function switchMode(mode) {
     document.getElementById('mode-training').classList.toggle('active', mode === 'training');
     document.getElementById('mode-dominance').classList.toggle('active', mode === 'dominance');
     document.getElementById('mode-nash').classList.toggle('active', mode === 'nash');
-    document.getElementById('mode-expected-value').classList.toggle('active', mode === 'expected-value');
+    document.getElementById('mode-expected-payoff').classList.toggle('active', mode === 'expected-payoff');
     document.getElementById('mode-indifference').classList.toggle('active', mode === 'indifference');
     
     // Toggle sections
@@ -803,9 +803,9 @@ function switchMode(mode) {
         nashSection.style.display = mode === 'nash' ? 'block' : 'none';
     }
     
-    const evSection = document.getElementById('expected-value-section');
-    if (evSection) {
-        evSection.style.display = mode === 'expected-value' ? 'block' : 'none';
+    const epSection = document.getElementById('expected-payoff-section');
+    if (epSection) {
+        epSection.style.display = mode === 'expected-payoff' ? 'block' : 'none';
     }
     
     const indiffSection = document.getElementById('indifference-section');
@@ -824,9 +824,9 @@ function switchMode(mode) {
     } else if (mode === 'nash') {
         description.textContent = 'Identify all pure Nash equilibriums!';
         generateNashProblem();
-    } else if (mode === 'expected-value') {
-        description.textContent = 'Calculate expected values for mixed strategies!';
-        generateEVProblem();
+    } else if (mode === 'expected-payoff') {
+        description.textContent = 'Calculate expected payoffs for mixed strategies!';
+        generateEPProblem();
     } else if (mode === 'indifference') {
         description.textContent = 'Find the indifference probability for mixed strategies!';
         generateIndiffProblem();
@@ -1656,9 +1656,9 @@ document.getElementById('nash-reset').addEventListener('click', resetNashSession
 document.getElementById('nash-next').addEventListener('click', generateNashProblem);
 document.getElementById('nash-submit').addEventListener('click', submitNashAnswer);
 
-// Expected Value mode functions
-function getEVStrategyLabel(index, player) {
-    const maxStrategies = player === 1 ? evRows : evCols;
+// Expected Payoff mode functions
+function getEPStrategyLabel(index, player) {
+    const maxStrategies = player === 1 ? epRows : epCols;
     
     if (player === 1) {
         if (maxStrategies <= 3) {
@@ -1677,54 +1677,54 @@ function getEVStrategyLabel(index, player) {
     }
 }
 
-function generateEVProblem() {
+function generateEPProblem() {
     // Generate random dimensions
-    evRows = Math.floor(Math.random() * 2) + 2; // 2 or 3
-    evCols = Math.floor(Math.random() * 2) + 2; // 2 or 3
+    epRows = Math.floor(Math.random() * 2) + 2; // 2 or 3
+    epCols = Math.floor(Math.random() * 2) + 2; // 2 or 3
     
     // Generate random payoffs
-    evPayoffs = GameTheory.generateRandomPayoffs(evRows, evCols);
+    epPayoffs = GameTheory.generateRandomPayoffs(epRows, epCols);
     
     // Randomly select which player uses mixed strategy
-    evMixedPlayer = Math.random() < 0.5 ? 1 : 2;
-    evQuestionPlayer = evMixedPlayer === 1 ? 2 : 1;
+    epMixedPlayer = Math.random() < 0.5 ? 1 : 2;
+    epQuestionPlayer = epMixedPlayer === 1 ? 2 : 1;
     
     // Generate mixed strategy for the mixed player
-    const numStrategies = evMixedPlayer === 1 ? evRows : evCols;
-    evMixedStrategy = GameTheory.generateMixedStrategy(numStrategies);
+    const numStrategies = epMixedPlayer === 1 ? epRows : epCols;
+    epMixedStrategy = GameTheory.generateMixedStrategy(numStrategies);
     
     // Select which strategy to ask about for the other player
-    const numQuestionStrategies = evQuestionPlayer === 1 ? evRows : evCols;
-    evQuestionStrategy = Math.floor(Math.random() * numQuestionStrategies);
+    const numQuestionStrategies = epQuestionPlayer === 1 ? epRows : epCols;
+    epQuestionStrategy = Math.floor(Math.random() * numQuestionStrategies);
     
     // Calculate correct answer
-    evCorrectAnswer = GameTheory.calculateExpectedValue(
-        evPayoffs,
-        evRows,
-        evCols,
-        evQuestionPlayer,
-        evQuestionStrategy,
-        evMixedStrategy
+    epCorrectAnswer = GameTheory.calculateExpectedValue(
+        epPayoffs,
+        epRows,
+        epCols,
+        epQuestionPlayer,
+        epQuestionStrategy,
+        epMixedStrategy
     );
     
     // Display matrix
-    generateEVMatrix();
+    generateEPMatrix();
     
     // Generate question text
-    generateEVQuestion();
+    generateEPQuestion();
     
     // Clear input and hide feedback
-    const answerInput = document.getElementById('ev-answer-input');
+    const answerInput = document.getElementById('ep-answer-input');
     if (answerInput) {
         answerInput.value = '';
     }
     
-    const submitButton = document.getElementById('ev-submit');
+    const submitButton = document.getElementById('ep-submit');
     if (submitButton) {
         submitButton.style.display = 'block';
     }
     
-    const feedbackBox = document.getElementById('ev-feedback');
+    const feedbackBox = document.getElementById('ep-feedback');
     if (feedbackBox) {
         feedbackBox.style.display = 'none';
         feedbackBox.classList.remove('correct', 'incorrect');
@@ -1733,8 +1733,8 @@ function generateEVProblem() {
     renderMath();
 }
 
-function generateEVMatrix() {
-    const container = document.getElementById('ev-matrix-container');
+function generateEPMatrix() {
+    const container = document.getElementById('ep-matrix-container');
     if (!container) return;
     
     container.innerHTML = '';
@@ -1763,9 +1763,9 @@ function generateEVMatrix() {
     const emptyHeader = document.createElement('th');
     headerRow.appendChild(emptyHeader);
     
-    for (let j = 0; j < evCols; j++) {
+    for (let j = 0; j < epCols; j++) {
         const th = document.createElement('th');
-        th.innerHTML = getEVStrategyLabel(j, 2);
+        th.innerHTML = getEPStrategyLabel(j, 2);
         headerRow.appendChild(th);
     }
     thead.appendChild(headerRow);
@@ -1773,21 +1773,21 @@ function generateEVMatrix() {
     
     // Body rows
     const tbody = document.createElement('tbody');
-    for (let i = 0; i < evRows; i++) {
+    for (let i = 0; i < epRows; i++) {
         const row = document.createElement('tr');
         
         const labelCell = document.createElement('td');
         labelCell.className = 'row-label';
-        labelCell.innerHTML = getEVStrategyLabel(i, 1);
+        labelCell.innerHTML = getEPStrategyLabel(i, 1);
         row.appendChild(labelCell);
         
-        for (let j = 0; j < evCols; j++) {
+        for (let j = 0; j < epCols; j++) {
             const cell = document.createElement('td');
             cell.className = 'matrix-cell';
             
             const key = `${i}-${j}`;
-            const p1 = evPayoffs[key].p1;
-            const p2 = evPayoffs[key].p2;
+            const p1 = epPayoffs[key].p1;
+            const p2 = epPayoffs[key].p2;
             
             const p1Display = document.createElement('span');
             p1Display.className = 'payoff-display';
@@ -1811,19 +1811,19 @@ function generateEVMatrix() {
     container.appendChild(wrapper);
 }
 
-function generateEVQuestion() {
-    const questionText = document.getElementById('ev-question-text');
+function generateEPQuestion() {
+    const questionText = document.getElementById('ep-question-text');
     if (!questionText) return;
     
     // Build mixed strategy string
     let mixedStrategyStr = '';
-    const numStrategies = evMixedPlayer === 1 ? evRows : evCols;
+    const numStrategies = epMixedPlayer === 1 ? epRows : epCols;
     const strategyLabels = [];
     
     for (let i = 0; i < numStrategies; i++) {
-        const prob = evMixedStrategy[i];
+        const prob = epMixedStrategy[i];
         if (prob > 0) {
-            const label = getEVStrategyLabel(i, evMixedPlayer);
+            const label = getEPStrategyLabel(i, epMixedPlayer);
             // Convert probability to percentage
             const percentage = Math.round(prob * 100);
             strategyLabels.push(`${percentage}% ${label}`);
@@ -1832,21 +1832,21 @@ function generateEVQuestion() {
     
     mixedStrategyStr = strategyLabels.join(', ');
     
-    const mixedPlayerName = evMixedPlayer === 1 ? 'Player 1' : 'Player 2';
-    const questionPlayerName = evQuestionPlayer === 1 ? 'Player 1' : 'Player 2';
-    const questionStrategyLabel = getEVStrategyLabel(evQuestionStrategy, evQuestionPlayer);
+    const mixedPlayerName = epMixedPlayer === 1 ? 'Player 1' : 'Player 2';
+    const questionPlayerName = epQuestionPlayer === 1 ? 'Player 1' : 'Player 2';
+    const questionStrategyLabel = getEPStrategyLabel(epQuestionStrategy, epQuestionPlayer);
     
     questionText.innerHTML = `
         <strong>${mixedPlayerName}</strong> is using a mixed strategy: <strong>${mixedStrategyStr}</strong>.<br><br>
-        What is <strong>${questionPlayerName}</strong>'s expected value if they play strategy <strong>${questionStrategyLabel}</strong>?
+        What is <strong>${questionPlayerName}</strong>'s expected payoff if they play strategy <strong>${questionStrategyLabel}</strong>?
     `;
 }
 
-function submitEVAnswer() {
-    const answerInput = document.getElementById('ev-answer-input');
-    const feedbackBox = document.getElementById('ev-feedback');
-    const feedbackText = document.getElementById('ev-feedback-text');
-    const submitButton = document.getElementById('ev-submit');
+function submitEPAnswer() {
+    const answerInput = document.getElementById('ep-answer-input');
+    const feedbackBox = document.getElementById('ep-feedback');
+    const feedbackText = document.getElementById('ep-feedback-text');
+    const submitButton = document.getElementById('ep-submit');
     
     if (!answerInput || !feedbackBox || !feedbackText) return;
     
@@ -1866,55 +1866,55 @@ function submitEVAnswer() {
     
     // Check if answer is correct (allow small floating point error)
     const tolerance = 0.01;
-    const isCorrect = Math.abs(userAnswer - evCorrectAnswer) < tolerance;
+    const isCorrect = Math.abs(userAnswer - epCorrectAnswer) < tolerance;
     
     feedbackBox.style.display = 'block';
     
     if (isCorrect) {
-        evCorrectCount++;
+        epCorrectCount++;
         feedbackBox.classList.add('correct');
         feedbackBox.classList.remove('incorrect');
-        feedbackText.textContent = `Correct! The expected value is ${evCorrectAnswer.toFixed(2)}.`;
+        feedbackText.textContent = `Correct! The expected payoff is ${epCorrectAnswer.toFixed(2)}.`;
     } else {
-        evIncorrectCount++;
+        epIncorrectCount++;
         feedbackBox.classList.add('incorrect');
         feedbackBox.classList.remove('correct');
-        feedbackText.textContent = `Incorrect. The correct expected value is ${evCorrectAnswer.toFixed(2)}.`;
+        feedbackText.textContent = `Incorrect. The correct expected payoff is ${epCorrectAnswer.toFixed(2)}.`;
     }
     
-    updateEVStats();
+    updateEPStats();
 }
 
-function updateEVStats() {
-    const correctEl = document.getElementById('ev-correct');
-    const incorrectEl = document.getElementById('ev-incorrect');
-    const accuracyEl = document.getElementById('ev-accuracy');
+function updateEPStats() {
+    const correctEl = document.getElementById('ep-correct');
+    const incorrectEl = document.getElementById('ep-incorrect');
+    const accuracyEl = document.getElementById('ep-accuracy');
     
     if (!correctEl || !incorrectEl || !accuracyEl) return;
     
-    correctEl.textContent = evCorrectCount;
-    incorrectEl.textContent = evIncorrectCount;
+    correctEl.textContent = epCorrectCount;
+    incorrectEl.textContent = epIncorrectCount;
     
-    const total = evCorrectCount + evIncorrectCount;
-    const accuracy = total > 0 ? Math.round((evCorrectCount / total) * 100) : 0;
+    const total = epCorrectCount + epIncorrectCount;
+    const accuracy = total > 0 ? Math.round((epCorrectCount / total) * 100) : 0;
     accuracyEl.textContent = `${accuracy}%`;
 }
 
-function resetEVSession() {
-    evCorrectCount = 0;
-    evIncorrectCount = 0;
-    updateEVStats();
-    generateEVProblem();
+function resetEPSession() {
+    epCorrectCount = 0;
+    epIncorrectCount = 0;
+    updateEPStats();
+    generateEPProblem();
 }
 
-document.getElementById('ev-reset').addEventListener('click', resetEVSession);
-document.getElementById('ev-next').addEventListener('click', generateEVProblem);
-document.getElementById('ev-submit').addEventListener('click', submitEVAnswer);
+document.getElementById('ep-reset').addEventListener('click', resetEPSession);
+document.getElementById('ep-next').addEventListener('click', generateEPProblem);
+document.getElementById('ep-submit').addEventListener('click', submitEPAnswer);
 
 // Allow Enter key to submit answer
-document.getElementById('ev-answer-input').addEventListener('keypress', function(event) {
+document.getElementById('ep-answer-input').addEventListener('keypress', function(event) {
     if (event.key === 'Enter') {
-        submitEVAnswer();
+        submitEPAnswer();
     }
 });
 
