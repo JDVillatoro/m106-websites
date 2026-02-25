@@ -3,31 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Graph Generator</title>
+    <title>M106: Graph Theory</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
-        <h1>Random Graph Generator</h1>
-        <form id="graph-form">
-            <label for="vertices">Number of vertices:</label>
-            <input type="number" id="vertices" name="vertices" min="1" value="5" required>
-            <br>
-            <input type="checkbox" id="loop" name="loop">
-            <label for="loop">Allow loops (loop graph)</label>
-            <br>
-            <input type="checkbox" id="multigraph" name="multigraph">
-            <label for="multigraph">Allow multiedges (multigraph)</label>
-            <br>
-            <label for="components">Number of connected components:</label>
-            <input type="number" id="components" name="components" min="1" value="1" required>
-            <br>
-            <button type="submit">Generate Graph</button>
-        </form>
-        <div id="csv-output">
-            <!-- CSV will be displayed here -->
+        <h1>M106: Graph Theory</h1>
+
+        <div class="mode-selector">
+            <button id="mode-make" class="mode-btn active">Make A Graph</button>
+            <button id="mode-test" class="mode-btn">Test Mode</button>
         </div>
+        <div class="game-info"><p id="mode-description">Create and edit graphs.</p></div>
+
+        <div class="graph-controls">
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" id="edit-graph-btn" class="edit-button">Edit Graph</button>
+                <button type="button" id="download-btn" class="download-button">Download</button>
+                <button type="button" id="done-edit-btn" class="edit-button editing" style="display:none;">Done Editing</button>
+                <button type="button" id="close-edit-btn" class="edit-button" style="display:none;">Cancel</button>
+            </div>
+        </div>
+
+        <div id="test-placeholder" style="display:none; margin-top:12px; padding:12px; background:#fbfdff; border-radius:8px;">
+            <h2>Test Mode (placeholder)</h2>
+            <p>This is a placeholder for the test mode. We'll add features here next.</p>
+        </div>
+
+        <!-- Editor panel inside the card (hidden by default) -->
+        <div id="graph-editor" style="display:none; margin-top:12px; padding:12px; background: #fbfdff; border-radius:8px;">
+            <h2>Edit Graph</h2>
+            <p style="color:#444; font-size:14px; margin-top:6px;">
+                Use this panel to rename vertices and add/remove edges. Change vertex names in the fields below — edges will update automatically. To add an edge, pick a source and target, optionally add a weight (if <em>Weighted</em> is checked), then click <strong>Add Edge</strong>. Click <strong>Apply Graph</strong> when finished.
+            </p>
+            <div class="editor-row" style="margin-top:12px;">
+                <label for="editor-vertices">Number of vertices:</label>
+                <input type="number" id="editor-vertices" min="1" value="5" style="width:80px; margin-left:8px;">
+                <button type="button" id="set-vertices-btn" style="margin-left:12px;">Set Vertices</button>
+                <button id="editor-random-btn" type="button" style="margin-left:8px;">Randomize</button>
+            </div>
+            <div id="vertex-names" style="margin-top:12px;"></div>
+
+            <hr style="margin-top:12px; margin-bottom:12px;">
+            <div class="editor-row">
+                <h3 style="margin:0;">Edges</h3>
+            </div>
+            <!-- Add Edge controls removed: adding edges now creates blank rows in the editable edge list -->
+            <div id="edge-list" style="margin-top:12px; background:#fbfdff; border-radius:6px; padding:8px; min-height:40px;"></div>
+
+            <!-- <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+                <button id="apply-graph-btn">Apply Graph</button>
+            </div> -->
+        </div>
+
+        <div class="zoom-controls" style="margin-top:12px;">
+            <button id="zoom-in">Zoom In</button>
+            <button id="zoom-out">Zoom Out</button>
+        </div>
+
+        <div id="cy"></div>
     </div>
+    <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <script src="cytoscape-svg.js"></script>
     <script src="graph.js"></script>
     <script src="script.js"></script>
 </body>
