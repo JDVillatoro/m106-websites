@@ -431,11 +431,21 @@ function renderEdgeList() {
         rem.textContent = 'Remove';
         rem.addEventListener('click', () => { editorEdges.splice(idx,1); renderEdgeList(); });
 
-        const cFrom = document.createElement('div'); cFrom.classList.add('edge-col','edge-col-start'); cFrom.appendChild(fromSel);
-        const cTo = document.createElement('div'); cTo.classList.add('edge-col','edge-col-end'); cTo.appendChild(toSel);
-        const cLabel = document.createElement('div'); cLabel.classList.add('edge-col','edge-col-name'); cLabel.appendChild(lblInput);
-        const cDirected = document.createElement('div'); cDirected.classList.add('edge-col','edge-col-directed'); cDirected.appendChild(dirCheckbox);
-        const cActions = document.createElement('div'); cActions.classList.add('edge-col','edge-col-actions'); cActions.appendChild(rem);
+        const cFrom = document.createElement('div'); cFrom.classList.add('edge-col','edge-col-start');
+        const labelFrom = document.createElement('span'); labelFrom.classList.add('col-label'); labelFrom.textContent = 'Start';
+        cFrom.appendChild(labelFrom); cFrom.appendChild(fromSel);
+        const cTo = document.createElement('div'); cTo.classList.add('edge-col','edge-col-end');
+        const labelTo = document.createElement('span'); labelTo.classList.add('col-label'); labelTo.textContent = 'End';
+        cTo.appendChild(labelTo); cTo.appendChild(toSel);
+        const cLabel = document.createElement('div'); cLabel.classList.add('edge-col','edge-col-name');
+        const labelName = document.createElement('span'); labelName.classList.add('col-label'); labelName.textContent = 'Label';
+        cLabel.appendChild(labelName); cLabel.appendChild(lblInput);
+        const cDirected = document.createElement('div'); cDirected.classList.add('edge-col','edge-col-directed');
+        const labelDirected = document.createElement('span'); labelDirected.classList.add('col-label'); labelDirected.textContent = 'Directed';
+        cDirected.appendChild(labelDirected); cDirected.appendChild(dirCheckbox);
+        const cActions = document.createElement('div'); cActions.classList.add('edge-col','edge-col-actions');
+        const labelActions = document.createElement('span'); labelActions.classList.add('col-label'); labelActions.textContent = '';
+        cActions.appendChild(labelActions); cActions.appendChild(rem);
         row.appendChild(cFrom);
         row.appendChild(cTo);
         row.appendChild(cLabel);
