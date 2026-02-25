@@ -34,7 +34,7 @@
         <div id="graph-editor" style="display:none; margin-top:12px; padding:12px; background: #fbfdff; border-radius:8px;">
             <h2>Edit Graph</h2>
             <p style="color:#444; font-size:14px; margin-top:6px;">
-                Use this panel to rename vertices and add/remove edges. Change vertex names in the fields below — edges will update automatically. To add an edge, pick a source and target, optionally add a weight (if <em>Weighted</em> is checked), then click <strong>Add Edge</strong>. Click <strong>Apply Graph</strong> when finished.
+                You can change the names of the edges and vertices here. To add an edge, pick a source and target. To make a weighted graph just add labels to the edges.
             </p>
             <div class="editor-row" style="margin-top:12px;">
                 <label for="editor-vertices">Number of vertices:</label>
@@ -56,12 +56,13 @@
             </div> -->
         </div>
 
-        <div class="zoom-controls" style="margin-top:12px;">
-            <button id="zoom-in">Zoom In</button>
-            <button id="zoom-out">Zoom Out</button>
+        <div id="graph-window" style="margin-top:12px;">
+            <div id="cy"></div>
+            <div class="zoom-controls" style="margin-top:8px;">
+                <button id="zoom-in">Zoom In</button>
+                <button id="zoom-out">Zoom Out</button>
+            </div>
         </div>
-
-        <div id="cy"></div>
     </div>
     <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <script src="cytoscape-svg.js"></script>

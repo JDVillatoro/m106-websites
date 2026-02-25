@@ -15,6 +15,9 @@ function edgesToCyElements(edges) {
     return elements;
 }
 
+// Debug logging toggle: set `window.GRAPH_VERBOSE = true` in the console to enable
+const VERBOSE = (typeof window !== 'undefined' && !!window.GRAPH_VERBOSE);
+
 function renderCyElements(elements) {
     if (window._cyInstance) {
         window._cyInstance.elements().remove();
@@ -27,7 +30,8 @@ function renderCyElements(elements) {
         elements,
         style: [
             { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(id)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
-            { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'label': 'data(label)', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
+            { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
+            { selector: 'edge[label]', style: { 'label': 'data(label)' } },
             { selector: 'edge[edgeType = "directed"]', style: { 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' } },
             { selector: 'edge[edgeType = "undirected"]', style: { 'target-arrow-shape': 'none' } }
         ],
@@ -60,15 +64,13 @@ function generateAndRenderRandom(n = 5, populateEditor = false) {
         editorVertices.value = n;
         createVertexInputs(n);
         const inputs = vertexNamesDiv.querySelectorAll('input');
-        inputs.forEach((inp, i) => { inp.value = labels[i]; inp.placeholder = labels[i]; });
+        inputs.forEach((inp, i) => { inp.value = labels[i]; inp.placeholder = labels[i]; inp.dataset.prev = labels[i]; });
         editorNodes = labels.slice();
         editorEdges = mapped.filter(e => e.target !== null).map(e => ({ source: e.source, target: e.target, label: e.label, isDirected: e.isDirected, directed: e.isDirected }));
         renderEdgeList();
         editor.style.display = 'block';
-        const cyEl = document.getElementById('cy');
-        const zoomEl = document.querySelector('.zoom-controls');
-        if (cyEl) cyEl.style.display = 'none';
-        if (zoomEl) zoomEl.style.display = 'none';
+        const graphWindow = document.getElementById('graph-window');
+        if (graphWindow) graphWindow.style.display = 'none';
     }
 }
 
@@ -113,7 +115,7 @@ editBtn.addEventListener('click', () => {
             editorVertices.value = nodes.length || 1;
             createVertexInputs(nodes.length || 1);
             const inputs = vertexNamesDiv.querySelectorAll('input');
-            inputs.forEach((inp, i) => { inp.value = nodes[i] || inp.placeholder; });
+            inputs.forEach((inp, i) => { inp.value = nodes[i] || inp.placeholder; inp.dataset.prev = inp.value; });
             editorEdges = edges.slice();
             renderEdgeList();
             editor.style.display = 'block';
@@ -135,10 +137,8 @@ editBtn.addEventListener('click', () => {
     // fallback: pre-fill editor vertices from main input
     editor.style.display = 'block';
     // hide rendered graph while editing
-    const cyEl = document.getElementById('cy');
-    const zoomEl = document.querySelector('.zoom-controls');
-    if (cyEl) cyEl.style.display = 'none';
-    if (zoomEl) zoomEl.style.display = 'none';
+    const graphWindow = document.getElementById('graph-window');
+    if (graphWindow) graphWindow.style.display = 'none';
     const mainV = document.getElementById('vertices').value || 5;
     editorVertices.value = mainV;
     createVertexInputs(parseInt(editorVertices.value, 10));
@@ -156,14 +156,14 @@ function setMode(mode) {
         if (modeDescription) modeDescription.textContent = 'Create and edit graphs.';
         // show main graph UI
         const gc = document.querySelector('.graph-controls'); if (gc) gc.style.display = '';
-        const cyEl = document.getElementById('cy'); if (cyEl) cyEl.style.display = '';
+        const graphWindow = document.getElementById('graph-window'); if (graphWindow) graphWindow.style.display = '';
         if (testPlaceholder) testPlaceholder.style.display = 'none';
     } else {
         if (modeMakeBtn) modeMakeBtn.classList.remove('active');
         if (modeTestBtn) modeTestBtn.classList.add('active');
         if (modeDescription) modeDescription.textContent = 'Test mode placeholder (features coming soon).';
         const gc = document.querySelector('.graph-controls'); if (gc) gc.style.display = 'none';
-        const cyEl = document.getElementById('cy'); if (cyEl) cyEl.style.display = 'none';
+        const graphWindow = document.getElementById('graph-window'); if (graphWindow) graphWindow.style.display = 'none';
         if (testPlaceholder) testPlaceholder.style.display = '';
     }
 }
@@ -177,10 +177,8 @@ setMode('make');
 if (closeEditBtn) {
     closeEditBtn.addEventListener('click', () => {
         editor.style.display = 'none';
-        const cyEl = document.getElementById('cy');
-        const zoomEl = document.querySelector('.zoom-controls');
-        if (cyEl) cyEl.style.display = '';
-        if (zoomEl) zoomEl.style.display = '';
+        const graphWindow = document.getElementById('graph-window');
+        if (graphWindow) graphWindow.style.display = '';
         if (editBtn) editBtn.style.display = '';
         if (doneEditBtn) doneEditBtn.style.display = 'none';
         if (closeEditBtn) closeEditBtn.style.display = 'none';
@@ -204,6 +202,7 @@ setVerticesBtn.addEventListener('click', () => {
             // set value and trigger rename propagation
             inp.value = prev;
             inp.placeholder = prev;
+            inp.dataset.prev = prev;
             renameVertex(i, prev);
         }
     }
@@ -236,12 +235,21 @@ function createVertexInputs(n) {
         input.type = 'text';
         input.placeholder = `v${i}`;
         input.value = `v${i}`;
+        input.dataset.prev = input.value;
         input.dataset.index = i;
         input.classList.add('vertex-input');
         input.addEventListener('input', (ev) => {
             const idx = parseInt(ev.target.dataset.index, 10);
-            const newName = ev.target.value || ev.target.placeholder;
-            renameVertex(idx, newName);
+            const raw = ev.target.value || ev.target.placeholder || '';
+            const newName = String(raw).trim();
+            // read previous displayed name from dataset (helps when placeholders differ)
+            const prevName = ev.target.dataset.prev || '';
+            // update the input value to the trimmed name for consistency and store prev
+            ev.target.value = newName;
+            if (VERBOSE) console.log('vertex input', { idx, newName, prev: prevName, editorNodesPrev: editorNodes[idx] });
+            // call renameVertex with prevName to update edges that referenced the old displayed name
+            renameVertex(idx, newName, prevName);
+            ev.target.dataset.prev = newName;
         });
         line.appendChild(lbl);
         line.appendChild(input);
@@ -252,18 +260,48 @@ function createVertexInputs(n) {
     updateVertexLists();
 }
 
-function renameVertex(index, newName) {
-    const oldName = editorNodes[index];
-    if (!oldName || oldName === newName) {
+function renameVertex(index, newName, prevDisplayedName) {
+    // prefer the previous displayed name (from input.dataset.prev) when provided,
+    // otherwise fall back to the stored editorNodes value
+    const oldName = (typeof prevDisplayedName === 'string' && prevDisplayedName.length > 0)
+        ? String(prevDisplayedName).trim()
+        : (editorNodes[index] ? String(editorNodes[index]).trim() : '');
+    newName = String(newName || '').trim();
+    if (VERBOSE) console.log('renameVertex start', { index, oldName, newName, editorEdgesBefore: JSON.parse(JSON.stringify(editorEdges)) });
+    if (oldName === newName) {
         editorNodes[index] = newName;
         updateVertexLists();
         return;
     }
-    // Update any edges that reference the old name
+    // Update any edges that reference the old name (compare trimmed)
     for (const e of editorEdges) {
-        if (e.source === oldName) e.source = newName;
-        if (e.target === oldName) e.target = newName;
+        if (String(e.source || '').trim() === oldName) e.source = newName;
+        if (String(e.target || '').trim() === oldName) e.target = newName;
     }
+    // Also update any existing edge-select DOM options so UI updates immediately
+    if (oldName) {
+        const edgeListEl = document.getElementById('edge-list');
+        if (edgeListEl) {
+            const selects = edgeListEl.querySelectorAll('select');
+            selects.forEach((sel, selIdx) => {
+                // update option values/text that match oldName
+                Array.from(sel.options).forEach((opt, optIdx) => {
+                    if (String(opt.value || '').trim() === oldName) {
+                        const prevVal = opt.value;
+                        opt.value = newName;
+                        opt.textContent = newName;
+                        if (VERBOSE) console.log('renameVertex: updated option', { selIdx, optIdx, prevVal, newVal: newName });
+                    }
+                });
+                // if currently selected was oldName, update selection
+                if (String(sel.value || '').trim() === oldName) {
+                    sel.value = newName;
+                    if (VERBOSE) console.log('renameVertex: updated select selection', { selIdx, newValue: sel.value });
+                }
+            });
+        }
+    }
+    if (VERBOSE) console.log('renameVertex after updates', { editorEdgesAfter: JSON.parse(JSON.stringify(editorEdges)) });
     editorNodes[index] = newName;
     updateVertexLists();
     renderEdgeList();
@@ -313,10 +351,10 @@ function renderEdgeList() {
     hdr.classList.add('edge-list-header');
     const hStart = document.createElement('div'); hStart.textContent = 'Start'; hStart.classList.add('edge-col','edge-col-start');
     const hEnd = document.createElement('div'); hEnd.textContent = 'End'; hEnd.classList.add('edge-col','edge-col-end');
-    const hName = document.createElement('div'); hName.textContent = 'Name'; hName.classList.add('edge-col','edge-col-name');
+    const hLabel = document.createElement('div'); hLabel.textContent = 'Label'; hLabel.classList.add('edge-col','edge-col-name');
     const hDirected = document.createElement('div'); hDirected.textContent = 'Directed'; hDirected.classList.add('edge-col','edge-col-directed');
     const hActions = document.createElement('div'); hActions.textContent = ''; hActions.classList.add('edge-col','edge-col-actions');
-    hdr.appendChild(hStart); hdr.appendChild(hEnd); hdr.appendChild(hName); hdr.appendChild(hDirected); hdr.appendChild(hActions);
+    hdr.appendChild(hStart); hdr.appendChild(hEnd); hdr.appendChild(hLabel); hdr.appendChild(hDirected); hdr.appendChild(hActions);
     edgeListDiv.appendChild(hdr);
     editorEdges.forEach((e, idx) => {
         const row = document.createElement('div');
@@ -326,14 +364,31 @@ function renderEdgeList() {
         const fromSel = document.createElement('select');
         const ph1 = document.createElement('option'); ph1.value = ''; ph1.textContent = '--'; fromSel.appendChild(ph1);
         names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; fromSel.appendChild(o); });
-        if (e.source) fromSel.value = e.source; else fromSel.selectedIndex = 0;
+        if (e.source) {
+            fromSel.value = e.source;
+            if (fromSel.value !== e.source) {
+                // try trimmed match
+                const trimmed = String(e.source).trim();
+                const optIndex = Array.from(fromSel.options).findIndex(o => o.value === trimmed);
+                if (optIndex >= 0) fromSel.selectedIndex = optIndex; else fromSel.selectedIndex = 0;
+            }
+        } else fromSel.selectedIndex = 0;
+        if (VERBOSE) console.log('renderEdgeList: fromSel', { idx, source: e.source, selectedValue: fromSel.value });
         fromSel.addEventListener('change', () => { editorEdges[idx].source = fromSel.value; });
 
         // To select
         const toSel = document.createElement('select');
         const ph2 = document.createElement('option'); ph2.value = ''; ph2.textContent = '--'; toSel.appendChild(ph2);
         names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; toSel.appendChild(o); });
-        if (e.target) toSel.value = e.target; else toSel.selectedIndex = 0;
+        if (e.target) {
+            toSel.value = e.target;
+            if (toSel.value !== e.target) {
+                const trimmed = String(e.target).trim();
+                const optIndex = Array.from(toSel.options).findIndex(o => o.value === trimmed);
+                if (optIndex >= 0) toSel.selectedIndex = optIndex; else toSel.selectedIndex = 0;
+            }
+        } else toSel.selectedIndex = 0;
+        if (VERBOSE) console.log('renderEdgeList: toSel', { idx, target: e.target, selectedValue: toSel.value });
         toSel.addEventListener('change', () => { editorEdges[idx].target = toSel.value; });
 
         // Label input
@@ -361,12 +416,12 @@ function renderEdgeList() {
 
         const cFrom = document.createElement('div'); cFrom.classList.add('edge-col','edge-col-start'); cFrom.appendChild(fromSel);
         const cTo = document.createElement('div'); cTo.classList.add('edge-col','edge-col-end'); cTo.appendChild(toSel);
-        const cName = document.createElement('div'); cName.classList.add('edge-col','edge-col-name'); cName.appendChild(lblInput);
+        const cLabel = document.createElement('div'); cLabel.classList.add('edge-col','edge-col-name'); cLabel.appendChild(lblInput);
         const cDirected = document.createElement('div'); cDirected.classList.add('edge-col','edge-col-directed'); cDirected.appendChild(dirCheckbox);
         const cActions = document.createElement('div'); cActions.classList.add('edge-col','edge-col-actions'); cActions.appendChild(rem);
         row.appendChild(cFrom);
         row.appendChild(cTo);
-        row.appendChild(cName);
+        row.appendChild(cLabel);
         row.appendChild(cDirected);
         row.appendChild(cActions);
         edgeListDiv.appendChild(row);
@@ -412,7 +467,8 @@ function applyGraphAction() {
             elements: cyElements,
             style: [
                 { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(id)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
-                { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'label': 'data(label)', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
+                { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
+                { selector: 'edge[label]', style: { 'label': 'data(label)' } },
                 { selector: 'edge[edgeType = "directed"]', style: { 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' } },
                 { selector: 'edge[edgeType = "undirected"]', style: { 'target-arrow-shape': 'none' } }
             ],

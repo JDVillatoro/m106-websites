@@ -171,6 +171,14 @@ button {
     transition: all 0.3s ease;
 }
 
+.game-info {
+    background: #f0f4ff;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
 button:hover {
     background: #5568d3;
     transform: translateY(-2px);
@@ -181,4 +189,4 @@ button:hover {
   .container { padding: 18px; }
   #cy { height: 420px; }
 }
-	background: #5568d3;
+
