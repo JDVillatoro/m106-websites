@@ -1,12 +1,12 @@
 // Helper: convert edges array to Cytoscape elements
-function edgesToCyElements(edges) {
+function edgesToCyElements(edges, nodesMap = {}) {
     const nodeSet = new Set();
     for (const e of edges) {
         nodeSet.add(e.source);
         if (e.target !== null) nodeSet.add(e.target);
     }
     const elements = [];
-    for (const id of nodeSet) elements.push({ data: { id } });
+    for (const id of nodeSet) elements.push({ data: { id, displayName: nodesMap[id] || '' } });
     for (let i = 0; i < edges.length; i++) {
         const edge = edges[i];
         if (edge.target === null) continue;
@@ -29,7 +29,7 @@ function renderCyElements(elements) {
         container: document.getElementById('cy'),
         elements,
         style: [
-            { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(id)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
+            { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(displayName)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
             { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
             { selector: 'edge[label]', style: { 'label': 'data(label)' } },
             { selector: 'edge[edgeType = "directed"]', style: { 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' } },
@@ -53,20 +53,20 @@ function generateAndRenderRandom(n = 5, populateEditor = false) {
     } else {
         for (let i = 0; i < n; i++) labels.push(String.fromCharCode(65 + i));
     }
-    const nameMap = {};
-    for (let i = 0; i < n; i++) nameMap[`v${i}`] = labels[i];
-    // convert weights to labels for display and remap vertex ids
-    const mapped = edges.map(e => ({ source: nameMap[e.source] || e.source, target: e.target === null ? null : (nameMap[e.target] || e.target), label: e.weight !== null ? String(e.weight) : null, isDirected: !!e.isDirected }));
-    const elements = edgesToCyElements(mapped);
+    // nodesMap maps internal id (v0..) -> display label
+    const nodesMap = {};
+    for (let i = 0; i < n; i++) nodesMap[`v${i}`] = labels[i];
+    const elements = edgesToCyElements(edges, nodesMap);
     renderCyElements(elements);
     if (populateEditor) {
-        // populate editor inputs and edges
+        // populate editor inputs and edges (editorNodes holds display names)
         editorVertices.value = n;
+        // set editorNodes to labels so inputs show default labels
+        editorNodes = labels.slice();
         createVertexInputs(n);
         const inputs = vertexNamesDiv.querySelectorAll('input');
-        inputs.forEach((inp, i) => { inp.value = labels[i]; inp.placeholder = labels[i]; inp.dataset.prev = labels[i]; });
-        editorNodes = labels.slice();
-        editorEdges = mapped.filter(e => e.target !== null).map(e => ({ source: e.source, target: e.target, label: e.label, isDirected: e.isDirected, directed: e.isDirected }));
+        inputs.forEach((inp, i) => { inp.value = labels[i]; inp.placeholder = ''; inp.dataset.prev = labels[i]; inp.dataset.id = `v${i}`; });
+        editorEdges = edges.filter(e => e.target !== null).map(e => ({ source: e.source, target: e.target, label: e.weight !== null ? String(e.weight) : null, isDirected: !!e.isDirected, directed: !!e.isDirected }));
         renderEdgeList();
         editor.style.display = 'block';
         const graphWindow = document.getElementById('graph-window');
@@ -110,12 +110,14 @@ editBtn.addEventListener('click', () => {
     // If a cytoscape instance exists, populate editor from it; otherwise use main input
     if (window._cyInstance) {
         try {
-            const nodes = window._cyInstance.nodes().map(n => n.data('id'));
+            const nodes = window._cyInstance.nodes().map(n => ({ id: n.data('id'), name: n.data('displayName') || '' }));
             const edges = window._cyInstance.edges().map(ed => ({ source: ed.data('source'), target: ed.data('target'), label: ed.data('label') || null, isDirected: ed.data('edgeType') === 'directed' }));
             editorVertices.value = nodes.length || 1;
+            // set editorNodes from display names
+            editorNodes = nodes.map(n => n.name || '');
             createVertexInputs(nodes.length || 1);
             const inputs = vertexNamesDiv.querySelectorAll('input');
-            inputs.forEach((inp, i) => { inp.value = nodes[i] || inp.placeholder; inp.dataset.prev = inp.value; });
+            inputs.forEach((inp, i) => { inp.value = nodes[i] ? nodes[i].name : inp.placeholder; inp.dataset.prev = inp.value; inp.dataset.id = nodes[i] ? nodes[i].id : (`v${i}`); });
             editorEdges = edges.slice();
             renderEdgeList();
             editor.style.display = 'block';
@@ -233,10 +235,11 @@ function createVertexInputs(n) {
         lbl.classList.add('vertex-label');
         const input = document.createElement('input');
         input.type = 'text';
-        input.placeholder = `v${i}`;
-        input.value = `v${i}`;
+        input.placeholder = '';
+        input.value = editorNodes[i] || '';
         input.dataset.prev = input.value;
         input.dataset.index = i;
+        input.dataset.id = `v${i}`;
         input.classList.add('vertex-input');
         input.addEventListener('input', (ev) => {
             const idx = parseInt(ev.target.dataset.index, 10);
@@ -273,33 +276,43 @@ function renameVertex(index, newName, prevDisplayedName) {
         updateVertexLists();
         return;
     }
-    // Update any edges that reference the old name (compare trimmed)
+    // Update any edges that reference the old name or the internal id
+    const nodeId = `v${index}`;
     for (const e of editorEdges) {
-        if (String(e.source || '').trim() === oldName) e.source = newName;
-        if (String(e.target || '').trim() === oldName) e.target = newName;
+        if (e.source === nodeId || String(e.source || '').trim() === oldName) e.source = nodeId;
+        if (e.target === nodeId || String(e.target || '').trim() === oldName) e.target = nodeId;
     }
     // Also update any existing edge-select DOM options so UI updates immediately
-    if (oldName) {
-        const edgeListEl = document.getElementById('edge-list');
-        if (edgeListEl) {
-            const selects = edgeListEl.querySelectorAll('select');
-            selects.forEach((sel, selIdx) => {
-                // update option values/text that match oldName
-                Array.from(sel.options).forEach((opt, optIdx) => {
-                    if (String(opt.value || '').trim() === oldName) {
-                        const prevVal = opt.value;
-                        opt.value = newName;
-                        opt.textContent = newName;
-                        if (VERBOSE) console.log('renameVertex: updated option', { selIdx, optIdx, prevVal, newVal: newName });
-                    }
-                });
-                // if currently selected was oldName, update selection
-                if (String(sel.value || '').trim() === oldName) {
-                    sel.value = newName;
-                    if (VERBOSE) console.log('renameVertex: updated select selection', { selIdx, newValue: sel.value });
+    const edgeListEl = document.getElementById('edge-list');
+    if (edgeListEl) {
+        const inputs = Array.from(vertexNamesDiv.querySelectorAll('input'));
+        const idToIndex = inputs.reduce((m, inp, idx) => { m[inp.dataset.id || `v${idx}`] = idx; return m; }, {});
+        const selects = edgeListEl.querySelectorAll('select');
+        selects.forEach((sel, selIdx) => {
+            Array.from(sel.options).forEach((opt, optIdx) => {
+                const optVal = String(opt.value || '');
+                // if option value is the internal id, update its displayed text
+                if (optVal === nodeId) {
+                    const idx = idToIndex[nodeId] ?? index;
+                    opt.textContent = `${idx+1}.${newName ? ' ' + newName : ''}`;
+                    if (VERBOSE) console.log('renameVertex: updated option text', { selIdx, optIdx, optVal, newText: opt.textContent });
+                }
+                // handle legacy option values that used the oldName as the value
+                if (oldName && optVal === oldName) {
+                    // switch the option value to the internal id and update text
+                    const prevVal = optVal;
+                    opt.value = nodeId;
+                    const idx = idToIndex[nodeId] ?? index;
+                    opt.textContent = `${idx+1}.${newName ? ' ' + newName : ''}`;
+                    if (VERBOSE) console.log('renameVertex: migrated legacy option', { selIdx, optIdx, prevVal, newVal: opt.value });
                 }
             });
-        }
+            // if currently selected matched oldName (legacy), migrate selection to nodeId
+            if (oldName && String(sel.value || '').trim() === oldName) {
+                sel.value = nodeId;
+                if (VERBOSE) console.log('renameVertex: migrated select selection', { selIdx, newValue: sel.value });
+            }
+        });
     }
     if (VERBOSE) console.log('renameVertex after updates', { editorEdgesAfter: JSON.parse(JSON.stringify(editorEdges)) });
     editorNodes[index] = newName;
@@ -345,7 +358,7 @@ if (editorRandomBtn) {
 function renderEdgeList() {
     edgeListDiv.innerHTML = '';
     const inputs = vertexNamesDiv.querySelectorAll('input');
-    const names = Array.from(inputs).map(i => i.value || i.placeholder);
+    const vertices = Array.from(inputs).map((i, idx) => ({ id: i.dataset.id || `v${idx}`, name: (i.value || '').trim(), index: idx }));
     // Header row for the table-like view
     const hdr = document.createElement('div');
     hdr.classList.add('edge-list-header');
@@ -363,31 +376,37 @@ function renderEdgeList() {
         // From select
         const fromSel = document.createElement('select');
         const ph1 = document.createElement('option'); ph1.value = ''; ph1.textContent = '--'; fromSel.appendChild(ph1);
-        names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; fromSel.appendChild(o); });
+        vertices.forEach(v => { const o = document.createElement('option'); o.value = v.id; o.textContent = `${v.index+1}.${v.name ? ' ' + v.name : ''}`; fromSel.appendChild(o); });
+        // resolve selection: e.source may be an id or a display name
+        let selSourceId = '';
         if (e.source) {
-            fromSel.value = e.source;
-            if (fromSel.value !== e.source) {
-                // try trimmed match
-                const trimmed = String(e.source).trim();
-                const optIndex = Array.from(fromSel.options).findIndex(o => o.value === trimmed);
-                if (optIndex >= 0) fromSel.selectedIndex = optIndex; else fromSel.selectedIndex = 0;
+            // if matches an id
+            const matchById = vertices.find(v => v.id === e.source);
+            if (matchById) selSourceId = matchById.id;
+            else {
+                // try match by name
+                const matchByName = vertices.find(v => v.name === String(e.source).trim());
+                if (matchByName) selSourceId = matchByName.id;
             }
-        } else fromSel.selectedIndex = 0;
+        }
+        if (selSourceId) fromSel.value = selSourceId; else fromSel.selectedIndex = 0;
         if (VERBOSE) console.log('renderEdgeList: fromSel', { idx, source: e.source, selectedValue: fromSel.value });
         fromSel.addEventListener('change', () => { editorEdges[idx].source = fromSel.value; });
 
         // To select
         const toSel = document.createElement('select');
         const ph2 = document.createElement('option'); ph2.value = ''; ph2.textContent = '--'; toSel.appendChild(ph2);
-        names.forEach(n => { const o = document.createElement('option'); o.value = n; o.textContent = n; toSel.appendChild(o); });
+        vertices.forEach(v => { const o = document.createElement('option'); o.value = v.id; o.textContent = `${v.index+1}.${v.name ? ' ' + v.name : ''}`; toSel.appendChild(o); });
+        let selTargetId = '';
         if (e.target) {
-            toSel.value = e.target;
-            if (toSel.value !== e.target) {
-                const trimmed = String(e.target).trim();
-                const optIndex = Array.from(toSel.options).findIndex(o => o.value === trimmed);
-                if (optIndex >= 0) toSel.selectedIndex = optIndex; else toSel.selectedIndex = 0;
+            const matchById = vertices.find(v => v.id === e.target);
+            if (matchById) selTargetId = matchById.id;
+            else {
+                const matchByName = vertices.find(v => v.name === String(e.target).trim());
+                if (matchByName) selTargetId = matchByName.id;
             }
-        } else toSel.selectedIndex = 0;
+        }
+        if (selTargetId) toSel.value = selTargetId; else toSel.selectedIndex = 0;
         if (VERBOSE) console.log('renderEdgeList: toSel', { idx, target: e.target, selectedValue: toSel.value });
         toSel.addEventListener('change', () => { editorEdges[idx].target = toSel.value; });
 
@@ -447,13 +466,25 @@ function renderEdgeList() {
 function applyGraphAction() {
     // Build cytoscape elements from editorNodes and editorEdges
     const inputs = vertexNamesDiv.querySelectorAll('input');
-    const names = Array.from(inputs).map(i => i.value || i.placeholder);
+    // build mapping of internal id -> displayName
+    const vertices = Array.from(inputs).map((inp, idx) => ({ id: inp.dataset.id || `v${idx}`, name: (inp.value || '').trim() }));
+    const idByName = new Map(vertices.map(v => [v.name, v.id]));
     const cyElements = [];
-    names.forEach(n => cyElements.push({ data: { id: n } }));
+    vertices.forEach(v => cyElements.push({ data: { id: v.id, displayName: v.name || '' } }));
     editorEdges.forEach((e, i) => {
-        // skip incomplete edges
-        if (!e.source || !e.target) return;
-        cyElements.push({ data: { id: `e${i}_${e.source}_${e.target}`, source: e.source, target: e.target, label: e.label || null, edgeType: e.directed ? 'directed' : 'undirected' } });
+        // resolve source/target ids (e.source may be id or legacy name)
+        const resolveId = (val) => {
+            if (!val) return null;
+            // direct id match
+            const direct = vertices.find(v => v.id === val); if (direct) return direct.id;
+            // match by name
+            const byName = vertices.find(v => v.name === String(val).trim()); if (byName) return byName.id;
+            return null;
+        };
+        const sId = resolveId(e.source);
+        const tId = resolveId(e.target);
+        if (!sId || !tId) return;
+        cyElements.push({ data: { id: `e${i}_${sId}_${tId}`, source: sId, target: tId, label: e.label || null, edgeType: e.directed ? 'directed' : 'undirected' } });
     });
 
     // reuse rendering logic: create or update cytoscape
@@ -466,7 +497,7 @@ function applyGraphAction() {
             container: document.getElementById('cy'),
             elements: cyElements,
             style: [
-                { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(id)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
+            { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(displayName)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
                 { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
                 { selector: 'edge[label]', style: { 'label': 'data(label)' } },
                 { selector: 'edge[edgeType = "directed"]', style: { 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' } },
