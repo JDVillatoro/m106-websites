@@ -122,10 +122,8 @@ editBtn.addEventListener('click', () => {
             renderEdgeList();
             editor.style.display = 'block';
             // hide rendered graph while editing
-            const cyEl = document.getElementById('cy');
-            const zoomEl = document.querySelector('.zoom-controls');
-            if (cyEl) cyEl.style.display = 'none';
-            if (zoomEl) zoomEl.style.display = 'none';
+            const graphWindow = document.getElementById('graph-window');
+            if (graphWindow) graphWindow.style.display = 'none';
             // swap main buttons
             if (editBtn) editBtn.style.display = 'none';
             if (doneEditBtn) doneEditBtn.style.display = '';
@@ -512,10 +510,8 @@ function applyGraphAction() {
     }
 
     editor.style.display = 'none';
-    const cyEl = document.getElementById('cy');
-    const zoomEl = document.querySelector('.zoom-controls');
-    if (cyEl) cyEl.style.display = '';
-    if (zoomEl) zoomEl.style.display = '';
+    const graphWindow = document.getElementById('graph-window');
+    if (graphWindow) graphWindow.style.display = '';
     if (editBtn) editBtn.style.display = '';
     if (doneEditBtn) doneEditBtn.style.display = 'none';
     if (closeEditBtn) closeEditBtn.style.display = 'none';
