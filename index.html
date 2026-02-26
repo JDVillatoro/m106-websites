@@ -1,40 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>M106: Graph Theory</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="container">
         <h1>M106: Graph Theory</h1>
 
         <div class="mode-selector">
             <button id="mode-make" class="mode-btn active">Make A Graph</button>
-            <button id="mode-test" class="mode-btn">Test Mode</button>
+            <button id="mode-degree" class="mode-btn">Degree Sequences</button>
         </div>
-        <div class="game-info"><p id="mode-description">Create and edit graphs.</p></div>
 
-        <div class="graph-controls">
-            <div style="display:flex; gap:8px; margin-top:8px;">
+        <!-- Make A Graph mode -->
+        <div id="make-graph-panel" class="mode-panel">
+            <div class="game-info">
+                <p id="mode-description">Create and edit graphs!</p>
+            </div>
+
+            <div class="mode-options-panel">
                 <button type="button" id="edit-graph-btn" class="edit-button">Edit Graph</button>
                 <button type="button" id="download-btn" class="download-button">Download</button>
-                <button type="button" id="done-edit-btn" class="edit-button editing" style="display:none;">Done Editing</button>
+                <button type="button" id="done-edit-btn" class="edit-button editing" style="display:none;">Done
+                    Editing</button>
                 <button type="button" id="close-edit-btn" class="edit-button" style="display:none;">Cancel</button>
             </div>
-        </div>
 
-        <div id="test-placeholder" style="display:none; margin-top:12px; padding:12px; background:#fbfdff; border-radius:8px;">
-            <h2>Test Mode (placeholder)</h2>
-            <p>This is a placeholder for the test mode. We'll add features here next.</p>
-        </div>
-
-        <!-- Editor panel inside the card (hidden by default) -->
-        <div id="graph-editor" style="display:none; margin-top:12px; padding:12px; background: #fbfdff; border-radius:8px;">
+                    <!-- Editor panel inside the card (hidden by default) -->
+        <div id="graph-editor"
+            style="display:none; margin-top:12px; padding:12px; background: #fbfdff; border-radius:8px;">
             <h2>Edit Graph</h2>
             <p style="color:#444; font-size:14px; margin-top:6px;">
-                You can change the names of the edges and vertices here. To add an edge, pick a source and target. To make a weighted graph just add labels to the edges.
+                You can change the names of the edges and vertices here. To add an edge, pick a source and target.
+                To make a weighted graph just add labels to the edges.
             </p>
             <div class="editor-row" style="margin-top:12px;">
                 <label for="editor-vertices">Number of vertices:</label>
@@ -49,24 +52,75 @@
                 <h3 style="margin:0;">Edges</h3>
             </div>
             <!-- Add Edge controls removed: adding edges now creates blank rows in the editable edge list -->
-            <div id="edge-list" style="margin-top:12px; background:#fbfdff; border-radius:6px; padding:8px; min-height:40px;"></div>
+            <div id="edge-list"
+                style="margin-top:12px; background:#fbfdff; border-radius:6px; padding:8px; min-height:40px;"></div>
 
             <!-- <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
                 <button id="apply-graph-btn">Apply Graph</button>
             </div> -->
         </div>
 
-        <div id="graph-window" style="margin-top:12px;">
-            <div id="cy"></div>
-            <div class="zoom-controls" style="margin-top:8px;">
-                <button id="zoom-in">Zoom In</button>
-                <button id="zoom-out">Zoom Out</button>
+            <div class="graphic-prompt">
+                <div id="make-graph-area"></div>
+                <div id="make-graph-zoom-controls" class="zoom-controls">
+                    <button class="zoom-button zoom-in">Zoom In</button>
+                    <button class="zoom-button zoom-out">Zoom Out</button>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- Degree Mode -->
+        <div id="degree-panel" class="mode-panel">
+            <div class="game-info">
+                <p id="mode-description">Determine the degree sequence of the graph!</p>
+            </div>
+            <div class="mode-options-panel">
+                <button id="degree-reset-btn" class="reset-session-btn">Reset</button>
+            </div>
+            <div class="graphic-prompt">
+                <div id="degree-graph-area"></div>
+                <div id="degree-zoom-controls" class="zoom-controls">
+                    <button class="zoom-button zoom-in">Zoom In</button>
+                    <button class="zoom-button zoom-out">Zoom Out</button>
+                </div>
+                <p class="hint"> Hint: You can click and drag vertices to get a better look.</p>
+            </div>
+
+            <div class="training-actions">
+                <h2 id="training-actions-title">What is the Degree Sequence of the above graph?</h2>
+                <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
+                    <label for="degree-answer" style="margin-right:6px;">Degree Sequence = </label>
+                    <input class="text-input" type="text" id="degree-answer"
+                        placeholder="use curly brackets like {1,2,3,3,4}" />
+                    <button class="submit-btn" id="degree-submit-btn">Submit Answer</button>
+                </div>
+            </div>
+
+            <div class="training-feedback" id="training-feedback" style="display: none;">
+                <h2>Feedback</h2>
+                <p id="feedback-text">Type your answer, then submit.</p>
+                <button id="training-next" class="submit-btn">Try Again</button>
+            </div>
+
+            <div class="training-stats">
+                <h2>Statistics</h2>
+                <div class="stats-display">
+                    <p>Correct: <span id="degree-correct">0</span></p>
+                    <p>Incorrect: <span id="degree-incorrect">0</span></p>
+                    <p>Accuracy: <span id="degree-accuracy">0%</span></p>
+                </div>
             </div>
         </div>
+
+
+
     </div>
     <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <script src="cytoscape-svg.js"></script>
     <script src="graph.js"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

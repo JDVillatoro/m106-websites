@@ -392,3 +392,44 @@ function isWeighted(edges) {
 function isDirected(edges) {
     return edges.some(edge => edge.isDirected);
 }
+
+// Simple undirected simple-graph generator (no loops, no multiedges)
+function generateSimpleGraph(n, edgeProb = 0.4) {
+    const vertices = Array.from({length: n}, (_, i) => `v${i}`);
+    const edges = [];
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (Math.random() < edgeProb) {
+                edges.push({ source: vertices[i], target: vertices[j], isDirected: false, weight: null });
+            }
+        }
+    }
+    // Ensure every vertex exists in the edges list as isolated if needed
+    if (edges.length === 0) {
+        // add a single edge if entirely empty
+        if (n >= 2) edges.push({ source: 'v0', target: 'v1', isDirected: false, weight: null });
+    }
+    return edges;
+}
+
+// Degree of a vertex in an undirected graph. Loops count twice; multiple edges counted.
+function degreeOf(vertexId, edges) {
+    let deg = 0;
+    for (const e of edges) {
+        if (e.target === null) continue;
+        if (e.source === vertexId && e.target === vertexId) {
+            deg += 2; // loop
+        } else if (e.source === vertexId || e.target === vertexId) {
+            deg += 1;
+        }
+    }
+    return deg;
+}
+
+// Return the degree sequence as an array sorted non-decreasing
+// Used by the Degree Sequences mode: computes the degree sequence for vertices v0..v{n-1}
+function degreeSequence(edges, n) {
+    const verts = Array.from({length: n}, (_, i) => `v${i}`);
+    const seq = verts.map(v => degreeOf(v, edges));
+    return seq.sort((a,b) => a - b);
+}

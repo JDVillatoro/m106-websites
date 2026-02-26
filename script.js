@@ -1,569 +1,773 @@
-// Helper: convert edges array to Cytoscape elements
-function edgesToCyElements(edges, nodesMap = {}) {
-    const nodeSet = new Set();
-    for (const e of edges) {
-        nodeSet.add(e.source);
-        if (e.target !== null) nodeSet.add(e.target);
-    }
-    const elements = [];
-    for (const id of nodeSet) elements.push({ data: { id, displayName: nodesMap[id] || '' } });
-    for (let i = 0; i < edges.length; i++) {
-        const edge = edges[i];
-        if (edge.target === null) continue;
-        elements.push({ data: { id: `e${i}_${edge.source}_${edge.target}`, source: edge.source, target: edge.target, label: edge.label || null, edgeType: edge.isDirected ? 'directed' : 'undirected' } });
-    }
-    return elements;
-}
+// =============================================================================
+// script.js  –  Graph Theory Website
+// =============================================================================
+// Key design decisions:
+//  • Each mode owns its own Cytoscape instance (_cyMake / _cyDegree).
+//    Sharing a single instance caused layout/resize bugs when switching panels.
+//  • draw_graph() waits for the 'layoutstop' event before calling fit/center
+//    so the graph is always fully visible.
+//  • Editor state (editorNodes / editorEdges) works entirely with internal ids
+//    ("v0", "v1", …) – display names are kept in inputs only.
+// =============================================================================
 
-// Debug logging toggle: set `window.GRAPH_VERBOSE = true` in the console to enable
 const VERBOSE = (typeof window !== 'undefined' && !!window.GRAPH_VERBOSE);
 
-function renderCyElements(elements) {
-    if (window._cyInstance) {
-        window._cyInstance.elements().remove();
-        window._cyInstance.add(elements);
-        window._cyInstance.layout({ name: 'cose', animate: true, randomize: true }).run();
-        return;
+// ---------------------------------------------------------------------------
+// Shared Cytoscape style
+// ---------------------------------------------------------------------------
+const CY_STYLE = [
+    {
+        selector: 'node',
+        style: {
+            'background-color': '#fff',
+            'border-width': 2,
+            'border-color': '#333',
+            'label': 'data(displayName)',
+            'color': '#333',
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'width': 36,
+            'height': 36
+        }
+    },
+    {
+        selector: 'edge',
+        style: {
+            'width': 2,
+            'line-color': '#888',
+            'curve-style': 'bezier',
+            'font-size': 12,
+            'color': '#fff',
+            'text-background-color': '#888',
+            'text-background-opacity': 1,
+            'text-background-padding': 6
+        }
+    },
+    { selector: 'edge[label]', style: { 'label': 'data(label)' } },
+    {
+        selector: 'edge[edgeType = "directed"]',
+        style: { 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' }
+    },
+    {
+        selector: 'edge[edgeType = "undirected"]',
+        style: { 'target-arrow-shape': 'none' }
     }
-    window._cyInstance = cytoscape({
-        container: document.getElementById('cy'),
-        elements,
-        style: [
-            { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(displayName)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
-            { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
-            { selector: 'edge[label]', style: { 'label': 'data(label)' } },
-            { selector: 'edge[edgeType = "directed"]', style: { 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' } },
-            { selector: 'edge[edgeType = "undirected"]', style: { 'target-arrow-shape': 'none' } }
-        ],
-        layout: { name: 'cose', animate: true, randomize: true },
-        userZoomingEnabled: false
+];
+
+// ---------------------------------------------------------------------------
+// Per-mode Cytoscape instances
+// ---------------------------------------------------------------------------
+// We create them lazily the first time they are needed.
+window._cyMake = null;
+window._cyDegree = null;
+
+function getCy(mode) {
+    if (mode === 'make') {
+        if (!window._cyMake) {
+            const container = document.getElementById('make-graph-area');
+            if (!container) return null;
+            // Give the container an explicit viewport div
+            let vp = container.querySelector('.graph-viewport');
+            if (!vp) {
+                vp = document.createElement('div');
+                vp.className = 'graph-viewport';
+                container.appendChild(vp);
+            }
+            window._cyMake = cytoscape({
+                container: vp,
+                elements: [],
+                style: CY_STYLE,
+                userZoomingEnabled: true,
+                layout: { name: 'preset' }
+            });
+            wireZoomButtons('make-graph-panel', window._cyMake);
+        }
+        return window._cyMake;
+    } else if (mode === 'degree') {
+        if (!window._cyDegree) {
+            const container = document.getElementById('degree-graph-area');
+            if (!container) return null;
+            let vp = container.querySelector('.graph-viewport');
+            if (!vp) {
+                vp = document.createElement('div');
+                vp.className = 'graph-viewport';
+                container.appendChild(vp);
+            }
+            window._cyDegree = cytoscape({
+                container: vp,
+                elements: [],
+                style: CY_STYLE,
+                userZoomingEnabled: true,
+                layout: { name: 'preset' }
+            });
+            wireZoomButtons('degree-panel', window._cyDegree);
+        }
+        return window._cyDegree;
+    }
+    return null;
+}
+
+function wireZoomButtons(panelId, cy) {
+    const panel = document.getElementById(panelId);
+    if (!panel) return;
+    const zin = panel.querySelector('.zoom-button.zoom-in');
+    const zout = panel.querySelector('.zoom-button.zoom-out');
+    if (zin) zin.onclick = () => cy.zoom({ level: cy.zoom() * 1.2, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+    if (zout) zout.onclick = () => cy.zoom({ level: cy.zoom() / 1.2, renderedPosition: { x: cy.width() / 2, y: cy.height() / 2 } });
+}
+
+// ---------------------------------------------------------------------------
+// draw_graph – replace all elements in cy and run cose layout
+// graph_data: { n, names: string[], edges: [{source, target, label?, isDirected?}] }
+// ---------------------------------------------------------------------------
+function draw_graph(graph_data, cy) {
+    if (!cy || !graph_data) return;
+
+    const n = Number(graph_data.n) || 0;
+    const names = Array.isArray(graph_data.names) ? graph_data.names : [];
+    const edges = Array.isArray(graph_data.edges) ? graph_data.edges : [];
+
+    const validIds = new Set();
+    for (let i = 0; i < n; i++) validIds.add(`v${i}`);
+
+    const elems = [];
+    for (let i = 0; i < n; i++) {
+        const id = `v${i}`;
+        const displayName = typeof names[i] === 'string' ? names[i] : id;
+        elems.push({ data: { id, displayName } });
+    }
+
+    edges.forEach((e, idx) => {
+        const src = e && e.source;
+        const tgt = e && e.target;
+        // skip null-target edges (isolated vertex markers)
+        if (!src || !tgt) return;
+        if (!validIds.has(src) || !validIds.has(tgt)) {
+            if (VERBOSE) console.warn(`draw_graph: skipping edge ${idx} – unknown endpoint`, e);
+            return;
+        }
+        const data = { id: `e${idx}_${src}_${tgt}`, source: src, target: tgt };
+        if (e.label && String(e.label).trim() !== '') data.label = String(e.label);
+        data.edgeType = e.isDirected ? 'directed' : 'undirected';
+        elems.push({ data });
     });
-    document.getElementById('zoom-in').onclick = function() { window._cyInstance.zoom({ level: window._cyInstance.zoom() * 1.2 }); };
-    document.getElementById('zoom-out').onclick = function() { window._cyInstance.zoom({ level: window._cyInstance.zoom() / 1.2 }); };
-    window._cyInstance.userZoomingEnabled(false);
-    document.getElementById('cy').addEventListener('wheel', function(e) { e.stopPropagation(); }, { passive: false });
+
+    cy.batch(() => {
+        cy.elements().remove();
+        cy.add(elems);
+    });
+
+    cy.resize();
+
+    const layout = cy.layout({ name: 'cose', animate: false, randomize: true, fit: true });
+    layout.on('layoutstop', () => {
+        cy.fit();
+        cy.center();
+    });
+    layout.run();
 }
 
-function generateAndRenderRandom(n = 5, populateEditor = false) {
-    const edges = generateRandomGraph(n, false, false, 1);
-    // Decide vertex labels: A,B,C... (caps) unless n > 8 then use numbers starting at 1
-    const labels = [];
-    if (n > 8) {
-        for (let i = 0; i < n; i++) labels.push(String(i + 1));
-    } else {
-        for (let i = 0; i < n; i++) labels.push(String.fromCharCode(65 + i));
-    }
-    // nodesMap maps internal id (v0..) -> display label
-    const nodesMap = {};
-    for (let i = 0; i < n; i++) nodesMap[`v${i}`] = labels[i];
-    const elements = edgesToCyElements(edges, nodesMap);
-    renderCyElements(elements);
-    if (populateEditor) {
-        // populate editor inputs and edges (editorNodes holds display names)
-        editorVertices.value = n;
-        // set editorNodes to labels so inputs show default labels
-        editorNodes = labels.slice();
-        createVertexInputs(n);
-        const inputs = vertexNamesDiv.querySelectorAll('input');
-        inputs.forEach((inp, i) => { inp.value = labels[i]; inp.placeholder = ''; inp.dataset.prev = labels[i]; inp.dataset.id = `v${i}`; });
-        editorEdges = edges.filter(e => e.target !== null).map(e => ({ source: e.source, target: e.target, label: e.weight !== null ? String(e.weight) : null, isDirected: !!e.isDirected, directed: !!e.isDirected }));
-        renderEdgeList();
-        editor.style.display = 'block';
-        const graphWindow = document.getElementById('graph-window');
-        if (graphWindow) graphWindow.style.display = 'none';
-    }
-}
+// ---------------------------------------------------------------------------
+// Mode state
+// ---------------------------------------------------------------------------
+const modeStates = {
+    make:   { nodes: [], edges: [], _initialized: false },
+    degree: { nodes: [], edges: [], expectedSeq: [], stats: { correct: 0, incorrect: 0 }, _initialized: false }
+};
+let currentMode = 'make';
 
-// initial random graph on load
-document.addEventListener('DOMContentLoaded', () => {
-    const defaultN = 5;
-    // prepare editor elements references used by generateAndRenderRandom
-    // (vertexNamesDiv exists later in script scope)
-    setTimeout(() => generateAndRenderRandom(defaultN, false), 0);
-});
-
-// Editor UI logic
-const editBtn = document.getElementById('edit-graph-btn');
-const downloadBtn = document.getElementById('download-btn');
-const doneEditBtn = document.getElementById('done-edit-btn');
-const closeEditBtn = document.getElementById('close-edit-btn');
-const modeMakeBtn = document.getElementById('mode-make');
-const modeTestBtn = document.getElementById('mode-test');
-const modeDescription = document.getElementById('mode-description');
-const testPlaceholder = document.getElementById('test-placeholder');
-const editor = document.getElementById('graph-editor');
+// ---------------------------------------------------------------------------
+// DOM refs
+// ---------------------------------------------------------------------------
+const editBtn        = document.getElementById('edit-graph-btn');
+const downloadBtn    = document.getElementById('download-btn');
+const doneEditBtn    = document.getElementById('done-edit-btn');
+const closeEditBtn   = document.getElementById('close-edit-btn');
+const modeMakeBtn    = document.getElementById('mode-make');
+const modeDegreeBtn  = document.getElementById('mode-degree');
+const editor         = document.getElementById('graph-editor');
 const setVerticesBtn = document.getElementById('set-vertices-btn');
 const editorVertices = document.getElementById('editor-vertices');
 const vertexNamesDiv = document.getElementById('vertex-names');
-// removed legacy global edge-source/edge-target/add-edge controls
-const edgeListDiv = document.getElementById('edge-list');
-// apply-graph button deprecated; use applyGraphAction() instead
-const directedCheckbox = document.getElementById('directed-checkbox');
-const labelEdgesCheckbox = document.getElementById('label-edges-checkbox');
-const edgeLabelInput = document.getElementById('edge-label');
+const edgeListDiv    = document.getElementById('edge-list');
 const editorRandomBtn = document.getElementById('editor-random-btn');
 
-let editorNodes = [];
-let editorEdges = [];
+// These checkboxes don't exist in the current HTML but guard against errors if added later
+const directedCheckbox   = document.getElementById('directed-checkbox');
+const labelEdgesCheckbox = document.getElementById('label-edges-checkbox');
+const edgeLabelInput     = document.getElementById('edge-label');
 
-editBtn.addEventListener('click', () => {
-    // If a cytoscape instance exists, populate editor from it; otherwise use main input
-    if (window._cyInstance) {
-        try {
-            const nodes = window._cyInstance.nodes().map(n => ({ id: n.data('id'), name: n.data('displayName') || '' }));
-            const edges = window._cyInstance.edges().map(ed => ({ source: ed.data('source'), target: ed.data('target'), label: ed.data('label') || null, isDirected: ed.data('edgeType') === 'directed' }));
-            editorVertices.value = nodes.length || 1;
-            // set editorNodes from display names
-            editorNodes = nodes.map(n => n.name || '');
-            createVertexInputs(nodes.length || 1);
-            const inputs = vertexNamesDiv.querySelectorAll('input');
-            inputs.forEach((inp, i) => { inp.value = nodes[i] ? nodes[i].name : inp.placeholder; inp.dataset.prev = inp.value; inp.dataset.id = nodes[i] ? nodes[i].id : (`v${i}`); });
-            editorEdges = edges.slice();
-            renderEdgeList();
-            editor.style.display = 'block';
-            // hide rendered graph while editing
-            const graphWindow = document.getElementById('graph-window');
-            if (graphWindow) graphWindow.style.display = 'none';
-            // swap main buttons
-            if (editBtn) editBtn.style.display = 'none';
-            if (doneEditBtn) doneEditBtn.style.display = '';
-            if (closeEditBtn) closeEditBtn.style.display = '';
-                if (downloadBtn) downloadBtn.style.display = 'none';
-            return;
-        } catch (err) {
-            console.error('Failed to populate editor from Cytoscape instance', err);
+let editorNodes = [];  // display names parallel to v0..v{n-1}
+let editorEdges = [];  // [{source: "v0", target: "v1", label, isDirected}]
+
+// ---------------------------------------------------------------------------
+// Mode switching
+// ---------------------------------------------------------------------------
+function setMode(mode) {
+    document.querySelectorAll('.mode-panel').forEach(p => p.style.display = 'none');
+
+    if (mode === 'make') {
+        modeMakeBtn && modeMakeBtn.classList.add('active');
+        modeDegreeBtn && modeDegreeBtn.classList.remove('active');
+        document.getElementById('make-graph-panel').style.display = '';
+        currentMode = 'make';
+
+        if (!modeStates.make._initialized) {
+            modeStates.make._initialized = true;
+        }
+
+        // Re-draw stored make graph
+        const ms = modeStates.make;
+        if (ms.nodes.length > 0 || ms.edges.length > 0) {
+            // Need a small delay so the panel is visible before cytoscape measures size
+            setTimeout(() => {
+                const cy = getCy('make');
+                if (cy) draw_graph({ n: ms.nodes.length, names: ms.nodes, edges: ms.edges }, cy);
+            }, 30);
+        }
+
+    } else if (mode === 'degree') {
+        modeMakeBtn && modeMakeBtn.classList.remove('active');
+        modeDegreeBtn && modeDegreeBtn.classList.add('active');
+        document.getElementById('degree-panel').style.display = '';
+        currentMode = 'degree';
+
+        if (!modeStates.degree._initialized) {
+            loadDegreeStats();
+            bindDegreeControls();
+            modeStates.degree._initialized = true;
+            setTimeout(() => startDegreeSequence(), 30);
+        } else {
+            // Re-draw existing degree graph
+            const ds = modeStates.degree;
+            if (ds.nodes.length > 0) {
+                setTimeout(() => {
+                    const cy = getCy('degree');
+                    if (cy) draw_graph({ n: ds.nodes.length, names: ds.nodes, edges: ds.edges }, cy);
+                }, 30);
+            }
         }
     }
-    // fallback: pre-fill editor vertices from main input
-    editor.style.display = 'block';
-    // hide rendered graph while editing
-    const graphWindow = document.getElementById('graph-window');
-    if (graphWindow) graphWindow.style.display = 'none';
-    const mainV = document.getElementById('vertices').value || 5;
-    editorVertices.value = mainV;
-    createVertexInputs(parseInt(editorVertices.value, 10));
-    if (editBtn) editBtn.style.display = 'none';
-    if (doneEditBtn) doneEditBtn.style.display = '';
-    if (closeEditBtn) closeEditBtn.style.display = '';
-        if (downloadBtn) downloadBtn.style.display = 'none';
+}
+
+modeMakeBtn  && modeMakeBtn.addEventListener('click',  () => setMode('make'));
+modeDegreeBtn && modeDegreeBtn.addEventListener('click', () => setMode('degree'));
+
+// ---------------------------------------------------------------------------
+// Random graph generation helpers
+// ---------------------------------------------------------------------------
+function makeLabels(n) {
+    if (n > 8) return Array.from({length: n}, (_, i) => String(i + 1));
+    return Array.from({length: n}, (_, i) => String.fromCharCode(65 + i));
+}
+
+function generateAndRenderRandom(n = 5, populateEditor = false) {
+    const edges  = generateRandomGraph(n, false, false, 1);
+    const labels = makeLabels(n);
+
+    modeStates.make.nodes = labels.slice();
+    modeStates.make.edges = edges.slice();
+
+    const cy = getCy('make');
+    if (cy) draw_graph({ n, names: labels, edges }, cy);
+
+    if (populateEditor) {
+        editorVertices.value = n;
+        editorNodes = labels.slice();
+        createVertexInputs(n);
+        const inputs = vertexNamesDiv.querySelectorAll('input');
+        inputs.forEach((inp, i) => {
+            inp.value       = labels[i];
+            inp.placeholder = labels[i];
+            inp.dataset.prev = labels[i];
+            inp.dataset.id   = `v${i}`;
+        });
+        editorEdges = edges
+            .filter(e => e.target !== null)
+            .map(e => ({ source: e.source, target: e.target, label: e.weight != null ? String(e.weight) : null, isDirected: !!e.isDirected, directed: !!e.isDirected }));
+        renderEdgeList();
+        editor.style.display = 'block';
+        if (editBtn)     editBtn.style.display     = 'none';
+        if (doneEditBtn) doneEditBtn.style.display  = '';
+        if (closeEditBtn) closeEditBtn.style.display = '';
+        if (downloadBtn) downloadBtn.style.display  = 'none';
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Initial load
+// ---------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', () => {
+    setMode('make');
+    setTimeout(() => generateAndRenderRandom(5, false), 30);
 });
 
-// Mode switching
-function setMode(mode) {
-    if (mode === 'make') {
-        if (modeMakeBtn) modeMakeBtn.classList.add('active');
-        if (modeTestBtn) modeTestBtn.classList.remove('active');
-        if (modeDescription) modeDescription.textContent = 'Create and edit graphs.';
-        // show main graph UI
-        const gc = document.querySelector('.graph-controls'); if (gc) gc.style.display = '';
-        const graphWindow = document.getElementById('graph-window'); if (graphWindow) graphWindow.style.display = '';
-        if (testPlaceholder) testPlaceholder.style.display = 'none';
-    } else {
-        if (modeMakeBtn) modeMakeBtn.classList.remove('active');
-        if (modeTestBtn) modeTestBtn.classList.add('active');
-        if (modeDescription) modeDescription.textContent = 'Test mode placeholder (features coming soon).';
-        const gc = document.querySelector('.graph-controls'); if (gc) gc.style.display = 'none';
-        const graphWindow = document.getElementById('graph-window'); if (graphWindow) graphWindow.style.display = 'none';
-        if (testPlaceholder) testPlaceholder.style.display = '';
+// ---------------------------------------------------------------------------
+// Editor – open / close
+// ---------------------------------------------------------------------------
+editBtn && editBtn.addEventListener('click', () => {
+    const cy = getCy('make');
+    if (cy) {
+        const nodes = cy.nodes().map(nd => ({ id: nd.data('id'), name: nd.data('displayName') || '' }));
+        const cyEdges = cy.edges().map(ed => ({
+            source:     ed.data('source'),
+            target:     ed.data('target'),
+            label:      ed.data('label') || null,
+            isDirected: ed.data('edgeType') === 'directed',
+            directed:   ed.data('edgeType') === 'directed'
+        }));
+        editorVertices.value = nodes.length || 1;
+        editorNodes = nodes.map(nd => nd.name);
+        createVertexInputs(nodes.length || 1);
+        const inputs = vertexNamesDiv.querySelectorAll('input');
+        inputs.forEach((inp, i) => {
+            inp.value        = nodes[i] ? nodes[i].name : '';
+            inp.placeholder  = nodes[i] ? nodes[i].name : '';
+            inp.dataset.prev = inp.value;
+            inp.dataset.id   = nodes[i] ? nodes[i].id : `v${i}`;
+        });
+        editorEdges = cyEdges;
+        renderEdgeList();
     }
-}
+    editor.style.display = 'block';
+    if (editBtn)      editBtn.style.display      = 'none';
+    if (doneEditBtn)  doneEditBtn.style.display   = '';
+    if (closeEditBtn) closeEditBtn.style.display  = '';
+    if (downloadBtn)  downloadBtn.style.display   = 'none';
+});
 
-if (modeMakeBtn) modeMakeBtn.addEventListener('click', () => setMode('make'));
-if (modeTestBtn) modeTestBtn.addEventListener('click', () => setMode('test'));
+closeEditBtn && closeEditBtn.addEventListener('click', () => {
+    editor.style.display = 'none';
+    if (editBtn)      editBtn.style.display      = '';
+    if (doneEditBtn)  doneEditBtn.style.display   = 'none';
+    if (closeEditBtn) closeEditBtn.style.display  = 'none';
+    if (downloadBtn)  downloadBtn.style.display   = '';
+});
 
-// Ensure initial mode
-setMode('make');
+// ---------------------------------------------------------------------------
+// Editor – apply (Done Editing)
+// ---------------------------------------------------------------------------
+function applyGraphAction() {
+    const inputs = vertexNamesDiv.querySelectorAll('input');
+    const vertices = Array.from(inputs).map((inp, idx) => ({
+        id:   inp.dataset.id || `v${idx}`,
+        name: (inp.value || '').trim()
+    }));
 
-if (closeEditBtn) {
-    closeEditBtn.addEventListener('click', () => {
-        editor.style.display = 'none';
-        const graphWindow = document.getElementById('graph-window');
-        if (graphWindow) graphWindow.style.display = '';
-        if (editBtn) editBtn.style.display = '';
-        if (doneEditBtn) doneEditBtn.style.display = 'none';
-        if (closeEditBtn) closeEditBtn.style.display = 'none';
-            if (downloadBtn) downloadBtn.style.display = '';
+    const n = vertices.length;
+    const names = vertices.map(v => v.name);
+
+    // Resolve edge ids → filter out incomplete edges
+    const resolvedEdges = [];
+    editorEdges.forEach((e, i) => {
+        const sVert = vertices.find(v => v.id === e.source || v.name === String(e.source || '').trim());
+        const tVert = vertices.find(v => v.id === e.target || v.name === String(e.target || '').trim());
+        if (!sVert || !tVert) return;
+        resolvedEdges.push({
+            source:     sVert.id,
+            target:     tVert.id,
+            label:      e.label || null,
+            isDirected: !!e.isDirected
+        });
     });
+
+    modeStates.make.nodes = names;
+    modeStates.make.edges = resolvedEdges;
+
+    const cy = getCy('make');
+    if (cy) draw_graph({ n, names, edges: resolvedEdges }, cy);
+
+    editor.style.display = 'none';
+    if (editBtn)      editBtn.style.display      = '';
+    if (doneEditBtn)  doneEditBtn.style.display   = 'none';
+    if (closeEditBtn) closeEditBtn.style.display  = 'none';
+    if (downloadBtn)  downloadBtn.style.display   = '';
 }
 
-setVerticesBtn.addEventListener('click', () => {
+doneEditBtn && doneEditBtn.addEventListener('click', applyGraphAction);
+
+// ---------------------------------------------------------------------------
+// Download
+// ---------------------------------------------------------------------------
+downloadBtn && downloadBtn.addEventListener('click', async () => {
+    const cy = getCy('make');
+    if (!cy) { alert('No graph to download'); return; }
+    if (typeof cy.svg === 'function') {
+        try {
+            const svgStr = cy.svg({ scale: 1 });
+            const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+            const url  = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'graph.svg';
+            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            return;
+        } catch (e) { console.warn('SVG export failed, trying PNG', e); }
+    }
+    if (typeof cy.png === 'function') {
+        try {
+            const dataUrl = cy.png({ full: true, scale: 1 });
+            const res  = await fetch(dataUrl);
+            const blob = await res.blob();
+            const url  = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'graph.png';
+            document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+            return;
+        } catch (e) { console.warn('PNG export failed', e); }
+    }
+    alert('Export not available. Add the cytoscape-svg extension to enable SVG export.');
+});
+
+// ---------------------------------------------------------------------------
+// Editor – vertex inputs
+// ---------------------------------------------------------------------------
+setVerticesBtn && setVerticesBtn.addEventListener('click', () => {
     const n = parseInt(editorVertices.value, 10);
     if (isNaN(n) || n < 1) return;
-    // Preserve existing names where possible, and remove edges referencing deleted vertices
+
     const oldInputs = vertexNamesDiv.querySelectorAll('input');
-    const oldNames = Array.from(oldInputs).map(i => i.value || i.placeholder);
+    const oldNames  = Array.from(oldInputs).map(i => i.value || i.placeholder);
+
     createVertexInputs(n);
+
     const newInputs = vertexNamesDiv.querySelectorAll('input');
-    // Restore names for overlapping indices and propagate renames
     for (let i = 0; i < newInputs.length; i++) {
-        const inp = newInputs[i];
         if (i < oldNames.length) {
-            const prev = oldNames[i];
-            // set value and trigger rename propagation
-            inp.value = prev;
-            inp.placeholder = prev;
-            inp.dataset.prev = prev;
-            renameVertex(i, prev);
+            newInputs[i].value        = oldNames[i];
+            newInputs[i].placeholder  = oldNames[i];
+            newInputs[i].dataset.prev = oldNames[i];
         }
     }
-    // If vertices were removed, drop edges that reference removed names
-    if (oldNames.length > newInputs.length) {
-        const allowed = new Set(Array.from(newInputs).map(i => i.value || i.placeholder));
-        editorEdges = editorEdges.filter(e => allowed.has(e.source) && (e.target === null || allowed.has(e.target)));
-    }
-    updateVertexLists();
+
+    // Drop edges referencing removed vertices
+    const validIds = new Set(Array.from(newInputs).map(inp => inp.dataset.id));
+    editorEdges = editorEdges.filter(e => validIds.has(e.source) && validIds.has(e.target));
+
     renderEdgeList();
+});
+
+editorRandomBtn && editorRandomBtn.addEventListener('click', () => {
+    const n = parseInt(editorVertices.value, 10) || 5;
+    generateAndRenderRandom(n, true);
 });
 
 function createVertexInputs(n) {
     editorNodes = [];
     vertexNamesDiv.innerHTML = '';
-    // Render header + a vertical numbered list of inputs: "1. [label]"
+
     const header = document.createElement('h3');
     header.textContent = 'Vertices';
     header.classList.add('vertex-header');
     vertexNamesDiv.appendChild(header);
+
     const list = document.createElement('div');
     list.classList.add('vertex-list');
+
     for (let i = 0; i < n; i++) {
-        const line = document.createElement('div');
+        const line  = document.createElement('div');
         line.classList.add('vertex-line');
-        const lbl = document.createElement('label');
-        lbl.textContent = `${i+1}.`;
+
+        const lbl   = document.createElement('label');
+        lbl.textContent = `${i + 1}.`;
         lbl.classList.add('vertex-label');
+
         const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = '';
-        input.value = editorNodes[i] || '';
-        input.dataset.prev = input.value;
+        input.type          = 'text';
+        input.placeholder   = '';
+        input.value         = editorNodes[i] || '';
+        input.dataset.prev  = input.value;
         input.dataset.index = i;
-        input.dataset.id = `v${i}`;
+        input.dataset.id    = `v${i}`;
         input.classList.add('vertex-input');
-        input.addEventListener('input', (ev) => {
-            const idx = parseInt(ev.target.dataset.index, 10);
-            const raw = ev.target.value || ev.target.placeholder || '';
-            const newName = String(raw).trim();
-            // read previous displayed name from dataset (helps when placeholders differ)
+
+        input.addEventListener('input', ev => {
+            const idx     = parseInt(ev.target.dataset.index, 10);
+            const newName = (ev.target.value || '').trim();
             const prevName = ev.target.dataset.prev || '';
-            // update the input value to the trimmed name for consistency and store prev
-            ev.target.value = newName;
-            if (VERBOSE) console.log('vertex input', { idx, newName, prev: prevName, editorNodesPrev: editorNodes[idx] });
-            // call renameVertex with prevName to update edges that referenced the old displayed name
             renameVertex(idx, newName, prevName);
             ev.target.dataset.prev = newName;
         });
+
         line.appendChild(lbl);
         line.appendChild(input);
         list.appendChild(line);
         editorNodes.push(input.value);
     }
     vertexNamesDiv.appendChild(list);
-    updateVertexLists();
 }
 
 function renameVertex(index, newName, prevDisplayedName) {
-    // prefer the previous displayed name (from input.dataset.prev) when provided,
-    // otherwise fall back to the stored editorNodes value
     const oldName = (typeof prevDisplayedName === 'string' && prevDisplayedName.length > 0)
-        ? String(prevDisplayedName).trim()
+        ? prevDisplayedName.trim()
         : (editorNodes[index] ? String(editorNodes[index]).trim() : '');
     newName = String(newName || '').trim();
-    if (VERBOSE) console.log('renameVertex start', { index, oldName, newName, editorEdgesBefore: JSON.parse(JSON.stringify(editorEdges)) });
-    if (oldName === newName) {
-        editorNodes[index] = newName;
-        updateVertexLists();
-        return;
-    }
-    // Update any edges that reference the old name or the internal id
+
     const nodeId = `v${index}`;
     for (const e of editorEdges) {
         if (e.source === nodeId || String(e.source || '').trim() === oldName) e.source = nodeId;
         if (e.target === nodeId || String(e.target || '').trim() === oldName) e.target = nodeId;
     }
-    // Also update any existing edge-select DOM options so UI updates immediately
-    const edgeListEl = document.getElementById('edge-list');
-    if (edgeListEl) {
-        const inputs = Array.from(vertexNamesDiv.querySelectorAll('input'));
-        const idToIndex = inputs.reduce((m, inp, idx) => { m[inp.dataset.id || `v${idx}`] = idx; return m; }, {});
-        const selects = edgeListEl.querySelectorAll('select');
-        selects.forEach((sel, selIdx) => {
-            Array.from(sel.options).forEach((opt, optIdx) => {
-                const optVal = String(opt.value || '');
-                // if option value is the internal id, update its displayed text
-                if (optVal === nodeId) {
-                    const idx = idToIndex[nodeId] ?? index;
-                    opt.textContent = `${idx+1}.${newName ? ' ' + newName : ''}`;
-                    if (VERBOSE) console.log('renameVertex: updated option text', { selIdx, optIdx, optVal, newText: opt.textContent });
-                }
-                // handle legacy option values that used the oldName as the value
-                if (oldName && optVal === oldName) {
-                    // switch the option value to the internal id and update text
-                    const prevVal = optVal;
-                    opt.value = nodeId;
-                    const idx = idToIndex[nodeId] ?? index;
-                    opt.textContent = `${idx+1}.${newName ? ' ' + newName : ''}`;
-                    if (VERBOSE) console.log('renameVertex: migrated legacy option', { selIdx, optIdx, prevVal, newVal: opt.value });
-                }
-            });
-            // if currently selected matched oldName (legacy), migrate selection to nodeId
-            if (oldName && String(sel.value || '').trim() === oldName) {
-                sel.value = nodeId;
-                if (VERBOSE) console.log('renameVertex: migrated select selection', { selIdx, newValue: sel.value });
-            }
-        });
-    }
-    if (VERBOSE) console.log('renameVertex after updates', { editorEdgesAfter: JSON.parse(JSON.stringify(editorEdges)) });
+
     editorNodes[index] = newName;
-    updateVertexLists();
     renderEdgeList();
 }
 
-function updateVertexLists() {
-    const inputs = vertexNamesDiv.querySelectorAll('input');
-    const names = [];
-    inputs.forEach(inp => names.push(inp.value || inp.placeholder));
-    // update legacy selects if present in DOM
-    const edgeSourceEl = document.getElementById('edge-source');
-    const edgeTargetEl = document.getElementById('edge-target');
-    if (edgeSourceEl && edgeTargetEl) {
-        edgeSourceEl.innerHTML = '';
-        edgeTargetEl.innerHTML = '';
-        names.forEach(n => {
-            const o1 = document.createElement('option'); o1.value = n; o1.textContent = n;
-            const o2 = document.createElement('option'); o2.value = n; o2.textContent = n;
-            edgeSourceEl.appendChild(o1);
-            edgeTargetEl.appendChild(o2);
-        });
-    }
-}
-
-if (labelEdgesCheckbox) {
-    labelEdgesCheckbox.addEventListener('change', () => {
-        if (edgeLabelInput) edgeLabelInput.style.display = labelEdgesCheckbox.checked ? 'inline-block' : 'none';
-    });
-}
-
-// legacy addEdgeBtn removed; footer 'Add Edge' in renderEdgeList handles adding rows
-
-// Random graph button inside editor: generate with no loops, no multiedges, 1 component
-if (editorRandomBtn) {
-    editorRandomBtn.addEventListener('click', () => {
-        const n = parseInt(editorVertices.value, 10) || 5;
-        generateAndRenderRandom(n, true);
-    });
-}
-
+// ---------------------------------------------------------------------------
+// Editor – edge list
+// ---------------------------------------------------------------------------
 function renderEdgeList() {
     edgeListDiv.innerHTML = '';
-    const inputs = vertexNamesDiv.querySelectorAll('input');
-    const vertices = Array.from(inputs).map((i, idx) => ({ id: i.dataset.id || `v${idx}`, name: (i.value || '').trim(), index: idx }));
-    // Header row for the table-like view
+
+    const inputs   = vertexNamesDiv.querySelectorAll('input');
+    const vertices = Array.from(inputs).map((inp, idx) => ({
+        id:    inp.dataset.id || `v${idx}`,
+        name:  (inp.value || '').trim(),
+        index: idx
+    }));
+
+    // Header row
     const hdr = document.createElement('div');
     hdr.classList.add('edge-list-header');
-    const hStart = document.createElement('div'); hStart.textContent = 'Start'; hStart.classList.add('edge-col','edge-col-start');
-    const hEnd = document.createElement('div'); hEnd.textContent = 'End'; hEnd.classList.add('edge-col','edge-col-end');
-    const hLabel = document.createElement('div'); hLabel.textContent = 'Label'; hLabel.classList.add('edge-col','edge-col-name');
-    const hDirected = document.createElement('div'); hDirected.textContent = 'Directed'; hDirected.classList.add('edge-col','edge-col-directed');
-    const hActions = document.createElement('div'); hActions.textContent = ''; hActions.classList.add('edge-col','edge-col-actions');
-    hdr.appendChild(hStart); hdr.appendChild(hEnd); hdr.appendChild(hLabel); hdr.appendChild(hDirected); hdr.appendChild(hActions);
+    ['Start','End','Label','Directed',''].forEach((txt, i) => {
+        const cell = document.createElement('div');
+        cell.textContent = txt;
+        cell.classList.add('edge-col', ['edge-col-start','edge-col-end','edge-col-name','edge-col-directed','edge-col-actions'][i]);
+        hdr.appendChild(cell);
+    });
     edgeListDiv.appendChild(hdr);
+
     editorEdges.forEach((e, idx) => {
         const row = document.createElement('div');
         row.classList.add('edge-row');
 
-        // From select
-        const fromSel = document.createElement('select');
-        const ph1 = document.createElement('option'); ph1.value = ''; ph1.textContent = '--'; fromSel.appendChild(ph1);
-        vertices.forEach(v => { const o = document.createElement('option'); o.value = v.id; o.textContent = `${v.index+1}.${v.name ? ' ' + v.name : ''}`; fromSel.appendChild(o); });
-        // resolve selection: e.source may be an id or a display name
-        let selSourceId = '';
-        if (e.source) {
-            // if matches an id
-            const matchById = vertices.find(v => v.id === e.source);
-            if (matchById) selSourceId = matchById.id;
-            else {
-                // try match by name
-                const matchByName = vertices.find(v => v.name === String(e.source).trim());
-                if (matchByName) selSourceId = matchByName.id;
-            }
+        // Helper: build a vertex select
+        function makeVertexSelect(currentVal) {
+            const sel = document.createElement('select');
+            const ph  = document.createElement('option'); ph.value = ''; ph.textContent = '--'; sel.appendChild(ph);
+            vertices.forEach(v => {
+                const o = document.createElement('option');
+                o.value = v.id;
+                o.textContent = `${v.index + 1}.${v.name ? ' ' + v.name : ''}`;
+                sel.appendChild(o);
+            });
+            // Resolve selection
+            const match = vertices.find(v => v.id === currentVal) || vertices.find(v => v.name === String(currentVal || '').trim());
+            sel.value = match ? match.id : '';
+            return sel;
         }
-        if (selSourceId) fromSel.value = selSourceId; else fromSel.selectedIndex = 0;
-        if (VERBOSE) console.log('renderEdgeList: fromSel', { idx, source: e.source, selectedValue: fromSel.value });
+
+        const fromSel = makeVertexSelect(e.source);
         fromSel.addEventListener('change', () => { editorEdges[idx].source = fromSel.value; });
 
-        // To select
-        const toSel = document.createElement('select');
-        const ph2 = document.createElement('option'); ph2.value = ''; ph2.textContent = '--'; toSel.appendChild(ph2);
-        vertices.forEach(v => { const o = document.createElement('option'); o.value = v.id; o.textContent = `${v.index+1}.${v.name ? ' ' + v.name : ''}`; toSel.appendChild(o); });
-        let selTargetId = '';
-        if (e.target) {
-            const matchById = vertices.find(v => v.id === e.target);
-            if (matchById) selTargetId = matchById.id;
-            else {
-                const matchByName = vertices.find(v => v.name === String(e.target).trim());
-                if (matchByName) selTargetId = matchByName.id;
-            }
-        }
-        if (selTargetId) toSel.value = selTargetId; else toSel.selectedIndex = 0;
-        if (VERBOSE) console.log('renderEdgeList: toSel', { idx, target: e.target, selectedValue: toSel.value });
+        const toSel = makeVertexSelect(e.target);
         toSel.addEventListener('change', () => { editorEdges[idx].target = toSel.value; });
 
-        // Label input
         const lblInput = document.createElement('input');
-        lblInput.type = 'text';
+        lblInput.type        = 'text';
         lblInput.placeholder = 'label';
-        lblInput.value = e.label || '';
+        lblInput.value       = e.label || '';
         lblInput.style.width = '100%';
         lblInput.style.boxSizing = 'border-box';
         lblInput.addEventListener('input', () => { editorEdges[idx].label = lblInput.value; });
 
-        // Direction checkbox per-edge
-        const dirCheckbox = document.createElement('input');
-        dirCheckbox.type = 'checkbox';
-        dirCheckbox.title = 'Directed';
-        dirCheckbox.checked = !!(e.isDirected || e.directed);
+        const dirCheckbox       = document.createElement('input');
+        dirCheckbox.type        = 'checkbox';
+        dirCheckbox.title       = 'Directed';
+        dirCheckbox.checked     = !!(e.isDirected || e.directed);
         dirCheckbox.addEventListener('change', () => {
             editorEdges[idx].isDirected = dirCheckbox.checked;
-            editorEdges[idx].directed = dirCheckbox.checked;
+            editorEdges[idx].directed   = dirCheckbox.checked;
         });
 
         const rem = document.createElement('button');
         rem.textContent = 'Remove';
-        rem.addEventListener('click', () => { editorEdges.splice(idx,1); renderEdgeList(); });
+        rem.addEventListener('click', () => { editorEdges.splice(idx, 1); renderEdgeList(); });
 
-        const cFrom = document.createElement('div'); cFrom.classList.add('edge-col','edge-col-start');
-        const labelFrom = document.createElement('span'); labelFrom.classList.add('col-label'); labelFrom.textContent = 'Start';
-        cFrom.appendChild(labelFrom); cFrom.appendChild(fromSel);
-        const cTo = document.createElement('div'); cTo.classList.add('edge-col','edge-col-end');
-        const labelTo = document.createElement('span'); labelTo.classList.add('col-label'); labelTo.textContent = 'End';
-        cTo.appendChild(labelTo); cTo.appendChild(toSel);
-        const cLabel = document.createElement('div'); cLabel.classList.add('edge-col','edge-col-name');
-        const labelName = document.createElement('span'); labelName.classList.add('col-label'); labelName.textContent = 'Label';
-        cLabel.appendChild(labelName); cLabel.appendChild(lblInput);
-        const cDirected = document.createElement('div'); cDirected.classList.add('edge-col','edge-col-directed');
-        const labelDirected = document.createElement('span'); labelDirected.classList.add('col-label'); labelDirected.textContent = 'Directed';
-        cDirected.appendChild(labelDirected); cDirected.appendChild(dirCheckbox);
-        const cActions = document.createElement('div'); cActions.classList.add('edge-col','edge-col-actions');
-        const labelActions = document.createElement('span'); labelActions.classList.add('col-label'); labelActions.textContent = '';
-        cActions.appendChild(labelActions); cActions.appendChild(rem);
-        row.appendChild(cFrom);
-        row.appendChild(cTo);
-        row.appendChild(cLabel);
-        row.appendChild(cDirected);
-        row.appendChild(cActions);
+        function makeCol(cls, ...children) {
+            const div = document.createElement('div');
+            div.classList.add('edge-col', cls);
+            children.forEach(c => div.appendChild(c));
+            return div;
+        }
+
+        row.appendChild(makeCol('edge-col-start',    fromSel));
+        row.appendChild(makeCol('edge-col-end',      toSel));
+        row.appendChild(makeCol('edge-col-name',     lblInput));
+        row.appendChild(makeCol('edge-col-directed', dirCheckbox));
+        row.appendChild(makeCol('edge-col-actions',  rem));
         edgeListDiv.appendChild(row);
     });
 
-    // Footer: Add Edge button that inserts a blank editable edge row
+    // Add Edge button
     const footer = document.createElement('div');
-    footer.style.marginTop = '8px';
-    footer.style.display = 'flex';
-    footer.style.justifyContent = 'center';
+    footer.style.cssText = 'margin-top:8px;display:flex;justify-content:center;';
     const addBtn = document.createElement('button');
     addBtn.textContent = 'Add Edge';
     addBtn.addEventListener('click', () => {
-        const labelVal = (labelEdgesCheckbox && labelEdgesCheckbox.checked) ? (edgeLabelInput ? edgeLabelInput.value || '' : '') : null;
-        const edge = { source: '', target: '', label: labelVal, directed: directedCheckbox && directedCheckbox.checked, isDirected: directedCheckbox && directedCheckbox.checked };
-        editorEdges.push(edge);
+        editorEdges.push({ source: '', target: '', label: null, directed: false, isDirected: false });
         renderEdgeList();
     });
     footer.appendChild(addBtn);
     edgeListDiv.appendChild(footer);
 }
 
-function applyGraphAction() {
-    // Build cytoscape elements from editorNodes and editorEdges
-    const inputs = vertexNamesDiv.querySelectorAll('input');
-    // build mapping of internal id -> displayName
-    const vertices = Array.from(inputs).map((inp, idx) => ({ id: inp.dataset.id || `v${idx}`, name: (inp.value || '').trim() }));
-    const idByName = new Map(vertices.map(v => [v.name, v.id]));
-    const cyElements = [];
-    vertices.forEach(v => cyElements.push({ data: { id: v.id, displayName: v.name || '' } }));
-    editorEdges.forEach((e, i) => {
-        // resolve source/target ids (e.source may be id or legacy name)
-        const resolveId = (val) => {
-            if (!val) return null;
-            // direct id match
-            const direct = vertices.find(v => v.id === val); if (direct) return direct.id;
-            // match by name
-            const byName = vertices.find(v => v.name === String(val).trim()); if (byName) return byName.id;
-            return null;
-        };
-        const sId = resolveId(e.source);
-        const tId = resolveId(e.target);
-        if (!sId || !tId) return;
-        cyElements.push({ data: { id: `e${i}_${sId}_${tId}`, source: sId, target: tId, label: e.label || null, edgeType: e.directed ? 'directed' : 'undirected' } });
-    });
+// ---------------------------------------------------------------------------
+// Degree Sequences Mode
+// ---------------------------------------------------------------------------
+function loadDegreeStats() {
+    try {
+        const raw = localStorage.getItem('graph_degree_stats');
+        if (raw) {
+            const s = JSON.parse(raw);
+            modeStates.degree.stats.correct   = s.correct   || 0;
+            modeStates.degree.stats.incorrect = s.incorrect || 0;
+        }
+    } catch (e) { /* ignore */ }
+}
 
-    // reuse rendering logic: create or update cytoscape
-    if (window._cyInstance) {
-        window._cyInstance.elements().remove();
-        window._cyInstance.add(cyElements);
-        window._cyInstance.layout({ name: 'cose', animate: true, randomize: true }).run();
-    } else {
-        window._cyInstance = cytoscape({
-            container: document.getElementById('cy'),
-            elements: cyElements,
-            style: [
-            { selector: 'node', style: { 'background-color': '#fff', 'border-width': 2, 'border-color': '#333', 'label': 'data(displayName)', 'color': '#333', 'text-valign': 'center', 'text-halign': 'center', 'width': 36, 'height': 36 } },
-                { selector: 'edge', style: { 'width': 2, 'line-color': '#888', 'curve-style': 'bezier', 'font-size': 12, 'color': '#fff', 'text-background-color': '#888', 'text-background-opacity': 1, 'text-background-padding': 6 } },
-                { selector: 'edge[label]', style: { 'label': 'data(label)' } },
-                { selector: 'edge[edgeType = "directed"]', style: { 'target-arrow-color': '#888', 'target-arrow-shape': 'triangle' } },
-                { selector: 'edge[edgeType = "undirected"]', style: { 'target-arrow-shape': 'none' } }
-            ],
-            layout: { name: 'cose', animate: true, randomize: true },
-            userZoomingEnabled: false
-        });
-        // attach zoom buttons
-        document.getElementById('zoom-in').onclick = function() { window._cyInstance.zoom({ level: window._cyInstance.zoom() * 1.2 }); };
-        document.getElementById('zoom-out').onclick = function() { window._cyInstance.zoom({ level: window._cyInstance.zoom() / 1.2 }); };
+function saveDegreeStats() {
+    try {
+        localStorage.setItem('graph_degree_stats', JSON.stringify(modeStates.degree.stats));
+    } catch (e) { /* ignore */ }
+}
+
+function updateDegreeStatsDisplay() {
+    const stats = modeStates.degree.stats;
+    const total = stats.correct + stats.incorrect;
+    const pct   = total === 0 ? 0 : Math.round((stats.correct / total) * 100);
+    const el = id => document.getElementById(id);
+    if (el('degree-correct'))   el('degree-correct').textContent   = stats.correct;
+    if (el('degree-incorrect')) el('degree-incorrect').textContent = stats.incorrect;
+    if (el('degree-accuracy'))  el('degree-accuracy').textContent  = pct + '%';
+}
+
+// Show the answer input / submit button; hide the feedback box
+function showAnswerInput() {
+    const answerInput  = document.getElementById('degree-answer');
+    const submitBtn    = document.getElementById('degree-submit-btn');
+    const feedbackBox  = document.getElementById('training-feedback');
+    if (answerInput)  { answerInput.value = ''; answerInput.disabled = false; }
+    if (submitBtn)    submitBtn.style.display = '';
+    if (feedbackBox)  feedbackBox.style.display = 'none';
+}
+
+// Show the feedback box; hide the submit button and lock the input
+function showFeedback(correct, expected) {
+    const answerInput  = document.getElementById('degree-answer');
+    const submitBtn    = document.getElementById('degree-submit-btn');
+    const feedbackBox  = document.getElementById('training-feedback');
+    const feedbackText = document.getElementById('feedback-text');
+
+    if (answerInput) answerInput.disabled = true;
+    if (submitBtn)   submitBtn.style.display = 'none';
+
+    if (feedbackText) {
+        feedbackText.textContent = correct
+            ? '✓ Correct!'
+            : `✗ Incorrect. The correct degree sequence was {${expected.join(',')}}.`;
     }
 
-    editor.style.display = 'none';
-    const graphWindow = document.getElementById('graph-window');
-    if (graphWindow) graphWindow.style.display = '';
-    if (editBtn) editBtn.style.display = '';
-    if (doneEditBtn) doneEditBtn.style.display = 'none';
-    if (closeEditBtn) closeEditBtn.style.display = 'none';
-    if (downloadBtn) downloadBtn.style.display = '';
+    if (feedbackBox) {
+        feedbackBox.style.display = '';
+        feedbackBox.className = 'training-feedback ' + (correct ? 'correct' : 'incorrect');
+    }
 }
 
-if (doneEditBtn) {
-    doneEditBtn.addEventListener('click', () => {
-        // Trigger the Apply Graph behavior then close editor
-        applyGraphAction();
-    });
+function bindDegreeControls() {
+    const resetBtn    = document.getElementById('degree-reset-btn');
+    const submitBtn   = document.getElementById('degree-submit-btn');
+    const answerInput = document.getElementById('degree-answer');
+    const nextBtn     = document.getElementById('training-next');
+
+    if (resetBtn && !resetBtn.dataset.bound) {
+        resetBtn.dataset.bound = '1';
+        resetBtn.onclick = () => {
+            modeStates.degree.stats.correct   = 0;
+            modeStates.degree.stats.incorrect = 0;
+            saveDegreeStats();
+            updateDegreeStatsDisplay();
+            showAnswerInput();
+            startDegreeSequence();
+        };
+    }
+
+    if (submitBtn && answerInput && !submitBtn.dataset.bound) {
+        submitBtn.dataset.bound = '1';
+        submitBtn.onclick = () => {
+            const got = parseAnswer(answerInput.value);
+            if (got === null) {
+                answerInput.style.outline = '2px solid #e74c3c';
+                setTimeout(() => { answerInput.style.outline = ''; }, 1200);
+                return;
+            }
+            const expected = modeStates.degree.expectedSeq.slice();
+            const correct  = arraysEqual(got, expected);
+            if (correct) {
+                modeStates.degree.stats.correct++;
+            } else {
+                modeStates.degree.stats.incorrect++;
+            }
+            saveDegreeStats();
+            updateDegreeStatsDisplay();
+            showFeedback(correct, expected);
+        };
+    }
+
+    if (nextBtn && !nextBtn.dataset.bound) {
+        nextBtn.dataset.bound = '1';
+        nextBtn.onclick = () => {
+            showAnswerInput();
+            startDegreeSequence();
+        };
+    }
 }
 
-// Download/export handler: prefer SVG (if cytoscape provides svg()), fall back to PNG
-if (downloadBtn) {
-    downloadBtn.addEventListener('click', async () => {
-        if (!window._cyInstance) { alert('No graph to download'); return; }
-        // SVG if available
-        if (typeof window._cyInstance.svg === 'function') {
-            try {
-                const svgStr = window._cyInstance.svg({ scale: 1 });
-                const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = 'graph.svg'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                return;
-            } catch (e) {
-                console.warn('SVG export failed, falling back to PNG', e);
+
+function parseAnswer(str) {
+    if (!str) return null;
+    str = str.trim();
+    if (str.startsWith('{') && str.endsWith('}')) str = str.slice(1, -1);
+    str = str.replace(/\s+/g, '');
+    if (str.length === 0) return [];
+    const parts = str.split(',').map(s => parseInt(s, 10));
+    if (parts.some(x => isNaN(x))) return null;
+    return parts.sort((a, b) => a - b);
+}
+
+function arraysEqual(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
+}
+
+function startDegreeSequence() {
+    const n      = Math.floor(Math.random() * 5) + 3;   // 3..7
+    let   edges  = generateSimpleGraph(n, 0.4);
+
+    // Occasionally add loops / parallel edges to make it more interesting
+    if (Math.random() < 0.5) {
+        const extra = Math.floor(Math.random() * 3) + 1;
+        for (let k = 0; k < extra; k++) {
+            if (Math.random() < 0.5) {
+                const idx = Math.floor(Math.random() * n);
+                edges.push({ source: `v${idx}`, target: `v${idx}`, isDirected: false, weight: null });
+            } else {
+                let i = Math.floor(Math.random() * n);
+                let j = Math.floor(Math.random() * n);
+                if (i === j) j = (i + 1) % n;
+                edges.push({ source: `v${i}`, target: `v${j}`, isDirected: false, weight: null });
             }
         }
-        // Fallback: PNG using cy.png()
-        if (typeof window._cyInstance.png === 'function') {
-            try {
-                const dataUrl = window._cyInstance.png({ full: true, scale: 1 });
-                const res = await fetch(dataUrl);
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a'); a.href = url; a.download = 'graph.png'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-                return;
-            } catch (e) {
-                console.warn('PNG export failed', e);
-            }
-        }
-        alert('Export not available. To enable SVG export, add the cytoscape-svg extension.');
-    });
+    }
+
+    const labels = makeLabels(n);
+    const ds     = modeStates.degree;
+    ds.nodes       = labels.slice();           // store display names
+    ds.edges       = edges;
+    ds.expectedSeq = degreeSequence(edges, n);
+
+    const cy = getCy('degree');
+    if (cy) draw_graph({ n, names: labels, edges }, cy);
+
+    updateDegreeStatsDisplay();
+
+    if (VERBOSE) console.log('startDegreeSequence: expected', ds.expectedSeq);
 }

@@ -58,11 +58,19 @@ h1 {
   font-size: 2rem;
 }
 
-.graph-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 18px;
+
+/* Unified panel style for editor and degree mode */
+#graph-editor, #degree-panel {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fbfdff;
+  border-radius: 8px;
+}
+
+/* Graph viewing panel wrapper */
+#graph-window {
+  margin-top: 12px;
+  background: transparent;
 }
 
 .input-group {
@@ -83,6 +91,26 @@ input[type="number"] {
   font-size: 14px;
 }
 
+/* Consistent text input styling (matches vertex editor inputs) */
+input[type="text"], .vertex-input, textarea {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d6dbe9;
+  font-size: 15px;
+  background: white;
+  color: #222;
+}
+
+/* Consistent select styling */
+select {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d6dbe9;
+  background: white;
+  font-size: 15px;
+  color: #222;
+}
+
 input[type="checkbox"] {
   width: 18px;
   height: 18px;
@@ -101,7 +129,8 @@ input[type="checkbox"] {
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-top: 18px;
+  margin-top: 12px;
+  margin-bottom: 18px;
 }
 
 /* Mode selector */
@@ -110,6 +139,16 @@ input[type="checkbox"] {
     justify-content: center;
     gap: 10px;
     margin-bottom: 20px;
+}
+
+/* Left-align mode option buttons */
+.mode-options-panel {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 8px;
 }
 
 .mode-btn {
@@ -139,6 +178,24 @@ input[type="checkbox"] {
   background: #ffffff00;
 }
 
+/* Graph viewport used across modes */
+.graph-viewport {
+  width: 100%;
+  height: 520px;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 2px solid rgba(0,0,0,0.12);
+  box-sizing: border-box;
+  background: #ffffff00;
+}
+
+.graphic-prompt {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+
 /* Editor / Vertex list styles */
 .vertex-header { margin: 0 0 8px 0; font-size: 1.05rem; color: #333; }
 .vertex-list { display:flex; flex-direction:column; gap:8px; }
@@ -155,8 +212,8 @@ input[type="checkbox"] {
 .edge-col-directed { width:100px; text-align:center; display:flex; justify-content:center; }
 .edge-col-actions { width:90px; text-align:center; display:flex; justify-content:center; }
 .edge-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; margin-bottom:6px; background:#fff; }
-.edge-row select { width:100%; padding:8px; border-radius:6px; border:1px solid #d6dbe9; font-size:15px; }
-.edge-row input[type="text"] { padding:8px; border-radius:6px; border:1px solid #d6dbe9; font-size:15px; }
+.edge-row select { width:100%; }
+.edge-row input[type="text"] { width:100%; }
 .edge-footer { margin-top:8px; display:flex; justify-content:center; }
 
 
@@ -179,6 +236,14 @@ button {
     text-align: center;
 }
 
+.hint {
+    background: #f0f4ff;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
 button:hover {
     background: #5568d3;
     transform: translateY(-2px);
@@ -188,6 +253,7 @@ button:hover {
 @media (max-width: 720px) {
   .container { padding: 18px; }
   #cy { height: 420px; }
+  .graph-viewport { height: 420px; }
 }
 
 /* Responsive: stack edge row controls on narrow viewports */
@@ -228,3 +294,84 @@ button:hover {
   }
 }
 
+/* Small refinements for controls */
+.zoom-controls button { padding: 8px 12px; font-size: 14px; border-radius: 6px; }
+.edge-row button { padding: 6px 10px; font-size: 14px; }
+
+
+
+/* Training mode styles */
+.mode-panel {
+    margin-top: 30px;
+}
+
+.reset-session-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    margin-bottom: 30px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.reset-session-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.reset-session-btn:active {
+    transform: translateY(0);
+}
+
+.training-matrix {
+    margin-bottom: 30px;
+}
+
+.training-actions {
+    margin-bottom: 30px;
+}
+
+.training-feedback {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 30px;
+    min-height: 80px;
+}
+
+.training-feedback.correct {
+    background: #d4edda;
+    border-left: 4px solid #27ae60;
+}
+
+.training-feedback.incorrect {
+    background: #f8d7da;
+    border-left: 4px solid #e74c3c;
+}
+
+.training-stats {
+    background: #f0f4ff;
+    padding: 20px;
+    border-radius: 5px;
+}
+
+.stats-display {
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+
+.stats-display p {
+    font-size: 18px;
+    font-weight: bold;
+    color: #667eea;
+}
+
+.stats-display span {
+    color: #764ba2;
+}
