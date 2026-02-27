@@ -463,18 +463,21 @@ altTextBtn && altTextBtn.addEventListener('click', () => {
         const { text } = graphToDescription({ n: ms.nodes.length, names: ms.nodes, edges: ms.edges });
         altTextOutput.value = text;
         altTextPanel.style.display = 'block';
+        // Auto-fit height to content
+        altTextOutput.style.height = 'auto';
+        altTextOutput.style.height = (altTextOutput.scrollHeight + 4) + 'px';
     }
 });
 
 altTextCopyBtn && altTextCopyBtn.addEventListener('click', () => {
     navigator.clipboard.writeText(altTextOutput.value).then(() => {
-        altTextCopyBtn.textContent = '✓';
-        setTimeout(() => { altTextCopyBtn.textContent = '⧉'; }, 2000);
+        altTextCopyBtn.textContent = 'Copied!';
+        setTimeout(() => { altTextCopyBtn.textContent = 'Copy'; }, 2000);
     }).catch(() => {
         altTextOutput.select();
         document.execCommand('copy');
-        altTextCopyBtn.textContent = '✓';
-        setTimeout(() => { altTextCopyBtn.textContent = '⧉'; }, 2000);
+        altTextCopyBtn.textContent = 'Copied!';
+        setTimeout(() => { altTextCopyBtn.textContent = 'Copy'; }, 2000);
     });
 });
 

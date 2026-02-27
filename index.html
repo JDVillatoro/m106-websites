@@ -33,14 +33,20 @@
             </div>
 
             <!-- Alt text panel, hidden by default -->
-<div id="alt-text-panel" style="display:none; margin-top:12px; padding:12px; background:#fbfdff; border-radius:8px;">
-    <div style="position:relative; margin-top:8px;">
-        <textarea id="alt-text-output" readonly rows="6"
-            style="width:100%; box-sizing:border-box; font-size:14px; resize:vertical;"></textarea>
-        <button type="button" id="alt-text-copy-btn" title="Copy to clipboard"
-            style="position:absolute; top:6px; right:6px; padding:4px 6px; font-size:12px; line-height:1; cursor:pointer;">⧉</button>
-    </div>
-</div>
+            <div id="alt-text-panel"
+                style="display:none; margin-top:12px; padding:12px; background:#fbfdff; border-radius:8px;">
+                <div
+                    style="position:relative; margin-top:8px; border:1px solid #ccc; border-radius:6px; background:#f6f8fa;">
+                    <div
+                        style="display:flex; justify-content:space-between; align-items:center; padding:4px 8px; border-bottom:1px solid #ccc;">
+                        <span style="font-size:12px; color:#888;">alt text</span>
+                        <button type="button" id="alt-text-copy-btn" title="Copy to clipboard"
+                            style="padding:2px 8px; font-size:12px; line-height:1.5; cursor:pointer; background:#888; border:1px solid #ccc; border-radius:4px;">Copy</button>
+                    </div>
+                    <textarea id="alt-text-output" rows="1"
+                        style="width:100%; box-sizing:border-box; font-size:14px; resize:vertical; border:none; border-radius:0 0 6px 6px; background:transparent; padding:8px;"></textarea>
+                </div>
+            </div>
 
             <!-- Editor panel inside the card (hidden by default) -->
             <div id="graph-editor"
