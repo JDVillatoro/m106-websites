@@ -26,8 +26,9 @@ const CY_STYLE = [
             'color': '#333',
             'text-valign': 'center',
             'text-halign': 'center',
-            'width': 36,
-            'height': 36
+            'width': 'mapData(labelLen, 1, 12, 36, 120)',
+            'height': 36,
+            'shape': 'ellipse'
         }
     },
     {
@@ -134,7 +135,7 @@ function draw_graph(graph_data, cy) {
     for (let i = 0; i < n; i++) {
         const id = `v${i}`;
         const displayName = typeof names[i] === 'string' ? names[i] : id;
-        elems.push({ data: { id, displayName } });
+        elems.push({ data: { id, displayName, labelLen: displayName.length } });
     }
 
     edges.forEach((e, idx) => {
