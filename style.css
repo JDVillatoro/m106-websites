@@ -1,5 +1,11 @@
 /* Minimal stylesheet inspired by style_inspo.css */
 
+h2 {
+  color: #555;
+  margin-bottom: 15px;
+  font-size: 1.5em;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -11,56 +17,58 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   padding: 20px;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  /* -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale; */
 }
 
 .edit-button {
-    margin-bottom: 15px;
-    background: #27ae60;
+  margin-bottom: 15px;
+  background: #27ae60;
 }
 
 .edit-button:hover {
-    background: #229954;
+  background: #229954;
 }
 
 .download-button {
-    margin-bottom: 15px;
-    background: #27ae60;
+  margin-bottom: 15px;
+  background: #27ae60;
 }
 
 .download-button:hover {
-    background: #229954;
+  background: #229954;
 }
 
 
 .edit-button.editing {
-    background: #e67e22;
+  background: #e67e22;
 }
 
 .edit-button.editing:hover {
-    background: #d35400;
-}
-
-.container {
-  max-width: 980px;
-  margin: 0 auto;
-  background: rgba(255,255,255,0.95);
-  border-radius: 12px;
-  padding: 28px;
-  box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+  background: #d35400;
 }
 
 h1 {
   text-align: center;
-  color: #222;
-  margin-bottom: 18px;
-  font-size: 2rem;
+  color: #333;
+  margin-bottom: 20px;
+  font-size: 2.5em;
+}
+
+.container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 
+
 /* Unified panel style for editor and degree mode */
-#graph-editor, #degree-panel {
+#graph-editor,
+#degree-panel {
   margin-top: 12px;
   padding: 12px;
   background: #fbfdff;
@@ -71,6 +79,26 @@ h1 {
 #graph-window {
   margin-top: 12px;
   background: transparent;
+}
+
+/* Visually hidden but readable by screen readers */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+p {
+  display: block;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
 }
 
 .input-group {
@@ -92,13 +120,16 @@ input[type="number"] {
 }
 
 /* Consistent text input styling (matches vertex editor inputs) */
-input[type="text"], .vertex-input, textarea {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #d6dbe9;
-  font-size: 15px;
-  background: white;
-  color: #222;
+input[type="text"],
+.vertex-input,
+textarea {
+  flex: 1;
+  min-width: 200px;
+  padding: 10px;
+  border: 2px solid #ccc;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: border-color 0.3s ease;
 }
 
 /* Consistent select styling */
@@ -135,10 +166,10 @@ input[type="checkbox"] {
 
 /* Mode selector */
 .mode-selector {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 /* Left-align mode option buttons */
@@ -152,19 +183,19 @@ input[type="checkbox"] {
 }
 
 .mode-btn {
-    padding: 10px 30px;
-    background: #ddd;
-    color: #555;
-    font-weight: bold;
+  padding: 10px 30px;
+  background: #ddd;
+  color: #555;
+  font-weight: bold;
 }
 
 .mode-btn.active {
-    background: #667eea;
-    color: white;
+  background: #667eea;
+  color: white;
 }
 
 .mode-btn:hover {
-    opacity: 0.9;
+  opacity: 0.9;
 }
 
 
@@ -173,7 +204,7 @@ input[type="checkbox"] {
   height: 520px;
   margin-top: 22px;
   border-radius: 10px;
-  border: 2px solid rgba(0,0,0,0.12);
+  border: 2px solid rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
   background: #ffffff00;
 }
@@ -185,75 +216,161 @@ input[type="checkbox"] {
   margin-top: 12px;
   margin-bottom: 12px;
   border-radius: 10px;
-  border: 2px solid rgba(0,0,0,0.12);
+  border: 2px solid rgba(0, 0, 0, 0.12);
   box-sizing: border-box;
   background: #ffffff00;
 }
 
 .graphic-prompt {
-    margin-top: 12px;
-    margin-bottom: 12px;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 
 
 /* Editor / Vertex list styles */
-.vertex-header { margin: 0 0 8px 0; font-size: 1.05rem; color: #333; }
-.vertex-list { display:flex; flex-direction:column; gap:8px; }
-.vertex-line { display:flex; align-items:center; gap:8px; }
-.vertex-label { min-width:28px; text-align:right; margin-right:6px; color:#444; font-size:15px; }
-.vertex-input { padding:8px; border-radius:6px; border:1px solid #d6dbe9; flex:1; font-size:15px; }
+.vertex-header {
+  margin: 0 0 8px 0;
+  font-size: 1.05rem;
+  color: #333;
+}
+
+.vertex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vertex-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vertex-label {
+  min-width: 28px;
+  text-align: right;
+  margin-right: 6px;
+  color: #444;
+  font-size: 15px;
+}
+
+.vertex-input {
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #d6dbe9;
+  flex: 1;
+  font-size: 15px;
+}
 
 /* Edge list / table-like styles */
-.edge-list-header { display:flex; gap:8px; padding:6px 8px; border-bottom:1px solid #eee; font-weight:600; }
-.edge-col { padding:2px 6px; }
-.edge-col-start { width:140px; }
-.edge-col-end { width:140px; }
-.edge-col-name { flex:1; }
-.edge-col-directed { width:100px; text-align:center; display:flex; justify-content:center; }
-.edge-col-actions { width:90px; text-align:center; display:flex; justify-content:center; }
-.edge-row { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:6px; margin-bottom:6px; background:#fff; }
-.edge-row select { width:100%; }
-.edge-row input[type="text"] { width:100%; }
-.edge-footer { margin-top:8px; display:flex; justify-content:center; }
+.edge-list-header {
+  display: flex;
+  gap: 8px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #eee;
+  font-weight: 600;
+}
+
+.edge-col {
+  padding: 2px 6px;
+}
+
+.edge-col-start {
+  width: 140px;
+}
+
+.edge-col-end {
+  width: 140px;
+}
+
+.edge-col-name {
+  flex: 1;
+}
+
+.edge-col-directed {
+  width: 100px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+.edge-col-actions {
+  width: 90px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+
+.edge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+  background: #fff;
+}
+
+.edge-row select {
+  width: 100%;
+}
+
+.edge-row input[type="text"] {
+  width: 100%;
+}
+
+.edge-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
 
 
 button {
-    background: #667eea;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s ease;
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.3s ease;
 }
 
 .game-info {
-    background: #f0f4ff;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 30px;
-    text-align: center;
+  background: #f0f4ff;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+  text-align: center;
 }
 
 .hint {
-    background: #f0f4ff;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 30px;
-    text-align: center;
+  background: #f0f4ff;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+  text-align: center;
 }
 
 button:hover {
-    background: #5568d3;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
 }
 
 @media (max-width: 720px) {
-  .container { padding: 18px; }
-  #cy { height: 420px; }
-  .graph-viewport { height: 420px; }
+  .container {
+    padding: 18px;
+  }
+
+  #cy {
+    height: 420px;
+  }
+
+  .graph-viewport {
+    height: 420px;
+  }
 }
 
 /* Responsive: stack edge row controls on narrow viewports */
@@ -263,20 +380,26 @@ button:hover {
     align-items: stretch;
     gap: 6px;
   }
-  .edge-col-start, .edge-col-end {
+
+  .edge-col-start,
+  .edge-col-end {
     width: 100%;
   }
+
   .edge-col-name {
     width: 100%;
     margin-top: 4px;
   }
-  .edge-col-directed, .edge-col-actions {
+
+  .edge-col-directed,
+  .edge-col-actions {
     width: 100%;
     display: flex;
     justify-content: flex-start;
     margin-top: 4px;
     gap: 8px;
   }
+
   .edge-col-directed input[type="checkbox"] {
     margin-left: 0;
   }
@@ -284,7 +407,10 @@ button:hover {
 
 /* Mobile: hide table header and show inline labels inside each row */
 @media (max-width: 520px) {
-  .edge-list-header { display: none; }
+  .edge-list-header {
+    display: none;
+  }
+
   .col-label {
     display: inline-block;
     width: 6rem;
@@ -295,83 +421,120 @@ button:hover {
 }
 
 /* Small refinements for controls */
-.zoom-controls button { padding: 8px 12px; font-size: 14px; border-radius: 6px; }
-.edge-row button { padding: 6px 10px; font-size: 14px; }
+.zoom-controls button {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+.edge-row button {
+  padding: 6px 10px;
+  font-size: 14px;
+}
 
 
 
 /* Training mode styles */
 .mode-panel {
-    margin-top: 30px;
+  margin-top: 30px;
 }
 
 .reset-session-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    margin-bottom: 30px;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .reset-session-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
 }
 
 .reset-session-btn:active {
-    transform: translateY(0);
+  transform: translateY(0);
 }
 
 .training-matrix {
-    margin-bottom: 30px;
+  margin-bottom: 30px;
 }
 
 .training-actions {
-    margin-bottom: 30px;
+  margin-bottom: 30px;
 }
 
 .training-feedback {
-    background: #f9f9f9;
-    padding: 20px;
-    border-radius: 5px;
-    margin-bottom: 30px;
-    min-height: 80px;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+  min-height: 80px;
 }
 
 .training-feedback.correct {
-    background: #d4edda;
-    border-left: 4px solid #27ae60;
+  background: #d4edda;
+  border-left: 4px solid #27ae60;
 }
 
 .training-feedback.incorrect {
-    background: #f8d7da;
-    border-left: 4px solid #e74c3c;
+  background: #f8d7da;
+  border-left: 4px solid #e74c3c;
 }
 
 .training-stats {
-    background: #f0f4ff;
-    padding: 20px;
-    border-radius: 5px;
+  background: #f0f4ff;
+  padding: 20px;
+  border-radius: 5px;
 }
 
 .stats-display {
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
 }
 
 
 .stats-display p {
-    font-size: 18px;
-    font-weight: bold;
-    color: #667eea;
+  font-size: 18px;
+  font-weight: bold;
+  color: #667eea;
 }
 
 .stats-display span {
-    color: #764ba2;
+  color: #764ba2;
+}
+
+
+.submit-btn {
+  margin-top: 15px;
+  background: #764ba2;
+}
+
+.submit-btn:hover {
+  background: #653a8a;
+}
+
+.submit-btn.selected {
+  background: #27ae60;
+}
+
+/* I want a class for the color of feedback report based on correctness */
+.feedback-report.correct {
+  color: #27ae60;
+}
+
+.feedback-report.incorrect {
+  color: #e74c3c;
+}
+
+.graphic-prompt-subtitle {
+  color: #666;
+  font-style: italic;
+  margin-bottom: 10px;
 }

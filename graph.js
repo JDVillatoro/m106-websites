@@ -412,6 +412,98 @@ function generateSimpleGraph(n, edgeProb = 0.4) {
     return edges;
 }
 
+// ---------------------------------------------------------------------------
+// graphToDescription – convert graph data to a verbal description for screen readers.
+//
+// graph_data: { n, names: string[], edges: [{source, target, label?, isDirected?}] }
+//   source/target are internal ids like "v0", "v1"; names maps index → display label.
+//
+// Returns: { text: string, isLong: boolean }
+//   isLong is true when there are more than 10 edges (caller may warn before reading).
+// ---------------------------------------------------------------------------
+function graphToDescription(graph_data) {
+    if (!graph_data) return { text: 'No graph data available.', isLong: false };
+
+    const n     = Number(graph_data.n) || 0;
+    const names = Array.isArray(graph_data.names) ? graph_data.names : [];
+    const edges = Array.isArray(graph_data.edges)
+        ? graph_data.edges.filter(e => e && e.target !== null && e.target !== undefined)
+        : [];
+
+    // Helper: resolve internal id (e.g. "v2") to display name, falling back to vertex number
+    function label(id) {
+        if (typeof id !== 'string') return String(id);
+        const match = id.match(/^v(\d+)$/);
+        if (match) {
+            const i = parseInt(match[1], 10);
+            return (names[i] && String(names[i]).trim()) ? String(names[i]).trim() : String(i + 1);
+        }
+        return id;
+    }
+
+    // Determine whether ALL labelled edges carry numeric-only labels → use "weight" terminology
+    const labelledEdges = edges.filter(e => e.label && String(e.label).trim() !== '');
+    const allNumericLabels = labelledEdges.length > 0 &&
+        labelledEdges.every(e => !isNaN(Number(String(e.label).trim())));
+
+    const edgeCount = edges.length;
+    const isLong    = edgeCount > 10 || n > 8;
+
+    // --- Build description ---
+    const parts = [];
+
+    // Opening summary
+    parts.push(`A graph with ${n} ${n === 1 ? 'vertex' : 'vertices'} and ${edgeCount} ${edgeCount === 1 ? 'edge' : 'edges'}.`);
+
+    // Long-description warning immediately after the summary
+    if (isLong) {
+        parts.push(`Note: this graph is large. The following description may be lengthy.`);
+    }
+
+    // Vertex list
+    for (let i = 0; i < n; i++) {
+        const name = (names[i] && String(names[i]).trim()) ? String(names[i]).trim() : null;
+        parts.push(name ? `Vertex ${i + 1} labeled ${name}.` : `Vertex ${i + 1}.`);
+    }
+
+    // Transition sentence before edge list
+    parts.push(edgeCount === 0 ? 'There are no edges.' : 'The full edge list is as follows.');
+
+    // Edge list
+    for (const e of edges) {
+        const src = label(e.source);
+        const tgt = label(e.target);
+        const directed = !!e.isDirected;
+        const lbl = e.label && String(e.label).trim() !== '' ? String(e.label).trim() : null;
+
+        let sentence;
+        if (directed) {
+            if (lbl !== null) {
+                sentence = allNumericLabels
+                    ? `A directed edge from ${src} to ${tgt} with weight ${lbl}.`
+                    : `A directed edge from ${src} to ${tgt} labeled ${lbl}.`;
+            } else {
+                sentence = `A directed edge from ${src} to ${tgt}.`;
+            }
+        } else {
+            if (e.source === e.target) {
+                sentence = lbl !== null
+                    ? `A loop on vertex ${src} labeled ${lbl}.`
+                    : `A loop on vertex ${src}.`;
+            } else if (lbl !== null) {
+                sentence = allNumericLabels
+                    ? `An edge between ${src} and ${tgt} with weight ${lbl}.`
+                    : `An edge between ${src} and ${tgt} labeled ${lbl}.`;
+            } else {
+                sentence = `An edge between ${src} and ${tgt}.`;
+            }
+        }
+        parts.push(sentence);
+    }
+
+    return { text: parts.join(' '), isLong };
+}
+
 // Degree of a vertex in an undirected graph. Loops count twice; multiple edges counted.
 function degreeOf(vertexId, edges) {
     let deg = 0;

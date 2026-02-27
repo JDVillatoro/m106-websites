@@ -26,42 +26,55 @@
             <div class="mode-options-panel">
                 <button type="button" id="edit-graph-btn" class="edit-button">Edit Graph</button>
                 <button type="button" id="download-btn" class="download-button">Download</button>
+                <button type="button" id="alt-text-btn" class="edit-button">Alt Text</button>
                 <button type="button" id="done-edit-btn" class="edit-button editing" style="display:none;">Done
                     Editing</button>
                 <button type="button" id="close-edit-btn" class="edit-button" style="display:none;">Cancel</button>
             </div>
 
-                    <!-- Editor panel inside the card (hidden by default) -->
-        <div id="graph-editor"
-            style="display:none; margin-top:12px; padding:12px; background: #fbfdff; border-radius:8px;">
-            <h2>Edit Graph</h2>
-            <p style="color:#444; font-size:14px; margin-top:6px;">
-                You can change the names of the edges and vertices here. To add an edge, pick a source and target.
-                To make a weighted graph just add labels to the edges.
-            </p>
-            <div class="editor-row" style="margin-top:12px;">
-                <label for="editor-vertices">Number of vertices:</label>
-                <input type="number" id="editor-vertices" min="1" value="5" style="width:80px; margin-left:8px;">
-                <button type="button" id="set-vertices-btn" style="margin-left:12px;">Set Vertices</button>
-                <button id="editor-random-btn" type="button" style="margin-left:8px;">Randomize</button>
-            </div>
-            <div id="vertex-names" style="margin-top:12px;"></div>
+            <!-- Alt text panel, hidden by default -->
+<div id="alt-text-panel" style="display:none; margin-top:12px; padding:12px; background:#fbfdff; border-radius:8px;">
+    <div style="position:relative; margin-top:8px;">
+        <textarea id="alt-text-output" readonly rows="6"
+            style="width:100%; box-sizing:border-box; font-size:14px; resize:vertical;"></textarea>
+        <button type="button" id="alt-text-copy-btn" title="Copy to clipboard"
+            style="position:absolute; top:6px; right:6px; padding:4px 6px; font-size:12px; line-height:1; cursor:pointer;">⧉</button>
+    </div>
+</div>
 
-            <hr style="margin-top:12px; margin-bottom:12px;">
-            <div class="editor-row">
-                <h3 style="margin:0;">Edges</h3>
-            </div>
-            <!-- Add Edge controls removed: adding edges now creates blank rows in the editable edge list -->
-            <div id="edge-list"
-                style="margin-top:12px; background:#fbfdff; border-radius:6px; padding:8px; min-height:40px;"></div>
+            <!-- Editor panel inside the card (hidden by default) -->
+            <div id="graph-editor"
+                style="display:none; margin-top:12px; padding:12px; background: #fbfdff; border-radius:8px;">
+                <h2>Edit Graph</h2>
+                <p style="color:#444; font-size:14px; margin-top:6px;">
+                    You can change the names of the edges and vertices here. To add an edge, pick a source and target.
+                    To make a weighted graph just add labels to the edges.
+                </p>
+                <div class="editor-row" style="margin-top:12px;">
+                    <label for="editor-vertices">Number of vertices:</label>
+                    <input type="number" id="editor-vertices" min="1" value="5" style="width:80px; margin-left:8px;">
+                    <button type="button" id="set-vertices-btn" style="margin-left:12px;">Set Vertices</button>
+                    <button id="editor-random-btn" type="button" style="margin-left:8px;">Randomize</button>
+                </div>
+                <div id="vertex-names" style="margin-top:12px;"></div>
 
-            <!-- <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+                <hr style="margin-top:12px; margin-bottom:12px;">
+                <div class="editor-row">
+                    <h3 style="margin:0;">Edges</h3>
+                </div>
+                <!-- Add Edge controls removed: adding edges now creates blank rows in the editable edge list -->
+                <div id="edge-list"
+                    style="margin-top:12px; background:#fbfdff; border-radius:6px; padding:8px; min-height:40px;"></div>
+
+                <!-- <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
                 <button id="apply-graph-btn">Apply Graph</button>
             </div> -->
-        </div>
+            </div>
 
             <div class="graphic-prompt">
-                <div id="make-graph-area"></div>
+                <div id="make-graph-area" role="img" aria-label="Graph diagram"
+                    aria-describedby="make-graph-description"></div>
+                <p id="make-graph-description" class="sr-only"></p>
                 <div id="make-graph-zoom-controls" class="zoom-controls">
                     <button class="zoom-button zoom-in">Zoom In</button>
                     <button class="zoom-button zoom-out">Zoom Out</button>
@@ -80,7 +93,11 @@
                 <button id="degree-reset-btn" class="reset-session-btn">Reset</button>
             </div>
             <div class="graphic-prompt">
-                <div id="degree-graph-area"></div>
+                <h2>Here is a graph...</h2>
+                <p class="graphic-prompt-subtitle">Can you determine the degree sequence?</p>
+                <div id="degree-graph-area" role="img" aria-label="Graph diagram"
+                    aria-describedby="degree-graph-description"></div>
+                <p id="degree-graph-description" class="sr-only"></p>
                 <div id="degree-zoom-controls" class="zoom-controls">
                     <button class="zoom-button zoom-in">Zoom In</button>
                     <button class="zoom-button zoom-out">Zoom Out</button>
@@ -89,7 +106,7 @@
             </div>
 
             <div class="training-actions">
-                <h2 id="training-actions-title">What is the Degree Sequence of the above graph?</h2>
+                <h2 id="training-actions-title">Input the degree sequence</h2>
                 <div style="margin-top:6px; display:flex; gap:8px; align-items:center;">
                     <label for="degree-answer" style="margin-right:6px;">Degree Sequence = </label>
                     <input class="text-input" type="text" id="degree-answer"
@@ -117,6 +134,9 @@
 
 
     </div>
+    <!-- Screen reader live region: announces graph changes politely -->
+    <div id="graph-sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true" role="status"></div>
+
     <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <script src="cytoscape-svg.js"></script>
     <script src="graph.js"></script>

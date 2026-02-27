@@ -168,10 +168,36 @@ function draw_graph(graph_data, cy) {
 }
 
 // ---------------------------------------------------------------------------
+// Screen-reader accessibility helpers
+// ---------------------------------------------------------------------------
+
+// descriptionElementId: the id of the <p> holding the static description
+// graph_data: { n, names, edges } in draw_graph format
+// announce: if true, also push "New graph loaded. <description>" into the live region
+function updateGraphAria(descriptionElementId, graph_data, announce) {
+    const descEl = document.getElementById(descriptionElementId);
+    const announcer = document.getElementById('graph-sr-announcer');
+    if (!descEl) return;
+
+    const { text, isLong } = graphToDescription(graph_data);
+    descEl.textContent = text;
+
+    if (announce && announcer) {
+        // Momentarily clear the announcer so screen readers re-announce even if text is identical
+        announcer.textContent = '';
+        // Use setTimeout to ensure the DOM mutation is detected as a change
+        setTimeout(() => {
+            const prefix = 'New graph loaded. ';
+            announcer.textContent = prefix + text;
+        }, 50);
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Mode state
 // ---------------------------------------------------------------------------
 const modeStates = {
-    make:   { nodes: [], edges: [], _initialized: false },
+    make: { nodes: [], edges: [], _initialized: false },
     degree: { nodes: [], edges: [], expectedSeq: [], stats: { correct: 0, incorrect: 0 }, _initialized: false }
 };
 let currentMode = 'make';
@@ -179,23 +205,30 @@ let currentMode = 'make';
 // ---------------------------------------------------------------------------
 // DOM refs
 // ---------------------------------------------------------------------------
-const editBtn        = document.getElementById('edit-graph-btn');
-const downloadBtn    = document.getElementById('download-btn');
-const doneEditBtn    = document.getElementById('done-edit-btn');
-const closeEditBtn   = document.getElementById('close-edit-btn');
-const modeMakeBtn    = document.getElementById('mode-make');
-const modeDegreeBtn  = document.getElementById('mode-degree');
-const editor         = document.getElementById('graph-editor');
+const editBtn = document.getElementById('edit-graph-btn');
+const downloadBtn = document.getElementById('download-btn');
+
+const altTextBtn = document.getElementById('alt-text-btn');
+const altTextPanel = document.getElementById('alt-text-panel');
+const altTextOutput = document.getElementById('alt-text-output');
+const altTextCopyBtn = document.getElementById('alt-text-copy-btn');
+
+
+const doneEditBtn = document.getElementById('done-edit-btn');
+const closeEditBtn = document.getElementById('close-edit-btn');
+const modeMakeBtn = document.getElementById('mode-make');
+const modeDegreeBtn = document.getElementById('mode-degree');
+const editor = document.getElementById('graph-editor');
 const setVerticesBtn = document.getElementById('set-vertices-btn');
 const editorVertices = document.getElementById('editor-vertices');
 const vertexNamesDiv = document.getElementById('vertex-names');
-const edgeListDiv    = document.getElementById('edge-list');
+const edgeListDiv = document.getElementById('edge-list');
 const editorRandomBtn = document.getElementById('editor-random-btn');
 
 // These checkboxes don't exist in the current HTML but guard against errors if added later
-const directedCheckbox   = document.getElementById('directed-checkbox');
+const directedCheckbox = document.getElementById('directed-checkbox');
 const labelEdgesCheckbox = document.getElementById('label-edges-checkbox');
-const edgeLabelInput     = document.getElementById('edge-label');
+const edgeLabelInput = document.getElementById('edge-label');
 
 let editorNodes = [];  // display names parallel to v0..v{n-1}
 let editorEdges = [];  // [{source: "v0", target: "v1", label, isDirected}]
@@ -223,6 +256,7 @@ function setMode(mode) {
             setTimeout(() => {
                 const cy = getCy('make');
                 if (cy) draw_graph({ n: ms.nodes.length, names: ms.nodes, edges: ms.edges }, cy);
+                updateGraphAria('make-graph-description', { n: ms.nodes.length, names: ms.nodes, edges: ms.edges }, true);
             }, 30);
         }
 
@@ -244,25 +278,26 @@ function setMode(mode) {
                 setTimeout(() => {
                     const cy = getCy('degree');
                     if (cy) draw_graph({ n: ds.nodes.length, names: ds.nodes, edges: ds.edges }, cy);
+                    updateGraphAria('degree-graph-description', { n: ds.nodes.length, names: ds.nodes, edges: ds.edges }, true);
                 }, 30);
             }
         }
     }
 }
 
-modeMakeBtn  && modeMakeBtn.addEventListener('click',  () => setMode('make'));
+modeMakeBtn && modeMakeBtn.addEventListener('click', () => setMode('make'));
 modeDegreeBtn && modeDegreeBtn.addEventListener('click', () => setMode('degree'));
 
 // ---------------------------------------------------------------------------
 // Random graph generation helpers
 // ---------------------------------------------------------------------------
 function makeLabels(n) {
-    if (n > 8) return Array.from({length: n}, (_, i) => String(i + 1));
-    return Array.from({length: n}, (_, i) => String.fromCharCode(65 + i));
+    if (n > 8) return Array.from({ length: n }, (_, i) => String(i + 1));
+    return Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i));
 }
 
 function generateAndRenderRandom(n = 5, populateEditor = false) {
-    const edges  = generateRandomGraph(n, false, false, 1);
+    const edges = generateRandomGraph(n, false, false, 1);
     const labels = makeLabels(n);
 
     modeStates.make.nodes = labels.slice();
@@ -270,6 +305,7 @@ function generateAndRenderRandom(n = 5, populateEditor = false) {
 
     const cy = getCy('make');
     if (cy) draw_graph({ n, names: labels, edges }, cy);
+    updateGraphAria('make-graph-description', { n, names: labels, edges }, true);
 
     if (populateEditor) {
         editorVertices.value = n;
@@ -277,20 +313,20 @@ function generateAndRenderRandom(n = 5, populateEditor = false) {
         createVertexInputs(n);
         const inputs = vertexNamesDiv.querySelectorAll('input');
         inputs.forEach((inp, i) => {
-            inp.value       = labels[i];
+            inp.value = labels[i];
             inp.placeholder = labels[i];
             inp.dataset.prev = labels[i];
-            inp.dataset.id   = `v${i}`;
+            inp.dataset.id = `v${i}`;
         });
         editorEdges = edges
             .filter(e => e.target !== null)
             .map(e => ({ source: e.source, target: e.target, label: e.weight != null ? String(e.weight) : null, isDirected: !!e.isDirected, directed: !!e.isDirected }));
         renderEdgeList();
         editor.style.display = 'block';
-        if (editBtn)     editBtn.style.display     = 'none';
-        if (doneEditBtn) doneEditBtn.style.display  = '';
+        if (editBtn) editBtn.style.display = 'none';
+        if (doneEditBtn) doneEditBtn.style.display = '';
         if (closeEditBtn) closeEditBtn.style.display = '';
-        if (downloadBtn) downloadBtn.style.display  = 'none';
+        if (downloadBtn) downloadBtn.style.display = 'none';
     }
 }
 
@@ -310,38 +346,38 @@ editBtn && editBtn.addEventListener('click', () => {
     if (cy) {
         const nodes = cy.nodes().map(nd => ({ id: nd.data('id'), name: nd.data('displayName') || '' }));
         const cyEdges = cy.edges().map(ed => ({
-            source:     ed.data('source'),
-            target:     ed.data('target'),
-            label:      ed.data('label') || null,
+            source: ed.data('source'),
+            target: ed.data('target'),
+            label: ed.data('label') || null,
             isDirected: ed.data('edgeType') === 'directed',
-            directed:   ed.data('edgeType') === 'directed'
+            directed: ed.data('edgeType') === 'directed'
         }));
         editorVertices.value = nodes.length || 1;
         editorNodes = nodes.map(nd => nd.name);
         createVertexInputs(nodes.length || 1);
         const inputs = vertexNamesDiv.querySelectorAll('input');
         inputs.forEach((inp, i) => {
-            inp.value        = nodes[i] ? nodes[i].name : '';
-            inp.placeholder  = nodes[i] ? nodes[i].name : '';
+            inp.value = nodes[i] ? nodes[i].name : '';
+            inp.placeholder = nodes[i] ? nodes[i].name : '';
             inp.dataset.prev = inp.value;
-            inp.dataset.id   = nodes[i] ? nodes[i].id : `v${i}`;
+            inp.dataset.id = nodes[i] ? nodes[i].id : `v${i}`;
         });
         editorEdges = cyEdges;
         renderEdgeList();
     }
     editor.style.display = 'block';
-    if (editBtn)      editBtn.style.display      = 'none';
-    if (doneEditBtn)  doneEditBtn.style.display   = '';
-    if (closeEditBtn) closeEditBtn.style.display  = '';
-    if (downloadBtn)  downloadBtn.style.display   = 'none';
+    if (editBtn) editBtn.style.display = 'none';
+    if (doneEditBtn) doneEditBtn.style.display = '';
+    if (closeEditBtn) closeEditBtn.style.display = '';
+    if (downloadBtn) downloadBtn.style.display = 'none';
 });
 
 closeEditBtn && closeEditBtn.addEventListener('click', () => {
     editor.style.display = 'none';
-    if (editBtn)      editBtn.style.display      = '';
-    if (doneEditBtn)  doneEditBtn.style.display   = 'none';
-    if (closeEditBtn) closeEditBtn.style.display  = 'none';
-    if (downloadBtn)  downloadBtn.style.display   = '';
+    if (editBtn) editBtn.style.display = '';
+    if (doneEditBtn) doneEditBtn.style.display = 'none';
+    if (closeEditBtn) closeEditBtn.style.display = 'none';
+    if (downloadBtn) downloadBtn.style.display = '';
 });
 
 // ---------------------------------------------------------------------------
@@ -350,7 +386,7 @@ closeEditBtn && closeEditBtn.addEventListener('click', () => {
 function applyGraphAction() {
     const inputs = vertexNamesDiv.querySelectorAll('input');
     const vertices = Array.from(inputs).map((inp, idx) => ({
-        id:   inp.dataset.id || `v${idx}`,
+        id: inp.dataset.id || `v${idx}`,
         name: (inp.value || '').trim()
     }));
 
@@ -364,9 +400,9 @@ function applyGraphAction() {
         const tVert = vertices.find(v => v.id === e.target || v.name === String(e.target || '').trim());
         if (!sVert || !tVert) return;
         resolvedEdges.push({
-            source:     sVert.id,
-            target:     tVert.id,
-            label:      e.label || null,
+            source: sVert.id,
+            target: tVert.id,
+            label: e.label || null,
             isDirected: !!e.isDirected
         });
     });
@@ -376,12 +412,13 @@ function applyGraphAction() {
 
     const cy = getCy('make');
     if (cy) draw_graph({ n, names, edges: resolvedEdges }, cy);
+    updateGraphAria('make-graph-description', { n, names, edges: resolvedEdges }, true);
 
     editor.style.display = 'none';
-    if (editBtn)      editBtn.style.display      = '';
-    if (doneEditBtn)  doneEditBtn.style.display   = 'none';
-    if (closeEditBtn) closeEditBtn.style.display  = 'none';
-    if (downloadBtn)  downloadBtn.style.display   = '';
+    if (editBtn) editBtn.style.display = '';
+    if (doneEditBtn) doneEditBtn.style.display = 'none';
+    if (closeEditBtn) closeEditBtn.style.display = 'none';
+    if (downloadBtn) downloadBtn.style.display = '';
 }
 
 doneEditBtn && doneEditBtn.addEventListener('click', applyGraphAction);
@@ -396,7 +433,7 @@ downloadBtn && downloadBtn.addEventListener('click', async () => {
         try {
             const svgStr = cy.svg({ scale: 1 });
             const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-            const url  = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'graph.svg';
             document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
             return;
@@ -405,9 +442,9 @@ downloadBtn && downloadBtn.addEventListener('click', async () => {
     if (typeof cy.png === 'function') {
         try {
             const dataUrl = cy.png({ full: true, scale: 1 });
-            const res  = await fetch(dataUrl);
+            const res = await fetch(dataUrl);
             const blob = await res.blob();
-            const url  = URL.createObjectURL(blob);
+            const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'graph.png';
             document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
             return;
@@ -415,6 +452,31 @@ downloadBtn && downloadBtn.addEventListener('click', async () => {
     }
     alert('Export not available. Add the cytoscape-svg extension to enable SVG export.');
 });
+
+altTextBtn && altTextBtn.addEventListener('click', () => {
+    const isVisible = altTextPanel.style.display !== 'none';
+    if (isVisible) {
+        altTextPanel.style.display = 'none';
+    } else {
+        const ms = modeStates.make;
+        const { text } = graphToDescription({ n: ms.nodes.length, names: ms.nodes, edges: ms.edges });
+        altTextOutput.value = text;
+        altTextPanel.style.display = 'block';
+    }
+});
+
+altTextCopyBtn && altTextCopyBtn.addEventListener('click', () => {
+    navigator.clipboard.writeText(altTextOutput.value).then(() => {
+        altTextCopyBtn.textContent = '✓';
+        setTimeout(() => { altTextCopyBtn.textContent = '⧉'; }, 2000);
+    }).catch(() => {
+        altTextOutput.select();
+        document.execCommand('copy');
+        altTextCopyBtn.textContent = '✓';
+        setTimeout(() => { altTextCopyBtn.textContent = '⧉'; }, 2000);
+    });
+});
+
 
 // ---------------------------------------------------------------------------
 // Editor – vertex inputs
@@ -424,15 +486,15 @@ setVerticesBtn && setVerticesBtn.addEventListener('click', () => {
     if (isNaN(n) || n < 1) return;
 
     const oldInputs = vertexNamesDiv.querySelectorAll('input');
-    const oldNames  = Array.from(oldInputs).map(i => i.value || i.placeholder);
+    const oldNames = Array.from(oldInputs).map(i => i.value || i.placeholder);
 
     createVertexInputs(n);
 
     const newInputs = vertexNamesDiv.querySelectorAll('input');
     for (let i = 0; i < newInputs.length; i++) {
         if (i < oldNames.length) {
-            newInputs[i].value        = oldNames[i];
-            newInputs[i].placeholder  = oldNames[i];
+            newInputs[i].value = oldNames[i];
+            newInputs[i].placeholder = oldNames[i];
             newInputs[i].dataset.prev = oldNames[i];
         }
     }
@@ -462,24 +524,24 @@ function createVertexInputs(n) {
     list.classList.add('vertex-list');
 
     for (let i = 0; i < n; i++) {
-        const line  = document.createElement('div');
+        const line = document.createElement('div');
         line.classList.add('vertex-line');
 
-        const lbl   = document.createElement('label');
+        const lbl = document.createElement('label');
         lbl.textContent = `${i + 1}.`;
         lbl.classList.add('vertex-label');
 
         const input = document.createElement('input');
-        input.type          = 'text';
-        input.placeholder   = '';
-        input.value         = editorNodes[i] || '';
-        input.dataset.prev  = input.value;
+        input.type = 'text';
+        input.placeholder = '';
+        input.value = editorNodes[i] || '';
+        input.dataset.prev = input.value;
         input.dataset.index = i;
-        input.dataset.id    = `v${i}`;
+        input.dataset.id = `v${i}`;
         input.classList.add('vertex-input');
 
         input.addEventListener('input', ev => {
-            const idx     = parseInt(ev.target.dataset.index, 10);
+            const idx = parseInt(ev.target.dataset.index, 10);
             const newName = (ev.target.value || '').trim();
             const prevName = ev.target.dataset.prev || '';
             renameVertex(idx, newName, prevName);
@@ -516,20 +578,20 @@ function renameVertex(index, newName, prevDisplayedName) {
 function renderEdgeList() {
     edgeListDiv.innerHTML = '';
 
-    const inputs   = vertexNamesDiv.querySelectorAll('input');
+    const inputs = vertexNamesDiv.querySelectorAll('input');
     const vertices = Array.from(inputs).map((inp, idx) => ({
-        id:    inp.dataset.id || `v${idx}`,
-        name:  (inp.value || '').trim(),
+        id: inp.dataset.id || `v${idx}`,
+        name: (inp.value || '').trim(),
         index: idx
     }));
 
     // Header row
     const hdr = document.createElement('div');
     hdr.classList.add('edge-list-header');
-    ['Start','End','Label','Directed',''].forEach((txt, i) => {
+    ['Start', 'End', 'Label', 'Directed', ''].forEach((txt, i) => {
         const cell = document.createElement('div');
         cell.textContent = txt;
-        cell.classList.add('edge-col', ['edge-col-start','edge-col-end','edge-col-name','edge-col-directed','edge-col-actions'][i]);
+        cell.classList.add('edge-col', ['edge-col-start', 'edge-col-end', 'edge-col-name', 'edge-col-directed', 'edge-col-actions'][i]);
         hdr.appendChild(cell);
     });
     edgeListDiv.appendChild(hdr);
@@ -541,7 +603,7 @@ function renderEdgeList() {
         // Helper: build a vertex select
         function makeVertexSelect(currentVal) {
             const sel = document.createElement('select');
-            const ph  = document.createElement('option'); ph.value = ''; ph.textContent = '--'; sel.appendChild(ph);
+            const ph = document.createElement('option'); ph.value = ''; ph.textContent = '--'; sel.appendChild(ph);
             vertices.forEach(v => {
                 const o = document.createElement('option');
                 o.value = v.id;
@@ -561,20 +623,20 @@ function renderEdgeList() {
         toSel.addEventListener('change', () => { editorEdges[idx].target = toSel.value; });
 
         const lblInput = document.createElement('input');
-        lblInput.type        = 'text';
+        lblInput.type = 'text';
         lblInput.placeholder = 'label';
-        lblInput.value       = e.label || '';
+        lblInput.value = e.label || '';
         lblInput.style.width = '100%';
         lblInput.style.boxSizing = 'border-box';
         lblInput.addEventListener('input', () => { editorEdges[idx].label = lblInput.value; });
 
-        const dirCheckbox       = document.createElement('input');
-        dirCheckbox.type        = 'checkbox';
-        dirCheckbox.title       = 'Directed';
-        dirCheckbox.checked     = !!(e.isDirected || e.directed);
+        const dirCheckbox = document.createElement('input');
+        dirCheckbox.type = 'checkbox';
+        dirCheckbox.title = 'Directed';
+        dirCheckbox.checked = !!(e.isDirected || e.directed);
         dirCheckbox.addEventListener('change', () => {
             editorEdges[idx].isDirected = dirCheckbox.checked;
-            editorEdges[idx].directed   = dirCheckbox.checked;
+            editorEdges[idx].directed = dirCheckbox.checked;
         });
 
         const rem = document.createElement('button');
@@ -588,11 +650,11 @@ function renderEdgeList() {
             return div;
         }
 
-        row.appendChild(makeCol('edge-col-start',    fromSel));
-        row.appendChild(makeCol('edge-col-end',      toSel));
-        row.appendChild(makeCol('edge-col-name',     lblInput));
+        row.appendChild(makeCol('edge-col-start', fromSel));
+        row.appendChild(makeCol('edge-col-end', toSel));
+        row.appendChild(makeCol('edge-col-name', lblInput));
         row.appendChild(makeCol('edge-col-directed', dirCheckbox));
-        row.appendChild(makeCol('edge-col-actions',  rem));
+        row.appendChild(makeCol('edge-col-actions', rem));
         edgeListDiv.appendChild(row);
     });
 
@@ -617,7 +679,7 @@ function loadDegreeStats() {
         const raw = localStorage.getItem('graph_degree_stats');
         if (raw) {
             const s = JSON.parse(raw);
-            modeStates.degree.stats.correct   = s.correct   || 0;
+            modeStates.degree.stats.correct = s.correct || 0;
             modeStates.degree.stats.incorrect = s.incorrect || 0;
         }
     } catch (e) { /* ignore */ }
@@ -632,37 +694,37 @@ function saveDegreeStats() {
 function updateDegreeStatsDisplay() {
     const stats = modeStates.degree.stats;
     const total = stats.correct + stats.incorrect;
-    const pct   = total === 0 ? 0 : Math.round((stats.correct / total) * 100);
+    const pct = total === 0 ? 0 : Math.round((stats.correct / total) * 100);
     const el = id => document.getElementById(id);
-    if (el('degree-correct'))   el('degree-correct').textContent   = stats.correct;
+    if (el('degree-correct')) el('degree-correct').textContent = stats.correct;
     if (el('degree-incorrect')) el('degree-incorrect').textContent = stats.incorrect;
-    if (el('degree-accuracy'))  el('degree-accuracy').textContent  = pct + '%';
+    if (el('degree-accuracy')) el('degree-accuracy').textContent = pct + '%';
 }
 
 // Show the answer input / submit button; hide the feedback box
 function showAnswerInput() {
-    const answerInput  = document.getElementById('degree-answer');
-    const submitBtn    = document.getElementById('degree-submit-btn');
-    const feedbackBox  = document.getElementById('training-feedback');
-    if (answerInput)  { answerInput.value = ''; answerInput.disabled = false; }
-    if (submitBtn)    submitBtn.style.display = '';
-    if (feedbackBox)  feedbackBox.style.display = 'none';
+    const answerInput = document.getElementById('degree-answer');
+    const submitBtn = document.getElementById('degree-submit-btn');
+    const feedbackBox = document.getElementById('training-feedback');
+    if (answerInput) { answerInput.value = ''; answerInput.disabled = false; }
+    if (submitBtn) submitBtn.style.display = '';
+    if (feedbackBox) feedbackBox.style.display = 'none';
 }
 
 // Show the feedback box; hide the submit button and lock the input
 function showFeedback(correct, expected) {
-    const answerInput  = document.getElementById('degree-answer');
-    const submitBtn    = document.getElementById('degree-submit-btn');
-    const feedbackBox  = document.getElementById('training-feedback');
+    const answerInput = document.getElementById('degree-answer');
+    const submitBtn = document.getElementById('degree-submit-btn');
+    const feedbackBox = document.getElementById('training-feedback');
     const feedbackText = document.getElementById('feedback-text');
 
     if (answerInput) answerInput.disabled = true;
-    if (submitBtn)   submitBtn.style.display = 'none';
-
+    if (submitBtn) submitBtn.style.display = 'none';
+    // Use the feedback report classes to show correct/incorrect styling
     if (feedbackText) {
-        feedbackText.textContent = correct
-            ? '✓ Correct!'
-            : `✗ Incorrect. The correct degree sequence was {${expected.join(',')}}.`;
+        feedbackText.innerHTML = correct
+            ? '✓ <strong class="feedback-report correct">Correct!</strong>'
+            : `✗ <strong class="feedback-report incorrect">Incorrect.</strong> The correct degree sequence was {${expected.join(',')}}.`;
     }
 
     if (feedbackBox) {
@@ -672,15 +734,15 @@ function showFeedback(correct, expected) {
 }
 
 function bindDegreeControls() {
-    const resetBtn    = document.getElementById('degree-reset-btn');
-    const submitBtn   = document.getElementById('degree-submit-btn');
+    const resetBtn = document.getElementById('degree-reset-btn');
+    const submitBtn = document.getElementById('degree-submit-btn');
     const answerInput = document.getElementById('degree-answer');
-    const nextBtn     = document.getElementById('training-next');
+    const nextBtn = document.getElementById('training-next');
 
     if (resetBtn && !resetBtn.dataset.bound) {
         resetBtn.dataset.bound = '1';
         resetBtn.onclick = () => {
-            modeStates.degree.stats.correct   = 0;
+            modeStates.degree.stats.correct = 0;
             modeStates.degree.stats.incorrect = 0;
             saveDegreeStats();
             updateDegreeStatsDisplay();
@@ -699,7 +761,7 @@ function bindDegreeControls() {
                 return;
             }
             const expected = modeStates.degree.expectedSeq.slice();
-            const correct  = arraysEqual(got, expected);
+            const correct = arraysEqual(got, expected);
             if (correct) {
                 modeStates.degree.stats.correct++;
             } else {
@@ -739,8 +801,8 @@ function arraysEqual(a, b) {
 }
 
 function startDegreeSequence() {
-    const n      = Math.floor(Math.random() * 5) + 3;   // 3..7
-    let   edges  = generateSimpleGraph(n, 0.4);
+    const n = Math.floor(Math.random() * 5) + 3;   // 3..7
+    let edges = generateSimpleGraph(n, 0.4);
 
     // Occasionally add loops / parallel edges to make it more interesting
     if (Math.random() < 0.5) {
@@ -759,13 +821,14 @@ function startDegreeSequence() {
     }
 
     const labels = makeLabels(n);
-    const ds     = modeStates.degree;
-    ds.nodes       = labels.slice();           // store display names
-    ds.edges       = edges;
+    const ds = modeStates.degree;
+    ds.nodes = labels.slice();           // store display names
+    ds.edges = edges;
     ds.expectedSeq = degreeSequence(edges, n);
 
     const cy = getCy('degree');
     if (cy) draw_graph({ n, names: labels, edges }, cy);
+    updateGraphAria('degree-graph-description', { n, names: labels, edges }, true);
 
     updateDegreeStatsDisplay();
 
