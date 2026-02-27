@@ -1,11 +1,16 @@
-/* Minimal stylesheet inspired by style_inspo.css */
+/* Minimal stylesheet — reorganized and cleaned
+   Sections:
+   1) Reset & base
+   2) Layout & container
+   3) Panels and graph viewport
+   4) Forms / inputs
+   5) Editor / vertex / edge list
+   6) Controls / buttons
+   7) Training-specific styles
+   8) Responsive rules
+*/
 
-h2 {
-  color: #555;
-  margin-bottom: 15px;
-  font-size: 1.5em;
-}
-
+/* 1) Reset & base --------------------------------------------------------- */
 * {
   margin: 0;
   padding: 0;
@@ -17,71 +22,9 @@ body {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   padding: 20px;
-  /* -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale; */
 }
 
-.edit-button {
-  margin-bottom: 15px;
-  background: #27ae60;
-}
-
-.edit-button:hover {
-  background: #229954;
-}
-
-.download-button {
-  margin-bottom: 15px;
-  background: #27ae60;
-}
-
-.download-button:hover {
-  background: #229954;
-}
-
-
-.edit-button.editing {
-  background: #e67e22;
-}
-
-.edit-button.editing:hover {
-  background: #d35400;
-}
-
-h1 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
-  font-size: 2.5em;
-}
-
-.container {
-  max-width: 900px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 10px;
-  padding: 30px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-
-
-/* Unified panel style for editor and degree mode */
-#graph-editor,
-#degree-panel {
-  margin-top: 12px;
-  padding: 12px;
-  background: #fbfdff;
-  border-radius: 8px;
-}
-
-/* Graph viewing panel wrapper */
-#graph-window {
-  margin-top: 12px;
-  background: transparent;
-}
-
-/* Visually hidden but readable by screen readers */
+/* Accessible visually-hidden utility */
 .sr-only {
   position: absolute;
   width: 1px;
@@ -93,78 +36,30 @@ h1 {
   border: 0;
 }
 
-p {
-  display: block;
-  margin-block-start: 1em;
-  margin-block-end: 1em;
-  margin-inline-start: 0px;
-  margin-inline-end: 0px;
-}
-
-.input-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-label {
+h1 {
+  text-align: center;
   color: #333;
+  margin-bottom: 20px;
+  font-size: 2.5em;
 }
 
-input[type="number"] {
-  width: 70px;
-  padding: 8px;
-  border: 1px solid #d6dbe9;
-  border-radius: 6px;
-  font-size: 14px;
+h2 {
+  color: #555;
+  margin-bottom: 15px;
+  font-size: 1.5em;
 }
 
-/* Consistent text input styling (matches vertex editor inputs) */
-input[type="text"],
-.vertex-input,
-textarea {
-  flex: 1;
-  min-width: 200px;
-  padding: 10px;
-  border: 2px solid #ccc;
-  border-radius: 5px;
-  font-size: 16px;
-  transition: border-color 0.3s ease;
-}
 
-/* Consistent select styling */
-select {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #d6dbe9;
+/* 2) Layout & container -------------------------------------------------- */
+.container {
+  max-width: 900px;
+  margin: 0 auto;
   background: white;
-  font-size: 15px;
-  color: #222;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
-input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-}
-
-#csv-output {
-  background: #f0f4ff;
-  border-radius: 8px;
-  padding: 12px;
-  font-family: monospace;
-  white-space: pre-wrap;
-  margin-top: 12px;
-}
-
-.zoom-controls {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 12px;
-  margin-bottom: 18px;
-}
-
-/* Mode selector */
 .mode-selector {
   display: flex;
   justify-content: center;
@@ -172,7 +67,6 @@ input[type="checkbox"] {
   margin-bottom: 20px;
 }
 
-/* Left-align mode option buttons */
 .mode-options-panel {
   display: flex;
   flex-direction: row;
@@ -198,36 +92,81 @@ input[type="checkbox"] {
   opacity: 0.9;
 }
 
-
-#cy {
-  width: 100%;
-  height: 520px;
-  margin-top: 22px;
-  border-radius: 10px;
-  border: 2px solid rgba(0, 0, 0, 0.12);
-  box-sizing: border-box;
-  background: #ffffff00;
+/* 3) Panels & graph viewport -------------------------------------------- */
+/* Unified panel styling for editor/training areas */
+.mode-panel,
+#graph-editor,
+#degree-panel {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fbfdff;
+  border-radius: 8px;
 }
 
-/* Graph viewport used across modes */
+.graphic-prompt {
+  margin: 12px 0;
+}
+
+/* Graph area — cytoscape container and viewport share the same visual
+   treatment. Keep both selectors for compatibility with existing markup. */
+#cy,
 .graph-viewport {
   width: 100%;
   height: 520px;
   margin-top: 12px;
-  margin-bottom: 12px;
   border-radius: 10px;
   border: 2px solid rgba(0, 0, 0, 0.12);
+  background: transparent;
   box-sizing: border-box;
-  background: #ffffff00;
 }
 
-.graphic-prompt {
+/* 4) Forms / inputs ------------------------------------------------------ */
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+label {
+  color: #333;
+}
+
+input[type="number"],
+select {
+  padding: 8px;
+  border: 1px solid #d6dbe9;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+/* Text inputs & textarea — consistent, single authoritative rule */
+input[type="text"],
+textarea,
+.vertex-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 10px;
+  border: 1px solid #d6dbe9;
+  border-radius: 6px;
+  font-size: 15px;
+  transition: border-color 0.2s ease;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+#csv-output {
+  background: #f0f4ff;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: monospace;
+  white-space: pre-wrap;
   margin-top: 12px;
-  margin-bottom: 12px;
 }
 
-
-/* Editor / Vertex list styles */
+/* 5) Editor / vertex / edge list ---------------------------------------- */
 .vertex-header {
   margin: 0 0 8px 0;
   font-size: 1.05rem;
@@ -254,15 +193,6 @@ input[type="checkbox"] {
   font-size: 15px;
 }
 
-.vertex-input {
-  padding: 8px;
-  border-radius: 6px;
-  border: 1px solid #d6dbe9;
-  flex: 1;
-  font-size: 15px;
-}
-
-/* Edge list / table-like styles */
 .edge-list-header {
   display: flex;
   gap: 8px;
@@ -275,10 +205,7 @@ input[type="checkbox"] {
   padding: 2px 6px;
 }
 
-.edge-col-start {
-  width: 140px;
-}
-
+.edge-col-start,
 .edge-col-end {
   width: 140px;
 }
@@ -311,10 +238,7 @@ input[type="checkbox"] {
   background: #fff;
 }
 
-.edge-row select {
-  width: 100%;
-}
-
+.edge-row select,
 .edge-row input[type="text"] {
   width: 100%;
 }
@@ -325,7 +249,12 @@ input[type="checkbox"] {
   justify-content: center;
 }
 
+/* inline label used for mobile edge rows */
+.col-label {
+  display: none;
+}
 
+/* 6) Controls / buttons -------------------------------------------------- */
 button {
   background: #667eea;
   color: white;
@@ -334,93 +263,37 @@ button {
   border-radius: 5px;
   cursor: pointer;
   font-size: 16px;
-  transition: all 0.3s ease;
+  transition: all 0.18s ease;
 }
 
-.game-info {
-  background: #f0f4ff;
-  padding: 15px;
-  border-radius: 5px;
-  margin-bottom: 30px;
-  text-align: center;
+/* Edit / download share same accent — combine to avoid duplication */
+.edit-button,
+.download-button {
+  margin-bottom: 15px;
+  background: #27ae60;
 }
 
-.hint {
-  background: #f0f4ff;
-  padding: 15px;
-  border-radius: 5px;
-  margin-bottom: 30px;
-  text-align: center;
+.edit-button:hover,
+.download-button:hover {
+  background: #229954;
 }
 
-button:hover {
-  background: #5568d3;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+.edit-button.editing {
+  background: #e67e22;
 }
 
-@media (max-width: 720px) {
-  .container {
-    padding: 18px;
-  }
-
-  #cy {
-    height: 420px;
-  }
-
-  .graph-viewport {
-    height: 420px;
-  }
+.edit-button.editing:hover {
+  background: #d35400;
 }
 
-/* Responsive: stack edge row controls on narrow viewports */
-@media (max-width: 520px) {
-  .edge-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 6px;
-  }
-
-  .edge-col-start,
-  .edge-col-end {
-    width: 100%;
-  }
-
-  .edge-col-name {
-    width: 100%;
-    margin-top: 4px;
-  }
-
-  .edge-col-directed,
-  .edge-col-actions {
-    width: 100%;
-    display: flex;
-    justify-content: flex-start;
-    margin-top: 4px;
-    gap: 8px;
-  }
-
-  .edge-col-directed input[type="checkbox"] {
-    margin-left: 0;
-  }
+/* Small control refinements */
+.zoom-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0 18px;
 }
 
-/* Mobile: hide table header and show inline labels inside each row */
-@media (max-width: 520px) {
-  .edge-list-header {
-    display: none;
-  }
-
-  .col-label {
-    display: inline-block;
-    width: 6rem;
-    font-weight: 600;
-    color: #444;
-    margin-right: 8px;
-  }
-}
-
-/* Small refinements for controls */
 .zoom-controls button {
   padding: 8px 12px;
   font-size: 14px;
@@ -432,13 +305,28 @@ button:hover {
   font-size: 14px;
 }
 
-
-
-/* Training mode styles */
-.mode-panel {
-  margin-top: 30px;
+button:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
 }
 
+.game-info,
+.hint {
+  background: #f0f4ff;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.game-info p,
+.hint p {
+  color: #555;
+  line-height: 1.6;
+}
+
+/* 7) Training-specific styles ------------------------------------------- */
 .reset-session-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -459,14 +347,6 @@ button:hover {
 
 .reset-session-btn:active {
   transform: translateY(0);
-}
-
-.training-matrix {
-  margin-bottom: 30px;
-}
-
-.training-actions {
-  margin-bottom: 30px;
 }
 
 .training-feedback {
@@ -499,7 +379,6 @@ button:hover {
   flex-wrap: wrap;
 }
 
-
 .stats-display p {
   font-size: 18px;
   font-weight: bold;
@@ -509,7 +388,6 @@ button:hover {
 .stats-display span {
   color: #764ba2;
 }
-
 
 .submit-btn {
   margin-top: 15px;
@@ -524,7 +402,6 @@ button:hover {
   background: #27ae60;
 }
 
-/* I want a class for the color of feedback report based on correctness */
 .feedback-report.correct {
   color: #27ae60;
 }
@@ -538,3 +415,135 @@ button:hover {
   font-style: italic;
   margin-bottom: 10px;
 }
+
+/* 8) Responsive ---------------------------------------------------------- */
+@media (max-width: 720px) {
+  .container {
+    padding: 18px;
+  }
+
+  #cy,
+  .graph-viewport {
+    height: 420px;
+  }
+}
+
+@media (max-width: 520px) {
+
+  /* Stack edge-row controls vertically on small screens */
+  .edge-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .edge-col-start,
+  .edge-col-end,
+  .edge-col-name,
+  .edge-col-directed,
+  .edge-col-actions {
+    width: 100%;
+  }
+
+  .edge-col-directed,
+  .edge-col-actions {
+    display: flex;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  /* Hide header and show inline labels */
+  .edge-list-header {
+    display: none;
+  }
+
+  .col-label {
+    display: inline-block;
+    width: 6rem;
+    font-weight: 600;
+    color: #444;
+    margin-right: 8px;
+  }
+
+  .edge-col-directed input[type="checkbox"] {
+    margin-left: 0;
+  }
+}
+
+/* 9) Eulerian Trails Mode ------------------------------------------------- */
+.eulerian-section {
+  margin-bottom: 20px;
+}
+
+.eulerian-btn-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.eulerian-choice-btn {
+  padding: 12px 32px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 6px;
+  background: #667eea;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 3px 10px rgba(102,126,234,0.25);
+}
+
+.eulerian-choice-btn:hover {
+  background: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102,126,234,0.35);
+}
+
+.eulerian-choice-btn.selected-correct {
+  background: #27ae60;
+}
+
+.eulerian-choice-btn.selected-wrong {
+  background: #e74c3c;
+}
+
+/* Eulerize edge-add rows */
+.eulerian-edge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: #fff;
+  border-radius: 6px;
+  border: 1px solid #e0e4f0;
+}
+
+.eulerian-edge-row label {
+  font-weight: 600;
+  min-width: 36px;
+  color: #555;
+}
+
+.eulerian-edge-row input[type="text"] {
+  width: 80px;
+  min-width: unset;
+  flex: none;
+  padding: 7px 10px;
+  font-size: 15px;
+  text-transform: uppercase;
+}
+
+.eulerian-edge-row button {
+  padding: 6px 12px;
+  font-size: 14px;
+  background: #e74c3c;
+}
+
+.eulerian-edge-row button:hover {
+  background: #c0392b;
+}
+
+/* End of stylesheet */

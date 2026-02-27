@@ -22,14 +22,13 @@
         <div class="mode-selector">
             <button id="mode-make" class="mode-btn active">Make A Graph</button>
             <button id="mode-degree" class="mode-btn">Degree Sequences</button>
+            <button id="mode-eulerian" class="mode-btn">Eulerian Trails</button>
         </div>
-
         <!-- Make A Graph mode: create, edit, and export graphs -->
         <div id="make-graph-panel" class="mode-panel">
             <div class="game-info">
                 <p id="mode-description">Create and edit graphs!</p>
             </div>
-
             <div class="mode-options-panel">
                 <button type="button" id="edit-graph-btn" class="edit-button">Edit Graph</button>
                 <button type="button" id="download-btn" class="download-button">Download</button>
@@ -67,6 +66,16 @@
                     <label for="editor-vertices">Number of vertices:</label>
                     <input type="number" id="editor-vertices" min="1" value="5" style="width:80px; margin-left:8px;">
                     <button type="button" id="set-vertices-btn" style="margin-left:12px;">Set Vertices</button>
+                    <label for="editor-random-type" style="margin-left:12px;">Randomize type:</label>
+                    <select id="editor-random-type" style="margin-left:8px;">
+                        <option value="default">Default</option>
+                        <option value="simple_graph">Simple Graph</option>
+                        <option value="mcs_graph">MCS Graph</option>
+                        <option value="msc_digraph">MSC Digraph</option>
+                        <option value="eulerian_digraph">Eulerian Digraph</option>
+                        <option value="eulerian_simple">Eulerian Simple</option>
+                        <option value="eulerian_multi">Eulerian Multi</option>
+                    </select>
                     <button id="editor-random-btn" type="button" style="margin-left:8px;">Randomize</button>
                 </div>
                 <div id="vertex-names" style="margin-top:12px;"></div>
@@ -145,6 +154,92 @@
         </div>
 
 
+
+        <!-- Eulerian Trails Mode -->
+        <div id="eulerian-panel" class="mode-panel" style="display:none;">
+            <div class="game-info">
+                <p>Is the graph Eulerian? If so, find an Eulerian path or circuit. If not, Eulerize it!</p>
+            </div>
+            <div class="mode-options-panel">
+                <button id="eulerian-reset-btn" class="reset-session-btn">Reset</button>
+            </div>
+
+            <div class="graphic-prompt">
+                <h2>Here is a graph...</h2>
+                <p class="graphic-prompt-subtitle">Is it Eulerian?</p>
+                <div id="eulerian-graph-area" role="img" aria-label="Graph diagram"
+                    aria-describedby="eulerian-graph-description"></div>
+                <p id="eulerian-graph-description" class="sr-only"></p>
+                <div id="eulerian-zoom-controls" class="zoom-controls">
+                    <button class="zoom-button zoom-in">Zoom In</button>
+                    <button class="zoom-button zoom-out">Zoom Out</button>
+                </div>
+                <p class="hint">Hint: You can click and drag vertices to get a better look.</p>
+            </div>
+
+            <!-- Part 1: Is it Eulerian? -->
+            <div id="eulerian-part1" class="eulerian-section">
+                <div class="training-actions">
+                    <h2>Part 1 — Is this graph Eulerian?</h2>
+                    <div class="eulerian-btn-row">
+                        <button id="eulerian-yes-btn" class="eulerian-choice-btn">Eulerian</button>
+                        <button id="eulerian-no-btn" class="eulerian-choice-btn">Not Eulerian</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Part 1 wrong feedback -->
+            <div id="eulerian-part1-wrong" class="training-feedback incorrect" style="display:none;">
+                <h2>Incorrect</h2>
+                <p id="eulerian-part1-wrong-text"></p>
+                <button id="eulerian-next-from-wrong" class="submit-btn">Next Question</button>
+            </div>
+
+            <!-- Part 2a: Find Eulerian path/circuit (shown when IS Eulerian) -->
+            <div id="eulerian-part2-path" class="eulerian-section" style="display:none;">
+                <div class="training-actions">
+                    <h2 id="eulerian-part2-path-title">Part 2 — Find an Eulerian circuit</h2>
+                    <p id="eulerian-part2-path-hint" class="graphic-prompt-subtitle"></p>
+                    <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                        <input class="text-input" type="text" id="eulerian-path-input" placeholder="e.g. ABCA" />
+                        <button class="submit-btn" id="eulerian-path-submit-btn">Submit</button>
+                    </div>
+                </div>
+                <div id="eulerian-path-feedback" class="training-feedback" style="display:none;">
+                    <p id="eulerian-path-feedback-text"></p>
+                    <button id="eulerian-path-try-again" class="submit-btn" style="display:none;">Try Again</button>
+                    <button id="eulerian-path-next" class="submit-btn" style="display:none;">Next Question</button>
+                </div>
+            </div>
+
+            <!-- Part 2b: Eulerize (shown when NOT Eulerian) -->
+            <div id="eulerian-part2-eulerize" class="eulerian-section" style="display:none;">
+                <div class="training-actions">
+                    <h2>Part 2 — Eulerize the graph</h2>
+                    <p class="graphic-prompt-subtitle">Add edges to make the graph Eulerian. Specify each edge you want to add below.</p>
+                    <div id="eulerian-add-edge-list" style="margin-top:10px;"></div>
+                    <div style="margin-top:8px; display:flex; gap:8px;">
+                        <button id="eulerian-add-edge-btn" class="edit-button" style="margin-bottom:0;">+ Add Edge</button>
+                        <button id="eulerian-eulerize-submit-btn" class="submit-btn" style="margin-top:0;">Submit</button>
+                    </div>
+                </div>
+                <div id="eulerian-eulerize-feedback" class="training-feedback" style="display:none;">
+                    <p id="eulerian-eulerize-feedback-text"></p>
+                    <button id="eulerian-eulerize-try-again" class="submit-btn" style="display:none;">Try Again</button>
+                    <button id="eulerian-eulerize-next" class="submit-btn" style="display:none;">Next Question</button>
+                </div>
+            </div>
+
+            <!-- Score -->
+            <div class="training-stats">
+                <h2>Score</h2>
+                <div class="stats-display">
+                    <p>Questions: <span id="eulerian-total">0</span></p>
+                    <p>Points earned: <span id="eulerian-points">0.0</span></p>
+                    <p>Score: <span id="eulerian-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
 
     </div>
     <!-- Screen reader live region: announces graph changes politely -->

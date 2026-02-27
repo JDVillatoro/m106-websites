@@ -61,6 +61,7 @@ const CY_STYLE = [
 // We create them lazily the first time they are needed.
 window._cyMake = null;
 window._cyDegree = null;
+window._cyEulerian = null;
 
 /**
  * Get or create a Cytoscape instance for a given UI mode.
@@ -111,6 +112,20 @@ function getCy(mode) {
             wireZoomButtons('degree-panel', window._cyDegree);
         }
         return window._cyDegree;
+    } else if (mode === 'eulerian') {
+        if (!window._cyEulerian) {
+            const container = document.getElementById('eulerian-graph-area');
+            if (!container) return null;
+            let vp = container.querySelector('.graph-viewport');
+            if (!vp) {
+                vp = document.createElement('div');
+                vp.className = 'graph-viewport';
+                container.appendChild(vp);
+            }
+            window._cyEulerian = cytoscape({ container: vp, elements: [], style: CY_STYLE, userZoomingEnabled: true, layout: { name: 'preset' } });
+            wireZoomButtons('eulerian-panel', window._cyEulerian);
+        }
+        return window._cyEulerian;
     }
     return null;
 }
@@ -224,7 +239,8 @@ function updateGraphAria(descriptionElementId, graph_data, announce) {
 // ---------------------------------------------------------------------------
 const modeStates = {
     make: { nodes: [], edges: [], _initialized: false },
-    degree: { nodes: [], edges: [], expectedSeq: [], stats: { correct: 0, incorrect: 0 }, _initialized: false }
+    degree: { nodes: [], edges: [], expectedSeq: [], stats: { correct: 0, incorrect: 0 }, _initialized: false },
+    eulerian: { nodes: [], edges: [], stats: { correct: 0, total: 0, points: 0 }, _initialized: false, currentPuzzle: null, part1Scored: false, part2Scored: false }
 };
 let currentMode = 'make';
 
@@ -244,6 +260,7 @@ const doneEditBtn = document.getElementById('done-edit-btn');
 const closeEditBtn = document.getElementById('close-edit-btn');
 const modeMakeBtn = document.getElementById('mode-make');
 const modeDegreeBtn = document.getElementById('mode-degree');
+const modeEulerBtn = document.getElementById('mode-eulerian');
 const editor = document.getElementById('graph-editor');
 const setVerticesBtn = document.getElementById('set-vertices-btn');
 const editorVertices = document.getElementById('editor-vertices');
@@ -251,10 +268,6 @@ const vertexNamesDiv = document.getElementById('vertex-names');
 const edgeListDiv = document.getElementById('edge-list');
 const editorRandomBtn = document.getElementById('editor-random-btn');
 
-// These checkboxes don't exist in the current HTML but guard against errors if added later
-const directedCheckbox = document.getElementById('directed-checkbox');
-const labelEdgesCheckbox = document.getElementById('label-edges-checkbox');
-const edgeLabelInput = document.getElementById('edge-label');
 
 let editorNodes = [];  // display names parallel to v0..v{n-1}
 let editorEdges = [];  // [{source: "v0", target: "v1", label, isDirected}]
@@ -268,6 +281,7 @@ function setMode(mode) {
     if (mode === 'make') {
         modeMakeBtn && modeMakeBtn.classList.add('active');
         modeDegreeBtn && modeDegreeBtn.classList.remove('active');
+        modeEulerBtn && modeEulerBtn.classList.remove('active');
         document.getElementById('make-graph-panel').style.display = '';
         currentMode = 'make';
 
@@ -289,6 +303,7 @@ function setMode(mode) {
     } else if (mode === 'degree') {
         modeMakeBtn && modeMakeBtn.classList.remove('active');
         modeDegreeBtn && modeDegreeBtn.classList.add('active');
+        modeEulerBtn && modeEulerBtn.classList.remove('active');
         document.getElementById('degree-panel').style.display = '';
         currentMode = 'degree';
 
@@ -308,11 +323,35 @@ function setMode(mode) {
                 }, 30);
             }
         }
+    } else if (mode === 'eulerian') {
+        modeMakeBtn && modeMakeBtn.classList.remove('active');
+        modeDegreeBtn && modeDegreeBtn.classList.remove('active');
+        const modeEulerBtn = document.getElementById('mode-eulerian');
+        if (modeEulerBtn) modeEulerBtn.classList.add('active');
+        document.getElementById('eulerian-panel').style.display = '';
+        currentMode = 'eulerian';
+
+        if (!modeStates.eulerian._initialized) {
+            loadEulerianStats();
+            bindEulerianControls();
+            modeStates.eulerian._initialized = true;
+            setTimeout(() => startEulerianTrial(), 30);
+        } else {
+            const es = modeStates.eulerian;
+            if (es.nodes.length > 0) {
+                setTimeout(() => {
+                    const cy = getCy('eulerian');
+                    if (cy) draw_graph({ n: es.nodes.length, names: es.nodes, edges: es.edges }, cy);
+                    updateGraphAria('eulerian-graph-description', { n: es.nodes.length, names: es.nodes, edges: es.edges }, true);
+                }, 30);
+            }
+        }
     }
 }
 
 modeMakeBtn && modeMakeBtn.addEventListener('click', () => setMode('make'));
 modeDegreeBtn && modeDegreeBtn.addEventListener('click', () => setMode('degree'));
+modeEulerBtn && modeEulerBtn.addEventListener('click', () => setMode('eulerian'));
 
 // ---------------------------------------------------------------------------
 // Random graph generation helpers
@@ -323,7 +362,54 @@ function makeLabels(n) {
 }
 
 function generateAndRenderRandom(n = 5, populateEditor = false) {
-    const edges = generateRandomGraph(n, false, false, 1);
+    // Determine randomization mode if provided via optional third parameter
+    const args = Array.from(arguments);
+    const type = args.length >= 3 && typeof args[2] === 'string' ? args[2] : 'default';
+    // Collect raw edges from the requested generator (if available)
+    let raw = [];
+    if (type === 'msc_digraph' && typeof generateMSC_Digraph === 'function') {
+        raw = generateMSC_Digraph(n) || [];
+    } else if (type === 'eulerian_digraph' && typeof generateEulerianDigraph === 'function') {
+        raw = generateEulerianDigraph(n) || [];
+    } else if (type === 'simple_graph' && typeof generateSimpleGraph === 'function') {
+        raw = generateSimpleGraph(n) || [];
+    } else if (type === 'eulerian_simple' && typeof generateEulerianSimpleGraph === 'function') {
+        raw = generateEulerianSimpleGraph(n) || [];
+    } else if (type === 'eulerian_multi' && typeof generateEulerianMultigraph === 'function') {
+        raw = generateEulerianMultigraph(n) || [];
+    } else if (type === 'mcs_graph' && typeof generateMinimalConnectedGraph === 'function') {
+        raw = generateMinimalConnectedGraph(n) || [];
+    } else {
+        // default: allow generators that may include random weights/directions
+        raw = generateRandomGraph(n, false, false, 1) || [];
+    }
+
+    // Normalize edges per-mode rules:
+    // - Only `default` may include random weights/directions (preserve from generator)
+    // - Digraph modes (msc_digraph, eulerian_digraph) must be directed, no weights
+    // - All other named modes: never directed and never weighted
+    const edges = raw.map(e => {
+        const src = (typeof e.source === 'number') ? `v${e.source}` : String(e.source);
+        const tgt = (typeof e.target === 'number') ? `v${e.target}` : String(e.target);
+        let isDirected = false;
+        let weight = null;
+
+        if (type === 'msc_digraph' || type === 'eulerian_digraph') {
+            isDirected = true;
+            weight = null;
+        } else if (type === 'default') {
+            isDirected = !!e.isDirected;
+            weight = (e.weight !== undefined) ? e.weight : null;
+        } else {
+            isDirected = false;
+            weight = null;
+        }
+
+        return {
+            source: src, target: tgt, isDirected, weight,
+            isLoop: !!e.isLoop, isMultiple: !!e.isMultiple
+        };
+    });
     const labels = makeLabels(n);
 
     modeStates.make.nodes = labels.slice();
@@ -545,7 +631,9 @@ setVerticesBtn && setVerticesBtn.addEventListener('click', () => {
 
 editorRandomBtn && editorRandomBtn.addEventListener('click', () => {
     const n = parseInt(editorVertices.value, 10) || 5;
-    generateAndRenderRandom(n, true);
+    const typeSelect = document.getElementById('editor-random-type');
+    const type = typeSelect ? typeSelect.value : 'default';
+    generateAndRenderRandom(n, true, type);
 });
 
 function createVertexInputs(n) {
@@ -839,7 +927,7 @@ function arraysEqual(a, b) {
 
 function startDegreeSequence() {
     const n = Math.floor(Math.random() * 5) + 3;   // 3..7
-    let edges = generateSimpleGraph(n, 0.4);
+    let edges = generateSimpleGraph(n);
 
     // Occasionally add loops / parallel edges to make it more interesting
     if (Math.random() < 0.5) {
@@ -870,4 +958,455 @@ function startDegreeSequence() {
     updateDegreeStatsDisplay();
 
     if (VERBOSE) console.log('startDegreeSequence: expected', ds.expectedSeq);
+}
+
+// ---------------------------------------------------------------------------
+// Eulerian Trails Mode
+// ---------------------------------------------------------------------------
+
+function loadEulerianStats() {
+    try {
+        const raw = localStorage.getItem('graph_eulerian_stats');
+        if (raw) {
+            const s = JSON.parse(raw);
+            modeStates.eulerian.stats.correct = s.correct || 0;
+            modeStates.eulerian.stats.total   = s.total   || 0;
+            modeStates.eulerian.stats.points  = s.points  || 0;
+        }
+    } catch (e) { /* ignore */ }
+}
+
+function saveEulerianStats() {
+    try {
+        localStorage.setItem('graph_eulerian_stats', JSON.stringify(modeStates.eulerian.stats));
+    } catch (e) { /* ignore */ }
+}
+
+function updateEulerianStatsDisplay() {
+    const s = modeStates.eulerian.stats;
+    const maxPts = s.total;
+    const pct = maxPts === 0 ? 0 : Math.round((s.points / maxPts) * 100);
+    const get = id => document.getElementById(id);
+    if (get('eulerian-total'))    get('eulerian-total').textContent    = s.total;
+    if (get('eulerian-points'))   get('eulerian-points').textContent   = s.points.toFixed(1);
+    if (get('eulerian-accuracy')) get('eulerian-accuracy').textContent = pct + '%';
+}
+
+/**
+ * Render the add-edge rows for the Eulerize panel.
+ * eulerAddEdges is an array of {from, to} objects (module-level state).
+ */
+let eulerAddEdges = [];
+
+function renderEulerAddEdgeList() {
+    const container = document.getElementById('eulerian-add-edge-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    eulerAddEdges.forEach((row, idx) => {
+        const div = document.createElement('div');
+        div.className = 'eulerian-edge-row';
+
+        const lbl = document.createElement('label');
+        lbl.textContent = `${idx + 1}.`;
+
+        const fromLbl = document.createElement('span');
+        fromLbl.textContent = 'From:';
+        fromLbl.style.cssText = 'color:#555; font-size:14px;';
+
+        const fromInput = document.createElement('input');
+        fromInput.type = 'text';
+        fromInput.placeholder = 'A';
+        fromInput.value = row.from || '';
+        fromInput.maxLength = 1;
+        fromInput.addEventListener('input', () => {
+            eulerAddEdges[idx].from = fromInput.value.toUpperCase().trim();
+            fromInput.value = eulerAddEdges[idx].from;
+        });
+
+        const toLbl = document.createElement('span');
+        toLbl.textContent = 'To:';
+        toLbl.style.cssText = 'color:#555; font-size:14px;';
+
+        const toInput = document.createElement('input');
+        toInput.type = 'text';
+        toInput.placeholder = 'B';
+        toInput.value = row.to || '';
+        toInput.maxLength = 1;
+        toInput.addEventListener('input', () => {
+            eulerAddEdges[idx].to = toInput.value.toUpperCase().trim();
+            toInput.value = eulerAddEdges[idx].to;
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.textContent = 'Remove';
+        removeBtn.addEventListener('click', () => {
+            eulerAddEdges.splice(idx, 1);
+            renderEulerAddEdgeList();
+        });
+
+        div.appendChild(lbl);
+        div.appendChild(fromLbl);
+        div.appendChild(fromInput);
+        div.appendChild(toLbl);
+        div.appendChild(toInput);
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+    });
+}
+
+/**
+ * Reset the Eulerian Trails UI to a clean state ready for a new puzzle.
+ */
+function resetEulerianUI() {
+    const show = id => { const el = document.getElementById(id); if (el) el.style.display = ''; };
+    const hide = id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
+    const get  = id => document.getElementById(id);
+
+    show('eulerian-part1');
+    hide('eulerian-part1-wrong');
+    hide('eulerian-part2-path');
+    hide('eulerian-part2-eulerize');
+    hide('eulerian-path-feedback');
+    hide('eulerian-eulerize-feedback');
+
+    // Reset Part1 buttons
+    ['eulerian-yes-btn', 'eulerian-no-btn'].forEach(id => {
+        const btn = get(id);
+        if (btn) { btn.classList.remove('selected-correct', 'selected-wrong'); btn.disabled = false; }
+    });
+
+    // Reset path input
+    const pathInput = get('eulerian-path-input');
+    if (pathInput) { pathInput.value = ''; pathInput.disabled = false; }
+
+    // Reset eulerize
+    eulerAddEdges = [{ from: '', to: '' }];
+    renderEulerAddEdgeList();
+
+    const submitBtn = get('eulerian-path-submit-btn');
+    if (submitBtn) submitBtn.style.display = '';
+    const ezSubmitBtn = get('eulerian-eulerize-submit-btn');
+    if (ezSubmitBtn) ezSubmitBtn.style.display = '';
+}
+
+function startEulerianTrial() {
+    const puzzle = generateEulerianTrailPuzzle();
+    modeStates.eulerian.currentPuzzle = puzzle;
+    modeStates.eulerian.part1Scored   = false;
+    modeStates.eulerian.part2Scored   = false;
+
+    const { n, names, edges, isDirected, isMulti, isEulerian } = puzzle;
+    modeStates.eulerian.nodes = names.slice();
+    modeStates.eulerian.edges = edges.slice();
+
+    const cy = getCy('eulerian');
+    if (cy) draw_graph({ n, names, edges }, cy);
+    updateGraphAria('eulerian-graph-description', { n, names, edges }, true);
+
+    resetEulerianUI();
+    updateEulerianStatsDisplay();
+
+    // Update subtitle hint for path input based on graph type
+    const hint = document.getElementById('eulerian-part2-path-hint');
+    if (hint) {
+        if (isMulti) {
+            hint.textContent = 'Enter alternating vertices and edge labels, e.g. AaBbCcA';
+        } else if (isDirected) {
+            hint.textContent = 'Enter the vertices of an Eulerian circuit in order, e.g. ABCDA';
+        } else {
+            const oddCount = (() => {
+                const deg = new Array(n).fill(0);
+                edges.forEach(e => {
+                    const si = parseInt(e.source.slice(1));
+                    const ti = parseInt(e.target.slice(1));
+                    if (si === ti) { deg[si] += 2; } else { deg[si]++; deg[ti]++; }
+                });
+                return deg.filter(d => d % 2 !== 0).length;
+            })();
+            hint.textContent = oddCount === 0
+                ? 'Enter the vertices of an Eulerian circuit in order, e.g. ABCA'
+                : 'Enter the vertices of an Eulerian path in order, e.g. ABCD';
+        }
+    }
+
+    if (VERBOSE) console.log('startEulerianTrial:', puzzle);
+}
+
+function bindEulerianControls() {
+    const get = id => document.getElementById(id);
+
+    // Reset button
+    const resetBtn = get('eulerian-reset-btn');
+    if (resetBtn && !resetBtn.dataset.bound) {
+        resetBtn.dataset.bound = '1';
+        resetBtn.onclick = () => {
+            modeStates.eulerian.stats = { correct: 0, total: 0, points: 0 };
+            saveEulerianStats();
+            updateEulerianStatsDisplay();
+            startEulerianTrial();
+        };
+    }
+
+    // Part 1 — Eulerian / Not Eulerian buttons
+    ['eulerian-yes-btn', 'eulerian-no-btn'].forEach(btnId => {
+        const btn = get(btnId);
+        if (btn && !btn.dataset.bound) {
+            btn.dataset.bound = '1';
+            btn.onclick = () => {
+                const puzzle = modeStates.eulerian.currentPuzzle;
+                if (!puzzle) return;
+
+                const userSaysEulerian = (btnId === 'eulerian-yes-btn');
+                const correct = (userSaysEulerian === puzzle.isEulerian);
+
+                // Disable both buttons
+                ['eulerian-yes-btn', 'eulerian-no-btn'].forEach(id => {
+                    const b = get(id); if (b) b.disabled = true;
+                });
+
+                // Award half point for Part 1
+                modeStates.eulerian.stats.total += 1;
+                if (correct) {
+                    modeStates.eulerian.stats.points += 0.5;
+                    modeStates.eulerian.part1Scored = true;
+                    btn.classList.add('selected-correct');
+                } else {
+                    btn.classList.add('selected-wrong');
+                    // Show wrong-answer panel with explanation
+                    get('eulerian-part1').style.display = 'none';
+                    const wrongPanel = get('eulerian-part1-wrong');
+                    const wrongText  = get('eulerian-part1-wrong-text');
+                    if (wrongText) {
+                        wrongText.textContent = puzzle.isEulerian
+                            ? 'This graph is actually Eulerian — every vertex has even degree (and the graph is connected).'
+                            : 'This graph is actually not Eulerian — it has one or more vertices with odd degree (or is not connected/strongly connected).';
+                    }
+                    if (wrongPanel) wrongPanel.style.display = '';
+                    saveEulerianStats();
+                    updateEulerianStatsDisplay();
+                    return;
+                }
+
+                saveEulerianStats();
+                updateEulerianStatsDisplay();
+
+                // Show Part 2
+                get('eulerian-part1').style.display = 'none';
+                if (puzzle.isEulerian) {
+                    // Part 2a — find the path/circuit
+                    const part2 = get('eulerian-part2-path');
+                    if (part2) part2.style.display = '';
+                    const title = get('eulerian-part2-path-title');
+                    if (title) {
+                        if (puzzle.isDirected) {
+                            title.textContent = 'Part 2 — Find an Eulerian circuit';
+                        } else {
+                            const deg = new Array(puzzle.n).fill(0);
+                            puzzle.edges.forEach(e => {
+                                const si = parseInt(e.source.slice(1));
+                                const ti = parseInt(e.target.slice(1));
+                                if (si === ti) { deg[si] += 2; } else { deg[si]++; deg[ti]++; }
+                            });
+                            const oddCount = deg.filter(d => d % 2 !== 0).length;
+                            title.textContent = oddCount === 0
+                                ? 'Part 2 — Find an Eulerian circuit'
+                                : 'Part 2 — Find an Eulerian path';
+                        }
+                    }
+                } else {
+                    // Part 2b — eulerize
+                    const part2 = get('eulerian-part2-eulerize');
+                    if (part2) part2.style.display = '';
+                    eulerAddEdges = [{ from: '', to: '' }];
+                    renderEulerAddEdgeList();
+                }
+            };
+        }
+    });
+
+    // Next button after Part 1 wrong
+    const nextFromWrong = get('eulerian-next-from-wrong');
+    if (nextFromWrong && !nextFromWrong.dataset.bound) {
+        nextFromWrong.dataset.bound = '1';
+        nextFromWrong.onclick = () => startEulerianTrial();
+    }
+
+    // Add Edge button (Eulerize panel)
+    const addEdgeBtn = get('eulerian-add-edge-btn');
+    if (addEdgeBtn && !addEdgeBtn.dataset.bound) {
+        addEdgeBtn.dataset.bound = '1';
+        addEdgeBtn.onclick = () => {
+            eulerAddEdges.push({ from: '', to: '' });
+            renderEulerAddEdgeList();
+        };
+    }
+
+    // Submit eulerization
+    const ezSubmitBtn = get('eulerian-eulerize-submit-btn');
+    if (ezSubmitBtn && !ezSubmitBtn.dataset.bound) {
+        ezSubmitBtn.dataset.bound = '1';
+        ezSubmitBtn.onclick = () => {
+            const puzzle = modeStates.eulerian.currentPuzzle;
+            if (!puzzle) return;
+
+            const valid = typeof validateEulerization === 'function'
+                ? validateEulerization(puzzle.edges, eulerAddEdges, puzzle.names, puzzle.n)
+                : false;
+
+            const feedbackDiv  = get('eulerian-eulerize-feedback');
+            const feedbackText = get('eulerian-eulerize-feedback-text');
+            const tryAgainBtn  = get('eulerian-eulerize-try-again');
+            const nextBtn      = get('eulerian-eulerize-next');
+
+            if (feedbackDiv) feedbackDiv.style.display = '';
+
+            if (valid) {
+                if (!modeStates.eulerian.part2Scored) {
+                    modeStates.eulerian.stats.points += 0.5;
+                    modeStates.eulerian.part2Scored = true;
+                    saveEulerianStats();
+                    updateEulerianStatsDisplay();
+                }
+                if (feedbackText) feedbackText.innerHTML = '✓ <strong class="feedback-report correct">Correct!</strong> The added edges make every vertex even-degree — the graph is now Eulerian.';
+                if (feedbackDiv)  feedbackDiv.className = 'training-feedback correct';
+                if (tryAgainBtn)  tryAgainBtn.style.display = 'none';
+                if (nextBtn)      nextBtn.style.display = '';
+                if (ezSubmitBtn)  ezSubmitBtn.style.display = 'none';
+            } else {
+                if (feedbackText) {
+                    // Give a helpful hint
+                    const deg = {};
+                    puzzle.names.forEach(nm => { deg[nm] = 0; });
+                    puzzle.edges.forEach(e => {
+                        const a = puzzle.names[parseInt(e.source.slice(1))];
+                        const b = puzzle.names[parseInt(e.target.slice(1))];
+                        if (a === b) { deg[a] += 2; } else { deg[a]++; deg[b]++; }
+                    });
+                    eulerAddEdges.forEach(ae => {
+                        const f = (ae.from || '').toUpperCase();
+                        const t = (ae.to   || '').toUpperCase();
+                        if (f && t && f !== t && puzzle.names.includes(f) && puzzle.names.includes(t)) {
+                            deg[f]++; deg[t]++;
+                        }
+                    });
+                    const oddAfter = Object.entries(deg).filter(([, d]) => d % 2 !== 0).map(([nm]) => nm);
+                    const hint = oddAfter.length > 0
+                        ? ` Vertices with odd degree after your additions: ${oddAfter.join(', ')}.`
+                        : ' Check that your added edges reference valid vertex names.';
+                    feedbackText.innerHTML = '✗ <strong class="feedback-report incorrect">Not quite.</strong>' + hint + ' Try again!';
+                }
+                if (feedbackDiv)  feedbackDiv.className = 'training-feedback incorrect';
+                if (tryAgainBtn)  tryAgainBtn.style.display = '';
+                if (nextBtn)      nextBtn.style.display = 'none';
+            }
+        };
+    }
+
+    // Try again / Next — eulerize
+    const ezTryAgain = get('eulerian-eulerize-try-again');
+    if (ezTryAgain && !ezTryAgain.dataset.bound) {
+        ezTryAgain.dataset.bound = '1';
+        ezTryAgain.onclick = () => {
+            get('eulerian-eulerize-feedback').style.display = 'none';
+            get('eulerian-eulerize-submit-btn').style.display = '';
+        };
+    }
+    const ezNext = get('eulerian-eulerize-next');
+    if (ezNext && !ezNext.dataset.bound) {
+        ezNext.dataset.bound = '1';
+        ezNext.onclick = () => startEulerianTrial();
+    }
+
+    // Submit Eulerian path
+    const pathSubmitBtn = get('eulerian-path-submit-btn');
+    if (pathSubmitBtn && !pathSubmitBtn.dataset.bound) {
+        pathSubmitBtn.dataset.bound = '1';
+        pathSubmitBtn.onclick = () => {
+            const puzzle   = modeStates.eulerian.currentPuzzle;
+            const pathInput = get('eulerian-path-input');
+            if (!puzzle || !pathInput) return;
+
+            const raw = pathInput.value.trim();
+            let valid = false;
+
+            if (puzzle.isMulti) {
+                // Multigraph: alternating capital/lowercase
+                // Determine if circuit required (all even) or path (2 odd)
+                const deg = new Array(puzzle.n).fill(0);
+                puzzle.edges.forEach(e => {
+                    const si = parseInt(e.source.slice(1));
+                    const ti = parseInt(e.target.slice(1));
+                    if (si === ti) { deg[si] += 2; } else { deg[si]++; deg[ti]++; }
+                });
+                const oddCount = deg.filter(d => d % 2 !== 0).length;
+                valid = validateEulerianPathMulti(raw, puzzle.names, puzzle.edges, oddCount === 0);
+            } else if (puzzle.isDirected) {
+                // Directed: must be a circuit
+                const path = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
+                valid = validateEulerianCircuitDigraph(path, puzzle.names, puzzle.edges);
+            } else {
+                // Simple undirected
+                const path = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
+                const deg = new Array(puzzle.n).fill(0);
+                puzzle.edges.forEach(e => {
+                    const si = parseInt(e.source.slice(1));
+                    const ti = parseInt(e.target.slice(1));
+                    if (si === ti) { deg[si] += 2; } else { deg[si]++; deg[ti]++; }
+                });
+                const oddCount = deg.filter(d => d % 2 !== 0).length;
+                valid = validateEulerianPathSimple(path, puzzle.names, puzzle.edges, oddCount === 0);
+            }
+
+            const feedbackDiv  = get('eulerian-path-feedback');
+            const feedbackText = get('eulerian-path-feedback-text');
+            const tryAgainBtn  = get('eulerian-path-try-again');
+            const nextBtn      = get('eulerian-path-next');
+
+            if (feedbackDiv) feedbackDiv.style.display = '';
+
+            if (valid) {
+                if (!modeStates.eulerian.part2Scored) {
+                    modeStates.eulerian.stats.points += 0.5;
+                    modeStates.eulerian.part2Scored = true;
+                    saveEulerianStats();
+                    updateEulerianStatsDisplay();
+                }
+                if (feedbackText) feedbackText.innerHTML = '✓ <strong class="feedback-report correct">Correct!</strong> That is a valid Eulerian path.';
+                if (feedbackDiv)  feedbackDiv.className = 'training-feedback correct';
+                if (tryAgainBtn)  tryAgainBtn.style.display = 'none';
+                if (nextBtn)      nextBtn.style.display = '';
+                if (pathSubmitBtn) pathSubmitBtn.style.display = 'none';
+                pathInput.disabled = true;
+            } else {
+                if (feedbackText) {
+                    let hint = '';
+                    if (puzzle.isMulti) hint = ' Remember: use alternating capital letters (vertices) and lowercase letters (edge labels), e.g. AaBbCA.';
+                    else if (puzzle.isDirected) hint = ' Remember: it must be a circuit (start = end) and follow edge directions.';
+                    else hint = ' Make sure you use every edge exactly once.';
+                    feedbackText.innerHTML = '✗ <strong class="feedback-report incorrect">Not valid.</strong>' + hint;
+                }
+                if (feedbackDiv)  feedbackDiv.className = 'training-feedback incorrect';
+                if (tryAgainBtn)  tryAgainBtn.style.display = '';
+                if (nextBtn)      nextBtn.style.display = 'none';
+            }
+        };
+    }
+
+    // Try again / Next — path
+    const pathTryAgain = get('eulerian-path-try-again');
+    if (pathTryAgain && !pathTryAgain.dataset.bound) {
+        pathTryAgain.dataset.bound = '1';
+        pathTryAgain.onclick = () => {
+            get('eulerian-path-feedback').style.display = 'none';
+            const pathInput = get('eulerian-path-input');
+            if (pathInput) { pathInput.value = ''; pathInput.disabled = false; }
+            get('eulerian-path-submit-btn').style.display = '';
+        };
+    }
+    const pathNext = get('eulerian-path-next');
+    if (pathNext && !pathNext.dataset.bound) {
+        pathNext.dataset.bound = '1';
+        pathNext.onclick = () => startEulerianTrial();
+    }
 }
