@@ -62,6 +62,13 @@ const CY_STYLE = [
 window._cyMake = null;
 window._cyDegree = null;
 
+/**
+ * Get or create a Cytoscape instance for a given UI mode.
+ * Modes supported: 'make' (graph editor) and 'degree' (degree sequence trainer).
+ * Instances are created lazily and cached on the global `window` object.
+ * @param {string} mode
+ * @returns {object|null} Cytoscape instance or null when the container is unavailable
+ */
 function getCy(mode) {
     if (mode === 'make') {
         if (!window._cyMake) {
@@ -121,6 +128,14 @@ function wireZoomButtons(panelId, cy) {
 // draw_graph – replace all elements in cy and run cose layout
 // graph_data: { n, names: string[], edges: [{source, target, label?, isDirected?}] }
 // ---------------------------------------------------------------------------
+/**
+ * Render a graph into a Cytoscape instance and run a layout.
+ * graph_data: { n, names: string[], edges: [{source, target, label?, isDirected?}] }
+ * The function filters invalid edges, creates nodes by id (v0..v{n-1}),
+ * and performs a 'cose' layout. On layoutstop the view is fit and centered.
+ * @param {object} graph_data
+ * @param {object} cy
+ */
 function draw_graph(graph_data, cy) {
     if (!cy || !graph_data) return;
 
@@ -175,6 +190,14 @@ function draw_graph(graph_data, cy) {
 // descriptionElementId: the id of the <p> holding the static description
 // graph_data: { n, names, edges } in draw_graph format
 // announce: if true, also push "New graph loaded. <description>" into the live region
+/**
+ * Update graph description for screen readers and optionally announce it
+ * via the polite live region. Also refreshes the alt-text panel when
+ * updating the 'make' panel description.
+ * @param {string} descriptionElementId
+ * @param {object} graph_data
+ * @param {boolean} announce
+ */
 function updateGraphAria(descriptionElementId, graph_data, announce) {
     const descEl = document.getElementById(descriptionElementId);
     const announcer = document.getElementById('graph-sr-announcer');

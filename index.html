@@ -9,15 +9,22 @@
 </head>
 
 <body>
+    <!--
+        M106 Graph Theory interactive site.
+        - Uses Cytoscape for interactive graph rendering.
+        - Two modes: Make A Graph (editor + export) and Degree Sequences (training).
+        Keep element IDs stable; JS relies on these IDs for wiring controls.
+    -->
     <div class="container">
         <h1>M106: Graph Theory</h1>
 
+        <!-- Mode selector: toggles between editor and training modes -->
         <div class="mode-selector">
             <button id="mode-make" class="mode-btn active">Make A Graph</button>
             <button id="mode-degree" class="mode-btn">Degree Sequences</button>
         </div>
 
-        <!-- Make A Graph mode -->
+        <!-- Make A Graph mode: create, edit, and export graphs -->
         <div id="make-graph-panel" class="mode-panel">
             <div class="game-info">
                 <p id="mode-description">Create and edit graphs!</p>
@@ -90,7 +97,7 @@
 
         </div>
 
-        <!-- Degree Mode -->
+        <!-- Degree Mode: practice identifying degree sequences -->
         <div id="degree-panel" class="mode-panel">
             <div class="game-info">
                 <p id="mode-description">Determine the degree sequence of the graph!</p>
