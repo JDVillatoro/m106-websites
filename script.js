@@ -192,6 +192,8 @@ function updateGraphAria(descriptionElementId, graph_data, announce) {
             announcer.textContent = prefix + text;
         }, 50);
     }
+
+    if (descriptionElementId === 'make-graph-description') refreshAltTextPanel(graph_data);
 }
 
 // ---------------------------------------------------------------------------
@@ -481,6 +483,14 @@ altTextCopyBtn && altTextCopyBtn.addEventListener('click', () => {
     });
 });
 
+
+function refreshAltTextPanel(graph_data) {
+    if (!altTextOutput || altTextPanel.style.display === 'none') return;
+    const { text } = graphToDescription(graph_data);
+    altTextOutput.value = text;
+    altTextOutput.style.height = 'auto';
+    altTextOutput.style.height = (altTextOutput.scrollHeight + 4) + 'px';
+}
 
 // ---------------------------------------------------------------------------
 // Editor – vertex inputs
