@@ -59,9 +59,9 @@ const CY_STYLE = [
 // Per-mode Cytoscape instances (lazy, cached on window)
 // ---------------------------------------------------------------------------
 const CY_CONFIG = {
-    make:     { containerId: 'make-graph-area',     panelId: 'make-graph-panel' },
-    degree:   { containerId: 'degree-graph-area',   panelId: 'degree-panel'     },
-    eulerian: { containerId: 'eulerian-graph-area',  panelId: 'eulerian-panel'   },
+    make: { containerId: 'make-graph-area', panelId: 'make-graph-panel' },
+    degree: { containerId: 'degree-graph-area', panelId: 'degree-panel' },
+    eulerian: { containerId: 'eulerian-graph-area', panelId: 'eulerian-panel' },
 };
 
 window._cy = {};   // mode → cytoscape instance
@@ -100,10 +100,10 @@ function getCy(mode) {
 function wireZoomButtons(panelId, cy) {
     const panel = document.getElementById(panelId);
     if (!panel) return;
-    const zin  = panel.querySelector('.zoom-button.zoom-in');
+    const zin = panel.querySelector('.zoom-button.zoom-in');
     const zout = panel.querySelector('.zoom-button.zoom-out');
-    const mid  = () => ({ x: cy.width() / 2, y: cy.height() / 2 });
-    if (zin)  zin.onclick  = () => cy.zoom({ level: cy.zoom() * 1.2, renderedPosition: mid() });
+    const mid = () => ({ x: cy.width() / 2, y: cy.height() / 2 });
+    if (zin) zin.onclick = () => cy.zoom({ level: cy.zoom() * 1.2, renderedPosition: mid() });
     if (zout) zout.onclick = () => cy.zoom({ level: cy.zoom() / 1.2, renderedPosition: mid() });
 }
 
@@ -117,14 +117,14 @@ function wireZoomButtons(panelId, cy) {
 function draw_graph(graph, cy) {
     if (!cy || !graph) return;
 
-    const n     = Number(graph.n) || 0;
+    const n = Number(graph.n) || 0;
     const names = Array.isArray(graph.names) ? graph.names : [];
     const edges = Array.isArray(graph.edges) ? graph.edges : [];
 
     const elems = [];
 
     for (let i = 0; i < n; i++) {
-        const id          = vertexId(i);
+        const id = vertexId(i);
         const displayName = (names[i] && String(names[i]).trim()) ? String(names[i]).trim() : id;
         elems.push({ data: { id, displayName, labelLen: displayName.length } });
     }
@@ -136,9 +136,9 @@ function draw_graph(graph, cy) {
             return;
         }
         const data = {
-            id:       `e${idx}_${e.source}_${e.target}`,
-            source:   e.source,
-            target:   e.target,
+            id: `e${idx}_${e.source}_${e.target}`,
+            source: e.source,
+            target: e.target,
             directed: graph.directed ? 'yes' : 'no',
         };
         if (e.label && String(e.label).trim() !== '') data.label = String(e.label).trim();
@@ -163,7 +163,7 @@ function draw_graph(graph, cy) {
  * @param {boolean} announce
  */
 function updateGraphAria(descriptionElementId, graph, announce) {
-    const descEl    = document.getElementById(descriptionElementId);
+    const descEl = document.getElementById(descriptionElementId);
     const announcer = document.getElementById('graph-sr-announcer');
     if (!descEl) return;
 
@@ -182,8 +182,8 @@ function updateGraphAria(descriptionElementId, graph, announce) {
 // Mode state
 // ---------------------------------------------------------------------------
 const modeStates = {
-    make:     { graph: null, _initialized: false },
-    degree:   { graph: null, expectedSeq: [], stats: { correct: 0, incorrect: 0 }, _initialized: false },
+    make: { graph: null, _initialized: false },
+    degree: { graph: null, expectedSeq: [], stats: { correct: 0, incorrect: 0 }, _initialized: false },
     eulerian: { graph: null, stats: { correct: 0, total: 0, points: 0 }, _initialized: false, currentPuzzle: null, part1Scored: false, part2Scored: false }
 };
 let currentMode = 'make';
@@ -191,22 +191,22 @@ let currentMode = 'make';
 // ---------------------------------------------------------------------------
 // DOM refs
 // ---------------------------------------------------------------------------
-const editBtn      = document.getElementById('edit-graph-btn');
-const downloadBtn  = document.getElementById('download-btn');
-const altTextBtn   = document.getElementById('alt-text-btn');
+const editBtn = document.getElementById('edit-graph-btn');
+const downloadBtn = document.getElementById('download-btn');
+const altTextBtn = document.getElementById('alt-text-btn');
 const altTextPanel = document.getElementById('alt-text-panel');
 const altTextOutput = document.getElementById('alt-text-output');
 const altTextCopyBtn = document.getElementById('alt-text-copy-btn');
-const doneEditBtn  = document.getElementById('done-edit-btn');
+const doneEditBtn = document.getElementById('done-edit-btn');
 const closeEditBtn = document.getElementById('close-edit-btn');
-const modeMakeBtn  = document.getElementById('mode-make');
+const modeMakeBtn = document.getElementById('mode-make');
 const modeDegreeBtn = document.getElementById('mode-degree');
-const modeEulerBtn  = document.getElementById('mode-eulerian');
-const editor       = document.getElementById('graph-editor');
+const modeEulerBtn = document.getElementById('mode-eulerian');
+const editor = document.getElementById('graph-editor');
 const setVerticesBtn = document.getElementById('set-vertices-btn');
 const editorVertices = document.getElementById('editor-vertices');
 const vertexNamesDiv = document.getElementById('vertex-names');
-const edgeListDiv    = document.getElementById('edge-list');
+const edgeListDiv = document.getElementById('edge-list');
 const editorRandomBtn = document.getElementById('editor-random-btn');
 
 // Editor working state (internal ids and display names)
@@ -273,9 +273,9 @@ function setMode(mode) {
     }
 }
 
-modeMakeBtn  && modeMakeBtn.addEventListener('click',  () => setMode('make'));
+modeMakeBtn && modeMakeBtn.addEventListener('click', () => setMode('make'));
 modeDegreeBtn && modeDegreeBtn.addEventListener('click', () => setMode('degree'));
-modeEulerBtn  && modeEulerBtn.addEventListener('click',  () => setMode('eulerian'));
+modeEulerBtn && modeEulerBtn.addEventListener('click', () => setMode('eulerian'));
 
 // ---------------------------------------------------------------------------
 // Random graph generation for the make panel
@@ -316,10 +316,10 @@ function generateAndRenderRandom(n = 5, populateEditor = false, type = 'default'
         createVertexInputs(n);
         const inputs = vertexNamesDiv.querySelectorAll('input');
         inputs.forEach((inp, i) => {
-            inp.value        = graph.names[i] || '';
-            inp.placeholder  = graph.names[i] || '';
+            inp.value = graph.names[i] || '';
+            inp.placeholder = graph.names[i] || '';
             inp.dataset.prev = inp.value;
-            inp.dataset.id   = vertexId(i);
+            inp.dataset.id = vertexId(i);
         });
         const directedCheckbox = document.getElementById('editor-directed');
         if (directedCheckbox) directedCheckbox.checked = graph.directed;
@@ -327,14 +327,14 @@ function generateAndRenderRandom(n = 5, populateEditor = false, type = 'default'
         editorEdges = graph.edges.map(e => ({
             source: e.source,
             target: e.target,
-            label:  e.label || null,
+            label: e.label || null,
         }));
         renderEdgeList();
         editor.style.display = 'block';
-        if (editBtn)     editBtn.style.display     = 'none';
-        if (doneEditBtn) doneEditBtn.style.display  = '';
+        if (editBtn) editBtn.style.display = 'none';
+        if (doneEditBtn) doneEditBtn.style.display = '';
         if (closeEditBtn) closeEditBtn.style.display = '';
-        if (downloadBtn) downloadBtn.style.display  = 'none';
+        if (downloadBtn) downloadBtn.style.display = 'none';
     }
 }
 
@@ -352,21 +352,21 @@ document.addEventListener('DOMContentLoaded', () => {
 editBtn && editBtn.addEventListener('click', () => {
     const cy = getCy('make');
     if (cy) {
-        const nodes   = cy.nodes().map(nd => ({ id: nd.data('id'), name: nd.data('displayName') || '' }));
+        const nodes = cy.nodes().map(nd => ({ id: nd.data('id'), name: nd.data('displayName') || '' }));
         const cyEdges = cy.edges().map(ed => ({
             source: ed.data('source'),
             target: ed.data('target'),
-            label:  ed.data('label') || null,
+            label: ed.data('label') || null,
         }));
         editorVertices.value = nodes.length || 1;
         editorNodes = nodes.map(nd => nd.name);
         createVertexInputs(nodes.length || 1);
         const inputs = vertexNamesDiv.querySelectorAll('input');
         inputs.forEach((inp, i) => {
-            inp.value        = nodes[i] ? nodes[i].name : '';
-            inp.placeholder  = inp.value;
+            inp.value = nodes[i] ? nodes[i].name : '';
+            inp.placeholder = inp.value;
             inp.dataset.prev = inp.value;
-            inp.dataset.id   = nodes[i] ? nodes[i].id : vertexId(i);
+            inp.dataset.id = nodes[i] ? nodes[i].id : vertexId(i);
         });
         editorEdges = cyEdges;
         const directedCheckbox = document.getElementById('editor-directed');
@@ -377,31 +377,31 @@ editBtn && editBtn.addEventListener('click', () => {
         renderEdgeList();
     }
     editor.style.display = 'block';
-    if (editBtn)     editBtn.style.display     = 'none';
-    if (doneEditBtn) doneEditBtn.style.display  = '';
+    if (editBtn) editBtn.style.display = 'none';
+    if (doneEditBtn) doneEditBtn.style.display = '';
     if (closeEditBtn) closeEditBtn.style.display = '';
-    if (downloadBtn) downloadBtn.style.display  = 'none';
+    if (downloadBtn) downloadBtn.style.display = 'none';
 });
 
 closeEditBtn && closeEditBtn.addEventListener('click', () => {
     editor.style.display = 'none';
-    if (editBtn)     editBtn.style.display     = '';
-    if (doneEditBtn) doneEditBtn.style.display  = 'none';
+    if (editBtn) editBtn.style.display = '';
+    if (doneEditBtn) doneEditBtn.style.display = 'none';
     if (closeEditBtn) closeEditBtn.style.display = 'none';
-    if (downloadBtn) downloadBtn.style.display  = '';
+    if (downloadBtn) downloadBtn.style.display = '';
 });
 
 // ---------------------------------------------------------------------------
 // Editor – apply (Done Editing)
 // ---------------------------------------------------------------------------
 function applyGraphAction() {
-    const inputs   = vertexNamesDiv.querySelectorAll('input');
+    const inputs = vertexNamesDiv.querySelectorAll('input');
     const vertices = Array.from(inputs).map((inp, idx) => ({
-        id:   inp.dataset.id || vertexId(idx),
+        id: inp.dataset.id || vertexId(idx),
         name: (inp.value || '').trim(),
     }));
 
-    const n     = vertices.length;
+    const n = vertices.length;
     const names = vertices.map(v => v.name);
 
     // Resolve and filter edges
@@ -414,10 +414,10 @@ function applyGraphAction() {
     }
 
     const directedCheckbox = document.getElementById('editor-directed');
-    const directed   = directedCheckbox ? directedCheckbox.checked : false;
-    const hasLabels  = edges.some(e => e.label && e.label.trim() !== '');
+    const directed = directedCheckbox ? directedCheckbox.checked : false;
+    const hasLabels = edges.some(e => e.label && e.label.trim() !== '');
     const allNumeric = hasLabels && edges.filter(e => e.label).every(e => !isNaN(Number(e.label)));
-    const edgeLabel  = !hasLabels ? null : allNumeric ? 'weight' : 'name';
+    const edgeLabel = !hasLabels ? null : allNumeric ? 'weight' : 'name';
 
     const graph = { n, names, directed, edgeLabel, edges };
     modeStates.make.graph = graph;
@@ -427,10 +427,10 @@ function applyGraphAction() {
     updateGraphAria('make-graph-description', graph, true);
 
     editor.style.display = 'none';
-    if (editBtn)     editBtn.style.display     = '';
-    if (doneEditBtn) doneEditBtn.style.display  = 'none';
+    if (editBtn) editBtn.style.display = '';
+    if (doneEditBtn) doneEditBtn.style.display = 'none';
     if (closeEditBtn) closeEditBtn.style.display = 'none';
-    if (downloadBtn) downloadBtn.style.display  = '';
+    if (downloadBtn) downloadBtn.style.display = '';
 }
 
 doneEditBtn && doneEditBtn.addEventListener('click', applyGraphAction);
@@ -444,9 +444,9 @@ downloadBtn && downloadBtn.addEventListener('click', async () => {
     if (typeof cy.svg === 'function') {
         try {
             const svgStr = cy.svg({ scale: 1 });
-            const blob   = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
-            const url    = URL.createObjectURL(blob);
-            const a      = document.createElement('a');
+            const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
             a.href = url; a.download = 'graph.svg';
             document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
             return;
@@ -455,10 +455,10 @@ downloadBtn && downloadBtn.addEventListener('click', async () => {
     if (typeof cy.png === 'function') {
         try {
             const dataUrl = cy.png({ full: true, scale: 1 });
-            const res  = await fetch(dataUrl);
+            const res = await fetch(dataUrl);
             const blob = await res.blob();
-            const url  = URL.createObjectURL(blob);
-            const a    = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
             a.href = url; a.download = 'graph.png';
             document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
             return;
@@ -510,14 +510,14 @@ setVerticesBtn && setVerticesBtn.addEventListener('click', () => {
     if (isNaN(n) || n < 1) return;
 
     const oldInputs = vertexNamesDiv.querySelectorAll('input');
-    const oldNames  = Array.from(oldInputs).map(i => i.value || i.placeholder);
+    const oldNames = Array.from(oldInputs).map(i => i.value || i.placeholder);
 
     createVertexInputs(n);
 
     const newInputs = vertexNamesDiv.querySelectorAll('input');
     for (let i = 0; i < newInputs.length; i++) {
         if (i < oldNames.length) {
-            newInputs[i].value       = oldNames[i];
+            newInputs[i].value = oldNames[i];
             newInputs[i].placeholder = oldNames[i];
             newInputs[i].dataset.prev = oldNames[i];
         }
@@ -529,9 +529,9 @@ setVerticesBtn && setVerticesBtn.addEventListener('click', () => {
 });
 
 editorRandomBtn && editorRandomBtn.addEventListener('click', () => {
-    const n          = parseInt(editorVertices.value, 10) || 5;
+    const n = parseInt(editorVertices.value, 10) || 5;
     const typeSelect = document.getElementById('editor-random-type');
-    const type       = typeSelect ? typeSelect.value : 'default';
+    const type = typeSelect ? typeSelect.value : 'default';
     generateAndRenderRandom(n, true, type);
 });
 
@@ -548,26 +548,26 @@ function createVertexInputs(n) {
     list.classList.add('vertex-list');
 
     for (let i = 0; i < n; i++) {
-        const line  = document.createElement('div');
+        const line = document.createElement('div');
         line.classList.add('vertex-line');
 
-        const lbl   = document.createElement('label');
+        const lbl = document.createElement('label');
         lbl.textContent = `${i + 1}.`;
         lbl.classList.add('vertex-label');
 
         const input = document.createElement('input');
-        input.type        = 'text';
+        input.type = 'text';
         input.placeholder = '';
-        input.value       = editorNodes[i] || '';
-        input.dataset.prev  = input.value;
+        input.value = editorNodes[i] || '';
+        input.dataset.prev = input.value;
         input.dataset.index = i;
-        input.dataset.id    = vertexId(i);
+        input.dataset.id = vertexId(i);
         input.classList.add('vertex-input');
 
         input.addEventListener('input', ev => {
-            const idx     = parseInt(ev.target.dataset.index, 10);
+            const idx = parseInt(ev.target.dataset.index, 10);
             const newName = (ev.target.value || '').trim();
-            const prev    = ev.target.dataset.prev || '';
+            const prev = ev.target.dataset.prev || '';
             renameVertex(idx, newName, prev);
             ev.target.dataset.prev = newName;
         });
@@ -584,7 +584,7 @@ function renameVertex(index, newName, prevDisplayedName) {
     const oldName = (typeof prevDisplayedName === 'string' && prevDisplayedName.length > 0)
         ? prevDisplayedName.trim()
         : (editorNodes[index] ? String(editorNodes[index]).trim() : '');
-    const nodeId  = vertexId(index);
+    const nodeId = vertexId(index);
     for (const e of editorEdges) {
         if (e.source === nodeId || String(e.source || '').trim() === oldName) e.source = nodeId;
         if (e.target === nodeId || String(e.target || '').trim() === oldName) e.target = nodeId;
@@ -599,10 +599,10 @@ function renameVertex(index, newName, prevDisplayedName) {
 function renderEdgeList() {
     edgeListDiv.innerHTML = '';
 
-    const inputs   = vertexNamesDiv.querySelectorAll('input');
+    const inputs = vertexNamesDiv.querySelectorAll('input');
     const vertices = Array.from(inputs).map((inp, idx) => ({
-        id:    inp.dataset.id || vertexId(idx),
-        name:  (inp.value || '').trim(),
+        id: inp.dataset.id || vertexId(idx),
+        name: (inp.value || '').trim(),
         index: idx,
     }));
 
@@ -612,7 +612,7 @@ function renderEdgeList() {
     ['Start', 'End', 'Label', ''].forEach((txt, i) => {
         const cell = document.createElement('div');
         cell.textContent = txt;
-        cell.classList.add('edge-col', ['edge-col-start','edge-col-end','edge-col-name','edge-col-actions'][i]);
+        cell.classList.add('edge-col', ['edge-col-start', 'edge-col-end', 'edge-col-name', 'edge-col-actions'][i]);
         hdr.appendChild(cell);
     });
     edgeListDiv.appendChild(hdr);
@@ -623,16 +623,16 @@ function renderEdgeList() {
 
         function makeVertexSelect(currentVal) {
             const sel = document.createElement('select');
-            const ph  = document.createElement('option');
+            const ph = document.createElement('option');
             ph.value = ''; ph.textContent = '--'; sel.appendChild(ph);
             vertices.forEach(v => {
                 const o = document.createElement('option');
-                o.value       = v.id;
+                o.value = v.id;
                 o.textContent = `${v.index + 1}.${v.name ? ' ' + v.name : ''}`;
                 sel.appendChild(o);
             });
             const match = vertices.find(v => v.id === currentVal)
-                       || vertices.find(v => v.name === String(currentVal || '').trim());
+                || vertices.find(v => v.name === String(currentVal || '').trim());
             sel.value = match ? match.id : '';
             return sel;
         }
@@ -643,11 +643,11 @@ function renderEdgeList() {
         const toSel = makeVertexSelect(e.target);
         toSel.addEventListener('change', () => { editorEdges[idx].target = toSel.value; });
 
-        const lblInput        = document.createElement('input');
-        lblInput.type         = 'text';
-        lblInput.placeholder  = 'label';
-        lblInput.value        = e.label || '';
-        lblInput.style.width  = '100%';
+        const lblInput = document.createElement('input');
+        lblInput.type = 'text';
+        lblInput.placeholder = 'label';
+        lblInput.value = e.label || '';
+        lblInput.style.width = '100%';
         lblInput.style.boxSizing = 'border-box';
         lblInput.addEventListener('input', () => { editorEdges[idx].label = lblInput.value; });
 
@@ -662,9 +662,9 @@ function renderEdgeList() {
             return div;
         }
 
-        row.appendChild(makeCol('edge-col-start',   fromSel));
-        row.appendChild(makeCol('edge-col-end',     toSel));
-        row.appendChild(makeCol('edge-col-name',    lblInput));
+        row.appendChild(makeCol('edge-col-start', fromSel));
+        row.appendChild(makeCol('edge-col-end', toSel));
+        row.appendChild(makeCol('edge-col-name', lblInput));
         row.appendChild(makeCol('edge-col-actions', rem));
         edgeListDiv.appendChild(row);
     });
@@ -689,7 +689,7 @@ function loadDegreeStats() {
         const raw = localStorage.getItem('graph_degree_stats');
         if (raw) {
             const s = JSON.parse(raw);
-            modeStates.degree.stats.correct   = s.correct   || 0;
+            modeStates.degree.stats.correct = s.correct || 0;
             modeStates.degree.stats.incorrect = s.incorrect || 0;
         }
     } catch (e) { /* ignore */ }
@@ -703,30 +703,30 @@ function saveDegreeStats() {
 function updateDegreeStatsDisplay() {
     const { correct, incorrect } = modeStates.degree.stats;
     const total = correct + incorrect;
-    const pct   = total === 0 ? 0 : Math.round((correct / total) * 100);
-    const el    = id => document.getElementById(id);
-    if (el('degree-correct'))   el('degree-correct').textContent   = correct;
+    const pct = total === 0 ? 0 : Math.round((correct / total) * 100);
+    const el = id => document.getElementById(id);
+    if (el('degree-correct')) el('degree-correct').textContent = correct;
     if (el('degree-incorrect')) el('degree-incorrect').textContent = incorrect;
-    if (el('degree-accuracy'))  el('degree-accuracy').textContent  = pct + '%';
+    if (el('degree-accuracy')) el('degree-accuracy').textContent = pct + '%';
 }
 
 function showAnswerInput() {
     const answerInput = document.getElementById('degree-answer');
-    const submitBtn   = document.getElementById('degree-submit-btn');
+    const submitBtn = document.getElementById('degree-submit-btn');
     const feedbackBox = document.getElementById('training-feedback');
     if (answerInput) { answerInput.value = ''; answerInput.disabled = false; }
-    if (submitBtn)   submitBtn.style.display   = '';
+    if (submitBtn) submitBtn.style.display = '';
     if (feedbackBox) feedbackBox.style.display = 'none';
 }
 
 function showFeedback(correct, expected) {
     const answerInput = document.getElementById('degree-answer');
-    const submitBtn   = document.getElementById('degree-submit-btn');
+    const submitBtn = document.getElementById('degree-submit-btn');
     const feedbackBox = document.getElementById('training-feedback');
     const feedbackText = document.getElementById('feedback-text');
 
     if (answerInput) answerInput.disabled = true;
-    if (submitBtn)   submitBtn.style.display = 'none';
+    if (submitBtn) submitBtn.style.display = 'none';
     if (feedbackText) {
         feedbackText.innerHTML = correct
             ? '✓ <strong class="feedback-report correct">Correct!</strong>'
@@ -739,10 +739,10 @@ function showFeedback(correct, expected) {
 }
 
 function bindDegreeControls() {
-    const resetBtn    = document.getElementById('degree-reset-btn');
-    const submitBtn   = document.getElementById('degree-submit-btn');
+    const resetBtn = document.getElementById('degree-reset-btn');
+    const submitBtn = document.getElementById('degree-submit-btn');
     const answerInput = document.getElementById('degree-answer');
-    const nextBtn     = document.getElementById('training-next');
+    const nextBtn = document.getElementById('training-next');
 
     if (resetBtn && !resetBtn.dataset.bound) {
         resetBtn.dataset.bound = '1';
@@ -765,7 +765,7 @@ function bindDegreeControls() {
                 return;
             }
             const expected = modeStates.degree.expectedSeq.slice();
-            const correct  = arraysEqual(got, expected);
+            const correct = arraysEqual(got, expected);
             modeStates.degree.stats[correct ? 'correct' : 'incorrect']++;
             saveDegreeStats();
             updateDegreeStatsDisplay();
@@ -796,8 +796,8 @@ function arraysEqual(a, b) {
 }
 
 function startDegreeSequence() {
-    const n     = Math.floor(Math.random() * 5) + 3;   // 3–7
-    let   graph = generateSimpleGraph(n);
+    const n = Math.floor(Math.random() * 5) + 3;   // 3–7
+    let graph = generateSimpleGraph(n);
 
     // Occasionally add loops / parallel edges for variety
     if (Math.random() < 0.5) {
@@ -816,8 +816,8 @@ function startDegreeSequence() {
         graph = { ...graph, edges: extraEdges };
     }
 
-    const ds       = modeStates.degree;
-    ds.graph       = graph;
+    const ds = modeStates.degree;
+    ds.graph = graph;
     ds.expectedSeq = degreeSequence(graph.edges, n);
 
     const cy = getCy('degree');
@@ -829,7 +829,7 @@ function startDegreeSequence() {
 }
 
 // ---------------------------------------------------------------------------
-// Eulerian Trails Mode
+// Eulerian graphs Mode
 // ---------------------------------------------------------------------------
 function loadEulerianStats() {
     try {
@@ -837,8 +837,8 @@ function loadEulerianStats() {
         if (raw) {
             const s = JSON.parse(raw);
             modeStates.eulerian.stats.correct = s.correct || 0;
-            modeStates.eulerian.stats.total   = s.total   || 0;
-            modeStates.eulerian.stats.points  = s.points  || 0;
+            modeStates.eulerian.stats.total = s.total || 0;
+            modeStates.eulerian.stats.points = s.points || 0;
         }
     } catch (e) { /* ignore */ }
 }
@@ -849,11 +849,11 @@ function saveEulerianStats() {
 }
 
 function updateEulerianStatsDisplay() {
-    const s    = modeStates.eulerian.stats;
-    const pct  = s.total === 0 ? 0 : Math.round((s.points / s.total) * 100);
-    const el   = id => document.getElementById(id);
-    if (el('eulerian-total'))    el('eulerian-total').textContent    = s.total;
-    if (el('eulerian-points'))   el('eulerian-points').textContent   = s.points.toFixed(1);
+    const s = modeStates.eulerian.stats;
+    const pct = s.total === 0 ? 0 : Math.round((s.points / s.total) * 100);
+    const el = id => document.getElementById(id);
+    if (el('eulerian-total')) el('eulerian-total').textContent = s.total;
+    if (el('eulerian-points')) el('eulerian-points').textContent = s.points.toFixed(1);
     if (el('eulerian-accuracy')) el('eulerian-accuracy').textContent = pct + '%';
 }
 
@@ -872,10 +872,10 @@ function renderEulerAddEdgeList() {
         lbl.textContent = `${idx + 1}.`;
 
         function makeInput(placeholder, value, onInput) {
-            const inp     = document.createElement('input');
-            inp.type      = 'text';
+            const inp = document.createElement('input');
+            inp.type = 'text';
             inp.placeholder = placeholder;
-            inp.value     = value;
+            inp.value = value;
             inp.maxLength = 1;
             inp.addEventListener('input', () => {
                 const v = inp.value.toUpperCase().trim();
@@ -885,10 +885,10 @@ function renderEulerAddEdgeList() {
             return inp;
         }
 
-        const fromLbl   = Object.assign(document.createElement('span'), { textContent: 'From:', style: 'color:#555;font-size:14px;' });
+        const fromLbl = Object.assign(document.createElement('span'), { textContent: 'From:', style: 'color:#555;font-size:14px;' });
         const fromInput = makeInput('A', row.from || '', v => { eulerAddEdges[idx].from = v; });
-        const toLbl     = Object.assign(document.createElement('span'), { textContent: 'To:',   style: 'color:#555;font-size:14px;' });
-        const toInput   = makeInput('B', row.to   || '', v => { eulerAddEdges[idx].to   = v; });
+        const toLbl = Object.assign(document.createElement('span'), { textContent: 'To:', style: 'color:#555;font-size:14px;' });
+        const toInput = makeInput('B', row.to || '', v => { eulerAddEdges[idx].to = v; });
 
         const removeBtn = document.createElement('button');
         removeBtn.textContent = 'Remove';
@@ -902,35 +902,36 @@ function renderEulerAddEdgeList() {
 function resetEulerianUI() {
     const show = id => { const el = document.getElementById(id); if (el) el.style.display = ''; };
     const hide = id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; };
-    const get  = id => document.getElementById(id);
+    const get = id => document.getElementById(id);
 
     show('eulerian-part1');
-    ['eulerian-part1-wrong', 'eulerian-part2-path', 'eulerian-part2-eulerize',
-     'eulerian-path-feedback', 'eulerian-eulerize-feedback'].forEach(hide);
+    ['eulerian-part1-wrong', 'eulerian-part2-circuit', 'eulerian-part2-eulerize',
+        'eulerian-circuit-feedback', 'eulerian-eulerize-feedback'].forEach(hide);
 
     ['eulerian-yes-btn', 'eulerian-no-btn'].forEach(id => {
         const btn = get(id);
         if (btn) { btn.classList.remove('selected-correct', 'selected-wrong'); btn.disabled = false; }
     });
 
-    const pathInput = get('eulerian-path-input');
-    if (pathInput) { pathInput.value = ''; pathInput.disabled = false; }
+    const circuitInput = get('eulerian-circuit-input');
+    if (circuitInput) { circuitInput.value = ''; circuitInput.disabled = false; }
 
     eulerAddEdges = [{ from: '', to: '' }];
     renderEulerAddEdgeList();
 
-    const submitBtn   = get('eulerian-path-submit-btn');
+    const submitBtn = get('eulerian-circuit-submit-btn');
     const ezSubmitBtn = get('eulerian-eulerize-submit-btn');
-    if (submitBtn)   submitBtn.style.display   = '';
+    const addEdgeBtn = get('eulerian-add-edge-btn');
+    if (submitBtn) submitBtn.style.display = '';
     if (ezSubmitBtn) ezSubmitBtn.style.display = '';
 }
 
 function startEulerianTrial() {
-    const puzzle = generateEulerianTrailPuzzle();
+    const puzzle = generateEulerianGraphPuzzle();
     modeStates.eulerian.currentPuzzle = puzzle;
-    modeStates.eulerian.part1Scored   = false;
-    modeStates.eulerian.part2Scored   = false;
-    modeStates.eulerian.graph         = puzzle;
+    modeStates.eulerian.part1Scored = false;
+    modeStates.eulerian.part2Scored = false;
+    modeStates.eulerian.graph = puzzle;
 
     const cy = getCy('eulerian');
     if (cy) draw_graph(puzzle, cy);
@@ -939,8 +940,8 @@ function startEulerianTrial() {
     resetEulerianUI();
     updateEulerianStatsDisplay();
 
-    // Update path input hint
-    const hint = document.getElementById('eulerian-part2-path-hint');
+    // Update circuit input hint
+    const hint = document.getElementById('eulerian-part2-circuit-hint');
     if (hint) {
         if (puzzle.isMulti) {
             hint.textContent = 'Enter alternating vertices and edge labels, e.g. AaBbCcA';
@@ -950,7 +951,7 @@ function startEulerianTrial() {
             const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
             hint.textContent = oddCount === 0
                 ? 'Enter the vertices of an Eulerian circuit in order, e.g. ABCA'
-                : 'Enter the vertices of an Eulerian path in order, e.g. ABCD';
+                : 'Enter the vertices of an Eulerian circuit in order, e.g. ABCD';
         }
     }
 
@@ -994,7 +995,7 @@ function bindEulerianControls() {
                 } else {
                     btn.classList.add('selected-wrong');
                     const wrongPanel = get('eulerian-part1-wrong');
-                    const wrongText  = get('eulerian-part1-wrong-text');
+                    const wrongText = get('eulerian-part1-wrong-text');
                     if (wrongText) {
                         wrongText.textContent = puzzle.isEulerian
                             ? 'This graph is actually Eulerian — every vertex has even degree (and the graph is connected).'
@@ -1012,9 +1013,9 @@ function bindEulerianControls() {
 
                 get('eulerian-part1').style.display = 'none';
                 if (puzzle.isEulerian) {
-                    const part2 = get('eulerian-part2-path');
+                    const part2 = get('eulerian-part2-circuit');
                     if (part2) part2.style.display = '';
-                    const title = get('eulerian-part2-path-title');
+                    const title = get('eulerian-part2-circuit-title');
                     if (title) {
                         if (puzzle.directed) {
                             title.textContent = 'Part 2 — Find an Eulerian circuit';
@@ -1022,12 +1023,16 @@ function bindEulerianControls() {
                             const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
                             title.textContent = oddCount === 0
                                 ? 'Part 2 — Find an Eulerian circuit'
-                                : 'Part 2 — Find an Eulerian path';
+                                : 'Part 2 — Find an Eulerian circuit';
                         }
                     }
                 } else {
                     const part2 = get('eulerian-part2-eulerize');
                     if (part2) part2.style.display = '';
+                    const addEdgeBtn = get('eulerian-add-edge-btn');
+                    const ezSubmitBtn = get('eulerian-eulerize-submit-btn');
+                    if (addEdgeBtn) addEdgeBtn.style.display = '';
+                    if (ezSubmitBtn) ezSubmitBtn.style.display = '';
                     eulerAddEdges = [{ from: '', to: '' }];
                     renderEulerAddEdgeList();
                 }
@@ -1055,15 +1060,15 @@ function bindEulerianControls() {
             const puzzle = modeStates.eulerian.currentPuzzle;
             if (!puzzle) return;
 
-            const valid = validateEulerization(puzzle, eulerAddEdges);
+            const result = validateEulerization(puzzle, eulerAddEdges);
 
-            const feedbackDiv  = get('eulerian-eulerize-feedback');
+            const feedbackDiv = get('eulerian-eulerize-feedback');
             const feedbackText = get('eulerian-eulerize-feedback-text');
-            const tryAgainBtn  = get('eulerian-eulerize-try-again');
-            const nextBtn      = get('eulerian-eulerize-next');
+            const tryAgainBtn = get('eulerian-eulerize-try-again');
+            const addEdgeBtn = get('eulerian-add-edge-btn');
             if (feedbackDiv) feedbackDiv.style.display = '';
 
-            if (valid) {
+            if (result.ok) {
                 if (!modeStates.eulerian.part2Scored) {
                     modeStates.eulerian.stats.points += 0.5;
                     modeStates.eulerian.part2Scored = true;
@@ -1071,35 +1076,43 @@ function bindEulerianControls() {
                     updateEulerianStatsDisplay();
                 }
                 if (feedbackText) feedbackText.innerHTML = '✓ <strong class="feedback-report correct">Correct!</strong> The added edges make every vertex even-degree — the graph is now Eulerian.';
-                if (feedbackDiv)  feedbackDiv.className  = 'training-feedback correct';
-                if (tryAgainBtn)  tryAgainBtn.style.display = 'none';
-                if (nextBtn)      nextBtn.style.display     = '';
-                if (ezSubmitBtn)  ezSubmitBtn.style.display = 'none';
+                if (feedbackDiv) feedbackDiv.className = 'training-feedback correct';
+                if (tryAgainBtn) tryAgainBtn.style.display = 'none';
+                if (ezSubmitBtn) ezSubmitBtn.style.display = 'none';
+                if (addEdgeBtn) addEdgeBtn.style.display = 'none';
+
+            } else if (result.reason === 'invalid_vertices') {
+                // Soft error — don't lock the form, just warn inline
+                if (feedbackText) feedbackText.innerHTML =
+                    '✗ <strong class="feedback-report incorrect">Invalid input.</strong> ' +
+                    `The following edges reference vertex names that don't exist in this graph: ${result.bad.join(', ')}. ` +
+                    'Check your spelling and try again.';
+                if (feedbackDiv) feedbackDiv.className = 'training-feedback incorrect';
+                if (tryAgainBtn) tryAgainBtn.style.display = '';
+                // Leave submit + add-edge visible so they can fix it
+                if (ezSubmitBtn) ezSubmitBtn.style.display = '';
+                // if (addEdgeBtn)  addEdgeBtn.style.display  = '';
+
             } else {
-                if (feedbackText) {
-                    // Compute post-addition odd vertices for the hint
-                    const deg = Object.fromEntries(puzzle.names.map(nm => [nm, 0]));
-                    puzzle.edges.forEach(e => {
-                        const a = vertexLabel(e.source, puzzle.names);
-                        const b = vertexLabel(e.target, puzzle.names);
-                        if (a === b) { deg[a] += 2; } else { deg[a]++; deg[b]++; }
-                    });
-                    eulerAddEdges.forEach(ae => {
-                        const f = (ae.from || '').toUpperCase();
-                        const t = (ae.to   || '').toUpperCase();
-                        if (f && t && f !== t && puzzle.names.includes(f) && puzzle.names.includes(t)) {
-                            deg[f]++; deg[t]++;
-                        }
-                    });
-                    const oddAfter = Object.entries(deg).filter(([, d]) => d % 2 !== 0).map(([nm]) => nm);
-                    const hint = oddAfter.length > 0
-                        ? ` Vertices with odd degree after your additions: ${oddAfter.join(', ')}.`
-                        : ' Check that your added edges reference valid vertex names.';
-                    feedbackText.innerHTML = '✗ <strong class="feedback-report incorrect">Not quite.</strong>' + hint + ' Try again!';
+                // Definitive wrong answer — lock the form and move on
+                let message;
+                if (result.reason === 'not_duplicate') {
+                    const direction = puzzle.directed
+                        ? ' You can only duplicate an existing directed edge in the same direction.'
+                        : ' You can only duplicate edges that already exist in the graph.';
+                    message = `The following edges you added don't duplicate any existing edge: ${result.bad.join(', ')}.` + direction;
+                } else {
+                    // not_eulerian
+                    message = `Your added edges are valid duplicates, but the graph is still not Eulerian. ` +
+                        `${puzzle.directed ? 'Vertices where in-degree ≠ out-degree' : 'Vertices with odd degree'} ` +
+                        `after your additions: ${result.oddVertices.join(', ')}.`;
                 }
-                if (feedbackDiv)  feedbackDiv.className     = 'training-feedback incorrect';
-                if (tryAgainBtn)  tryAgainBtn.style.display = '';
-                if (nextBtn)      nextBtn.style.display     = 'none';
+                if (feedbackText) feedbackText.innerHTML =
+                    `✗ <strong class="feedback-report incorrect">Incorrect.</strong> ${message}`;
+                if (feedbackDiv) feedbackDiv.className = 'training-feedback incorrect';
+                if (tryAgainBtn) tryAgainBtn.style.display = '';
+                if (ezSubmitBtn) ezSubmitBtn.style.display = 'none';
+                if (addEdgeBtn) addEdgeBtn.style.display = 'none';
             }
         };
     }
@@ -1107,45 +1120,41 @@ function bindEulerianControls() {
     const ezTryAgain = get('eulerian-eulerize-try-again');
     if (ezTryAgain && !ezTryAgain.dataset.bound) {
         ezTryAgain.dataset.bound = '1';
-        ezTryAgain.onclick = () => {
-            get('eulerian-eulerize-feedback').style.display = 'none';
-            get('eulerian-eulerize-submit-btn').style.display = '';
-        };
-    }
-    const ezNext = get('eulerian-eulerize-next');
-    if (ezNext && !ezNext.dataset.bound) {
-        ezNext.dataset.bound = '1';
-        ezNext.onclick = () => startEulerianTrial();
+        // After a soft error (invalid vertices) this re-hides feedback so they can fix input.
+        // After a definitive wrong answer the submit button is already hidden so clicking
+        // this just progresses — we update the label dynamically in the submit handler above,
+        // but the simplest approach is to always move to the next question here and let the
+        // submit handler control whether the button is visible at all.
+        ezTryAgain.onclick = () => startEulerianTrial();
     }
 
-    // Submit Eulerian path
-    const pathSubmitBtn = get('eulerian-path-submit-btn');
-    if (pathSubmitBtn && !pathSubmitBtn.dataset.bound) {
-        pathSubmitBtn.dataset.bound = '1';
-        pathSubmitBtn.onclick = () => {
-            const puzzle    = modeStates.eulerian.currentPuzzle;
-            const pathInput = get('eulerian-path-input');
-            if (!puzzle || !pathInput) return;
+    // Submit Eulerian circuit
+    const circuitSubmitBtn = get('eulerian-circuit-submit-btn');
+    if (circuitSubmitBtn && !circuitSubmitBtn.dataset.bound) {
+        circuitSubmitBtn.dataset.bound = '1';
+        circuitSubmitBtn.onclick = () => {
+            const puzzle = modeStates.eulerian.currentPuzzle;
+            const circuitInput = get('eulerian-circuit-input');
+            if (!puzzle || !circuitInput) return;
 
-            const raw = pathInput.value.trim();
+            const raw = circuitInput.value.trim();
             let valid = false;
 
             if (puzzle.isMulti) {
                 const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
-                valid = validateEulerianPathMulti(raw, puzzle, oddCount === 0);
+                valid = validateEuleriancircuitMulti(raw, puzzle, oddCount === 0);
             } else if (puzzle.directed) {
-                const path = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
-                valid = validateEulerianCircuitDigraph(path, puzzle);
+                const circuit = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
+                valid = validateEulerianCircuitDigraph(circuit, puzzle);
             } else {
-                const path     = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
+                const circuit = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
                 const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
-                valid = validateEulerianPathSimple(path, puzzle, oddCount === 0);
+                valid = validateEuleriancircuitSimple(circuit, puzzle, oddCount === 0);
             }
 
-            const feedbackDiv  = get('eulerian-path-feedback');
-            const feedbackText = get('eulerian-path-feedback-text');
-            const tryAgainBtn  = get('eulerian-path-try-again');
-            const nextBtn      = get('eulerian-path-next');
+            const feedbackDiv = get('eulerian-circuit-feedback');
+            const feedbackText = get('eulerian-circuit-feedback-text');
+            const tryAgainBtn = get('eulerian-circuit-try-again');
             if (feedbackDiv) feedbackDiv.style.display = '';
 
             if (valid) {
@@ -1155,40 +1164,29 @@ function bindEulerianControls() {
                     saveEulerianStats();
                     updateEulerianStatsDisplay();
                 }
-                if (feedbackText) feedbackText.innerHTML = '✓ <strong class="feedback-report correct">Correct!</strong> That is a valid Eulerian path.';
-                if (feedbackDiv)  feedbackDiv.className  = 'training-feedback correct';
-                if (tryAgainBtn)  tryAgainBtn.style.display  = 'none';
-                if (nextBtn)      nextBtn.style.display      = '';
-                if (pathSubmitBtn) pathSubmitBtn.style.display = 'none';
-                pathInput.disabled = true;
+                if (feedbackText) feedbackText.innerHTML = '✓ <strong class="feedback-report correct">Correct!</strong> That is a valid Eulerian circuit.';
+                if (feedbackDiv) feedbackDiv.className = 'training-feedback correct';
             } else {
                 if (feedbackText) {
                     let hint = '';
-                    if      (puzzle.isMulti)   hint = ' Remember: use alternating capital letters (vertices) and lowercase letters (edge labels), e.g. AaBbCA.';
-                    else if (puzzle.directed)  hint = ' Remember: it must be a circuit (start = end) and follow edge directions.';
-                    else                       hint = ' Make sure you use every edge exactly once.';
+                    if (puzzle.isMulti) hint = ' Remember: use alternating capital letters (vertices) and lowercase letters (edge labels), e.g. AaBbCA.';
+                    else if (puzzle.directed) hint = ' Remember: it must be a circuit (start = end) and follow edge directions.';
+                    else hint = ' Make sure you use every edge exactly once.';
                     feedbackText.innerHTML = '✗ <strong class="feedback-report incorrect">Not valid.</strong>' + hint;
                 }
-                if (feedbackDiv)  feedbackDiv.className     = 'training-feedback incorrect';
-                if (tryAgainBtn)  tryAgainBtn.style.display = '';
-                if (nextBtn)      nextBtn.style.display     = 'none';
+                if (feedbackDiv) feedbackDiv.className = 'training-feedback incorrect';
             }
+            if (tryAgainBtn) tryAgainBtn.style.display = '';
+            if (circuitSubmitBtn) circuitSubmitBtn.style.display = 'none';
+            circuitInput.disabled = true;
         };
     }
 
-    const pathTryAgain = get('eulerian-path-try-again');
-    if (pathTryAgain && !pathTryAgain.dataset.bound) {
-        pathTryAgain.dataset.bound = '1';
-        pathTryAgain.onclick = () => {
-            get('eulerian-path-feedback').style.display = 'none';
-            const pathInput = get('eulerian-path-input');
-            if (pathInput) { pathInput.value = ''; pathInput.disabled = false; }
-            get('eulerian-path-submit-btn').style.display = '';
+    const circuitTryAgain = get('eulerian-circuit-try-again');
+    if (circuitTryAgain && !circuitTryAgain.dataset.bound) {
+        circuitTryAgain.dataset.bound = '1';
+        circuitTryAgain.onclick = () => {
+            startEulerianTrial();
         };
-    }
-    const pathNext = get('eulerian-path-next');
-    if (pathNext && !pathNext.dataset.bound) {
-        pathNext.dataset.bound = '1';
-        pathNext.onclick = () => startEulerianTrial();
     }
 }

@@ -806,7 +806,7 @@ function generateRandomGraph(n, numComponents = 1) {
 
 
 // ---------------------------------------------------------------------------
-// Eulerian trail puzzle generators
+// Eulerian Graph puzzle generators
 // ---------------------------------------------------------------------------
 
 /** @returns {object} graph */
@@ -874,15 +874,15 @@ function _makeNonEulerianMulti(n) {
 }
 
 /**
- * Generate a random Eulerian trail puzzle.
+ * Generate a random Eulerian graph puzzle.
  *
  * Returns a graph object extended with:
  *   isEulerian  {boolean}  — ground-truth answer
- *   isMulti     {boolean}  — true when edge labels are edge-names (for path input format)
+ *   isMulti     {boolean}  — true when edge labels are edge-names (for circuit input format)
  *
  * @returns {object}
  */
-function generateEulerianTrailPuzzle() {
+function generateEulerianGraphPuzzle() {
     const n        = Math.floor(Math.random() * 3) + 4;   // 4–6 vertices
     const scenario = Math.floor(Math.random() * 6);
 
@@ -904,7 +904,7 @@ function generateEulerianTrailPuzzle() {
         const balanced = inDeg.every((d, i) => d === outDeg[i]);
         isEulerian = balanced && isStronglyConnected(graph.edges, n);
     } else {
-        isEulerian = isConnected(graph.edges, n) && getOddVertices(graph.edges, n).length <= 2;
+        isEulerian = isConnected(graph.edges, n) && getOddVertices(graph.edges, n).length === 0;
     }
 
     return { ...graph, isEulerian, isMulti };
@@ -912,20 +912,20 @@ function generateEulerianTrailPuzzle() {
 
 
 // ---------------------------------------------------------------------------
-// Eulerian trail validation
+// Eulerian circuit validation
 // ---------------------------------------------------------------------------
 
 /**
  * Check whether a sequence of vertex display-names forms a valid Eulerian
- * path/circuit in a simple undirected graph.
- * @param {string[]} path            - display names e.g. ["A","B","C","A"]
+ * circuit in a simple undirected graph.
+ * @param {string[]} circuit            - display names e.g. ["A","B","C","A"]
  * @param {object}   graph
  * @param {boolean}  requireCircuit
  * @returns {boolean}
  */
-function validateEulerianPathSimple(path, graph, requireCircuit) {
-    if (path.length < 2) return false;
-    if (requireCircuit && path[0] !== path[path.length - 1]) return false;
+function validateEulerianCircuitSimple(circuit, graph, requireCircuit) {
+    if (circuit.length < 2) return false;
+    if (requireCircuit && circuit[0] !== circuit[circuit.length - 1]) return false;
 
     const pool = graph.edges.map(e => ({
         a: vertexLabel(e.source, graph.names),
@@ -933,8 +933,8 @@ function validateEulerianPathSimple(path, graph, requireCircuit) {
         used: false,
     }));
 
-    for (let step = 0; step < path.length - 1; step++) {
-        const u = path[step], v = path[step + 1];
+    for (let step = 0; step < circuit.length - 1; step++) {
+        const u = circuit[step], v = circuit[step + 1];
         const ei = pool.findIndex(e => !e.used && ((e.a === u && e.b === v) || (e.a === v && e.b === u)));
         if (ei === -1) return false;
         pool[ei].used = true;
@@ -944,13 +944,13 @@ function validateEulerianPathSimple(path, graph, requireCircuit) {
 
 /**
  * Check whether an alternating vertex/edge-label string is a valid Eulerian
- * path in a multigraph, e.g. "AaBbCcA".
+ * circuit in a multigraph, e.g. "AaBbCcA".
  * @param {string}  input
  * @param {object}  graph
  * @param {boolean} requireCircuit
  * @returns {boolean}
  */
-function validateEulerianPathMulti(input, graph, requireCircuit) {
+function validateEulerianCircuitMulti(input, graph, requireCircuit) {
     const tokens = input.match(/[A-Z]|[a-z]/g);
     if (!tokens || tokens.length < 3) return false;
     for (let i = 0; i < tokens.length; i++) {
@@ -979,13 +979,13 @@ function validateEulerianPathMulti(input, graph, requireCircuit) {
 /**
  * Check whether a sequence of vertex display-names is a valid Eulerian circuit
  * in a directed graph.
- * @param {string[]} path
+ * @param {string[]} circuit
  * @param {object}   graph
  * @returns {boolean}
  */
-function validateEulerianCircuitDigraph(path, graph) {
-    if (path.length < 2) return false;
-    if (path[0] !== path[path.length - 1]) return false;
+function validateEulerianCircuitDigraph(circuit, graph) {
+    if (circuit.length < 2) return false;
+    if (circuit[0] !== circuit[circuit.length - 1]) return false;
 
     const pool = graph.edges.map(e => ({
         a: vertexLabel(e.source, graph.names),
@@ -993,8 +993,8 @@ function validateEulerianCircuitDigraph(path, graph) {
         used: false,
     }));
 
-    for (let step = 0; step < path.length - 1; step++) {
-        const u = path[step], v = path[step + 1];
+    for (let step = 0; step < circuit.length - 1; step++) {
+        const u = circuit[step], v = circuit[step + 1];
         const ei = pool.findIndex(e => !e.used && e.a === u && e.b === v);
         if (ei === -1) return false;
         pool[ei].used = true;
@@ -1003,64 +1003,84 @@ function validateEulerianCircuitDigraph(path, graph) {
 }
 
 /**
- * Check whether adding a set of edges to a graph makes it Eulerian.
- * Added edges are specified by display names and must duplicate existing edges
- * (no introducing new vertex relationships).
+ * Validate whether adding a set of edges to a graph makes it Eulerian.
+ * Added edges must duplicate existing edges (no new vertex relationships).
  *
- * @param {object}  graph      - the original graph
- * @param {Array<{from: string, to: string}>} addedEdges  - display-name pairs
- * @returns {boolean}
+ * Returns a result object rather than a bare boolean so the caller can
+ * display specific feedback for each failure mode:
+ *
+ *   { ok: true }
+ *     — the eulerization is correct.
+ *
+ *   { ok: false, reason: 'invalid_vertices', bad: ['X', 'Y'] }
+ *     — one or more added edges reference vertex names that don't exist.
+ *
+ *   { ok: false, reason: 'not_duplicate', bad: ['A→C', ...] }
+ *     — one or more added edges don't duplicate an existing edge.
+ *
+ *   { ok: false, reason: 'not_eulerian', oddVertices: ['A', 'C'] }
+ *     — all added edges are valid duplicates but the graph is still not Eulerian;
+ *       oddVertices lists the vertices that still have odd degree.
+ *
+ * @param {object}  graph
+ * @param {Array<{from: string, to: string}>} addedEdges
+ * @returns {{ ok: boolean, reason?: string, bad?: string[], oddVertices?: string[] }}
  */
 function validateEulerization(graph, addedEdges) {
-    const { n, names, directed, edges: origEdges } = graph;
+    const { names, directed, edges: origEdges } = graph;
 
-    if (directed) {
-        const origSet = new Set(origEdges.map(e => {
-            const a = vertexLabel(e.source, names), b = vertexLabel(e.target, names);
-            return a !== b ? `${a}->${b}` : null;
-        }).filter(Boolean));
+    const origSet = new Set(origEdges.map(e => {
+        const a = vertexLabel(e.source, names), b = vertexLabel(e.target, names);
+        if (a === b) return null;
+        return directed ? `${a}->${b}` : [a, b].sort().join('--');
+    }).filter(Boolean));
 
-        const combined = origEdges
-            .map(e => ({ s: vertexLabel(e.source, names), t: vertexLabel(e.target, names) }))
-            .filter(e => e.s !== e.t);
+    const combined = origEdges
+        .map(e => ({ s: vertexLabel(e.source, names), t: vertexLabel(e.target, names) }))
+        .filter(e => e.s !== e.t);
 
-        for (const ae of addedEdges) {
-            if (!ae.from || !ae.to) continue;
-            const from = ae.from.trim().toUpperCase();
-            const to   = ae.to.trim().toUpperCase();
-            if (!names.includes(from) || !names.includes(to)) return false;
-            if (from === to) continue;
-            if (!origSet.has(`${from}->${to}`)) return false;
-            combined.push({ s: from, t: to });
+    const invalidVertices = [];
+    const nonDuplicates   = [];
+
+    for (const ae of addedEdges) {
+        if (!ae.from || !ae.to) continue;
+        const from = ae.from.trim().toUpperCase();
+        const to   = ae.to.trim().toUpperCase();
+
+        if (!names.includes(from) || !names.includes(to)) {
+            invalidVertices.push(`${from}–${to}`);
+            continue;
         }
+        if (from === to) continue;  // self-loops are silently skipped
 
+        const key = directed ? `${from}->${to}` : [from, to].sort().join('--');
+        if (!origSet.has(key)) {
+            nonDuplicates.push(directed ? `${from}→${to}` : `${from}–${to}`);
+            continue;
+        }
+        combined.push({ s: from, t: to });
+    }
+
+    if (invalidVertices.length > 0) {
+        return { ok: false, reason: 'invalid_vertices', bad: invalidVertices };
+    }
+    if (nonDuplicates.length > 0) {
+        return { ok: false, reason: 'not_duplicate', bad: nonDuplicates };
+    }
+
+    // Check whether the combined graph is now Eulerian
+    if (directed) {
         const inDeg  = Object.fromEntries(names.map(nm => [nm, 0]));
         const outDeg = Object.fromEntries(names.map(nm => [nm, 0]));
         for (const { s, t } of combined) { outDeg[s]++; inDeg[t]++; }
-        return names.every(nm => inDeg[nm] === outDeg[nm]);
-
+        const oddVertices = names.filter(nm => inDeg[nm] !== outDeg[nm]);
+        if (oddVertices.length > 0) return { ok: false, reason: 'not_eulerian', oddVertices };
     } else {
-        const origSet = new Set(origEdges.map(e => {
-            const a = vertexLabel(e.source, names), b = vertexLabel(e.target, names);
-            return a !== b ? [a, b].sort().join('--') : null;
-        }).filter(Boolean));
-
-        const combined = origEdges
-            .map(e => ({ s: vertexLabel(e.source, names), t: vertexLabel(e.target, names) }))
-            .filter(e => e.s !== e.t);
-
-        for (const ae of addedEdges) {
-            if (!ae.from || !ae.to) continue;
-            const from = ae.from.trim().toUpperCase();
-            const to   = ae.to.trim().toUpperCase();
-            if (!names.includes(from) || !names.includes(to)) return false;
-            if (from === to) continue;
-            if (!origSet.has([from, to].sort().join('--'))) return false;
-            combined.push({ s: from, t: to });
-        }
-
         const deg = Object.fromEntries(names.map(nm => [nm, 0]));
         for (const { s, t } of combined) { deg[s]++; deg[t]++; }
-        return Object.values(deg).every(d => d % 2 === 0);
+        const oddVertices = names.filter(nm => deg[nm] % 2 !== 0);
+        if (oddVertices.length > 0) return { ok: false, reason: 'not_eulerian', oddVertices };
     }
+
+    return { ok: true };
 }

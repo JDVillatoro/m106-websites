@@ -22,7 +22,7 @@
         <div class="mode-selector">
             <button id="mode-make" class="mode-btn active">Make A Graph</button>
             <button id="mode-degree" class="mode-btn">Degree Sequences</button>
-            <button id="mode-eulerian" class="mode-btn">Eulerian Trails</button>
+            <button id="mode-eulerian" class="mode-btn">Eulerian Graphs</button>
         </div>
         <!-- Make A Graph mode: create, edit, and export graphs -->
         <div id="make-graph-panel" class="mode-panel">
@@ -161,10 +161,10 @@
 
 
 
-        <!-- Eulerian Trails Mode -->
+        <!-- Eulerian Graphs Mode -->
         <div id="eulerian-panel" class="mode-panel" style="display:none;">
             <div class="game-info">
-                <p>Is the graph Eulerian? If so, find an Eulerian path or circuit. If not, Eulerize it!</p>
+                <p>Is the graph Eulerian? If so, find an Eulerian circuit. If not, Eulerize it!</p>
             </div>
             <div class="mode-options-panel">
                 <button id="eulerian-reset-btn" class="reset-session-btn">Reset</button>
@@ -201,20 +201,20 @@
                 <button id="eulerian-next-from-wrong" class="submit-btn">Next Question</button>
             </div>
 
-            <!-- Part 2a: Find Eulerian path/circuit (shown when IS Eulerian) -->
-            <div id="eulerian-part2-path" class="eulerian-section" style="display:none;">
+            <!-- Part 2a: Find Eulerian circuit (shown when IS Eulerian) -->
+            <div id="eulerian-part2-circuit" class="eulerian-section" style="display:none;">
                 <div class="training-actions">
-                    <h2 id="eulerian-part2-path-title">Part 2 — Find an Eulerian circuit</h2>
-                    <p id="eulerian-part2-path-hint" class="graphic-prompt-subtitle"></p>
+                    <h2 id="eulerian-part2-circuit-title">Part 2 — Find an Eulerian circuit</h2>
+                    <p id="eulerian-part2-circuit-hint" class="graphic-prompt-subtitle"></p>
                     <div style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                        <input class="text-input" type="text" id="eulerian-path-input" placeholder="e.g. ABCA" />
-                        <button class="submit-btn" id="eulerian-path-submit-btn">Submit</button>
+                        <input class="text-input" type="text" id="eulerian-circuit-input" placeholder="e.g. ABCA" />
+                        <button class="submit-btn" id="eulerian-circuit-submit-btn">Submit</button>
                     </div>
                 </div>
-                <div id="eulerian-path-feedback" class="training-feedback" style="display:none;">
-                    <p id="eulerian-path-feedback-text"></p>
-                    <button id="eulerian-path-try-again" class="submit-btn" style="display:none;">Try Again</button>
-                    <button id="eulerian-path-next" class="submit-btn" style="display:none;">Next Question</button>
+                <div id="eulerian-circuit-feedback" class="training-feedback" style="display:none;">
+                    <p id="eulerian-circuit-feedback-text"></p>
+                    <button id="eulerian-circuit-try-again" class="submit-btn" style="display:none;">Try Again</button>
+                    <button id="eulerian-circuit-next" class="submit-btn" style="display:none;">Next Question</button>
                 </div>
             </div>
 
