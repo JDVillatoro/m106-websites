@@ -546,4 +546,52 @@ button:hover {
   background: #c0392b;
 }
 
+/* ── Isomorphism mode ──────────────────────────────────────────────────── */
+
+.iso-graphs-row {
+  display: flex;
+  flex-direction: column;
+  /* stretch (default) fills the full container width for each column */
+  align-items: stretch;
+  gap: 16px;
+  margin: 12px 0 4px;
+}
+
+.iso-graph-col {
+  width: 100%;
+}
+
+.iso-graph-label {
+  text-align: center;
+  margin: 0 0 6px;
+  font-size: 16px;
+  color: #555;
+}
+
+/* Slightly shorter than the single-graph modes (380px each) so two stacked
+   graphs don't dominate the page, but still wide and properly proportioned. */
+.iso-graph-col .graph-viewport {
+  height: 380px;
+}
+
+.iso-section {
+  margin-bottom: 20px;
+}
+
+.iso-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+  font-size: 15px;
+}
+
+.iso-mapping-row select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  min-width: 80px;
+}
+
 /* End of stylesheet */

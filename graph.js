@@ -71,7 +71,7 @@ function vertexLabel(id, names) {
  * @returns {string[]}
  */
 function makeLabels(n) {
-    if (n <= 8) return Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i));
+    if (n <= 9) return Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i));
     return Array.from({ length: n }, (_, i) => String(i + 1));
 }
 
@@ -809,18 +809,86 @@ function generateRandomGraph(n, numComponents = 1) {
 // Eulerian Graph puzzle generators
 // ---------------------------------------------------------------------------
 
+// ---- Complexity heuristics ------------------------------------------------
+// Applied to every puzzle graph to keep it legible regardless of vertex count.
+//
+//   1. Max degree of any vertex ≤ PUZZLE_MAX_DEG
+//   2. For every vertex v, mean degree of closed neighbourhood
+//      {v} ∪ neighbors(v)  ≤  PUZZLE_MAX_NBR_MEAN
+//
+// For directed graphs "degree" = in-degree + out-degree; "neighbour" means
+// adjacent in either direction.
+
+const _PUZZLE_MAX_DEG      = 5;
+const _PUZZLE_MAX_NBR_MEAN = 3.5;
+
+/**
+ * Return true when `edges` satisfies both puzzle complexity heuristics.
+ * @param {Edge[]} edges
+ * @param {number} n
+ * @param {boolean} directed
+ * @returns {boolean}
+ */
+function _puzzleComplexityOk(edges, n, directed) {
+    const deg = new Array(n).fill(0);
+    const adj = Array.from({ length: n }, () => new Set());
+
+    for (const { source, target } of edges) {
+        const s = vertexIndex(source);
+        const t = vertexIndex(target);
+        if (s === t) {
+            if (!directed) deg[s] += 2;
+            continue;
+        }
+        deg[s]++;
+        deg[t]++;
+        adj[s].add(t);
+        adj[t].add(s);
+    }
+
+    for (let v = 0; v < n; v++) {
+        if (deg[v] > _PUZZLE_MAX_DEG) return false;
+        const closed = [v, ...adj[v]];
+        const mean   = closed.reduce((sum, u) => sum + deg[u], 0) / closed.length;
+        if (mean > _PUZZLE_MAX_NBR_MEAN) return false;
+    }
+    return true;
+}
+
+/**
+ * Pick a random target edge count appropriate for an undirected puzzle graph
+ * on n vertices. Stays well below the density that would fail the heuristics.
+ * Range: [n, floor(1.8 · n)] capped at the complete-graph edge count.
+ * @param {number} n
+ * @returns {number}
+ */
+function _puzzleEdgeTarget(n) {
+    const lo  = n;
+    const hi  = Math.min(Math.floor(1.8 * n), (n * (n - 1)) / 2);
+    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+}
+
+// ---- Per-type makers -------------------------------------------------------
+
 /** @returns {object} graph */
-function _makeEulerianDigraph(n)    { return generateEulerianDigraph(n); }
+function _makeEulerianDigraph(n) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const g = generateEulerianDigraph(n);
+        if (_puzzleComplexityOk(g.edges, n, true)) return g;
+    }
+    return generateEulerianDigraph(n); // best effort
+}
 
 /** @returns {object} graph */
 function _makeNonEulerianDigraph(n) {
     for (let attempt = 0; attempt < 20; attempt++) {
         const g  = generateEulerianDigraph(n);
+        if (!_puzzleComplexityOk(g.edges, n, true)) continue;
         const candidates = shuffle(g.edges.slice());
         for (const cand of candidates) {
             const trial = g.edges.filter(e => e !== cand);
             if (isStronglyConnected(trial, n)) {
-                return { ...g, edges: trial };
+                return { ...g, edges: trial }; // fewer edges → still passes heuristics
             }
         }
     }
@@ -828,12 +896,19 @@ function _makeNonEulerianDigraph(n) {
 }
 
 /** @returns {object} graph */
-function _makeEulerianSimple(n)    { return generateEulerianSimpleGraph(n); }
+function _makeEulerianSimple(n) {
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g = generateEulerianSimpleGraph(n, _puzzleEdgeTarget(n));
+        if (_puzzleComplexityOk(g.edges, n, false)) return g;
+    }
+    return generateEulerianSimpleGraph(n, n); // sparse fallback
+}
 
 /** @returns {object} graph */
 function _makeNonEulerianSimple(n) {
-    for (let attempt = 0; attempt < 20; attempt++) {
-        const g   = generateEulerianSimpleGraph(n);
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g   = generateEulerianSimpleGraph(n, _puzzleEdgeTarget(n));
+        if (!_puzzleComplexityOk(g.edges, n, false)) continue;
         let edges = g.edges.slice();
         const numDelete = Math.random() < 0.5 ? 1 : 2;
         let deleted = 0;
@@ -851,12 +926,19 @@ function _makeNonEulerianSimple(n) {
 }
 
 /** @returns {object} graph */
-function _makeEulerianMulti(n)    { return generateEulerianMultigraph(n); }
+function _makeEulerianMulti(n) {
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g = generateEulerianMultigraph(n, _puzzleEdgeTarget(n));
+        if (_puzzleComplexityOk(g.edges, n, false)) return g;
+    }
+    return generateEulerianMultigraph(n, n); // sparse fallback
+}
 
 /** @returns {object} graph */
 function _makeNonEulerianMulti(n) {
-    for (let attempt = 0; attempt < 20; attempt++) {
-        const g   = generateEulerianMultigraph(n);
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g   = generateEulerianMultigraph(n, _puzzleEdgeTarget(n));
+        if (!_puzzleComplexityOk(g.edges, n, false)) continue;
         let edges = g.edges.slice();
         const numDelete = Math.random() < 0.5 ? 1 : 2;
         let deleted = 0;
@@ -883,7 +965,7 @@ function _makeNonEulerianMulti(n) {
  * @returns {object}
  */
 function generateEulerianGraphPuzzle() {
-    const n        = Math.floor(Math.random() * 3) + 4;   // 4–6 vertices
+    const n        = Math.floor(Math.random() * 6) + 4;   // 4–9 vertices
     const scenario = Math.floor(Math.random() * 6);
 
     const makers = [
@@ -1083,4 +1165,492 @@ function validateEulerization(graph, addedEdges) {
     }
 
     return { ok: true };
+}
+
+/**
+ * Minimum number of edges needed to Eulerize a connected undirected graph,
+ * where added edges must duplicate existing edges (Chinese Postman approach).
+ *
+ * Algorithm:
+ *   1. Find all odd-degree vertices.
+ *   2. BFS shortest-path distances between every pair of odd vertices
+ *      (each unit = one edge to duplicate along the path).
+ *   3. Minimum-weight perfect matching over odd vertices via bitmask DP.
+ *
+ * @param {object} graph
+ * @returns {number}
+ */
+function minEulerizeEdges(graph) {
+    const odds = getOddVertices(graph.edges, graph.n); // vertex indices
+    const k = odds.length;
+    if (k === 0) return 0;
+
+    // Build undirected adjacency list (ignoring self-loops)
+    const adj = Array.from({ length: graph.n }, () => []);
+    for (const { source, target } of graph.edges) {
+        const s = vertexIndex(source), t = vertexIndex(target);
+        if (s !== t) { adj[s].push(t); adj[t].push(s); }
+    }
+
+    // BFS from `start`; returns distance array indexed by vertex index
+    function bfsDist(start) {
+        const dist = new Array(graph.n).fill(-1);
+        dist[start] = 0;
+        const queue = [start];
+        while (queue.length) {
+            const u = queue.shift();
+            for (const v of adj[u]) {
+                if (dist[v] === -1) { dist[v] = dist[u] + 1; queue.push(v); }
+            }
+        }
+        return dist;
+    }
+
+    // Pairwise shortest-path distances between odd vertices (k×k matrix)
+    const dist = odds.map(v => {
+        const d = bfsDist(v);
+        return odds.map(w => (d[w] === -1 ? Infinity : d[w]));
+    });
+
+    // Minimum-weight perfect matching via bitmask DP — O(k² · 2^k), fast for k ≤ 8
+    const INF = Infinity;
+    const full = (1 << k) - 1;
+    const memo = new Array(1 << k).fill(INF);
+    memo[0] = 0;
+
+    for (let mask = 0; mask <= full; mask++) {
+        if (memo[mask] === INF) continue;
+        // Find the lowest-indexed unmatched vertex
+        let first = -1;
+        for (let i = 0; i < k; i++) {
+            if (!(mask >> i & 1)) { first = i; break; }
+        }
+        if (first === -1) continue; // all matched
+        // Pair it with every other unmatched vertex
+        for (let j = first + 1; j < k; j++) {
+            if (mask >> j & 1) continue;
+            const newMask = mask | (1 << first) | (1 << j);
+            const cost = memo[mask] + dist[first][j];
+            if (cost < memo[newMask]) memo[newMask] = cost;
+        }
+    }
+
+    return memo[full];
+}
+
+/**
+ * Return the display-names of vertices where in-degree ≠ out-degree.
+ * These are the vertices "responsible" for a directed graph not being Eulerian.
+ * @param {object} graph
+ * @returns {string[]}
+ */
+function getMismatchedVertices(graph) {
+    const { inDeg, outDeg } = getDirectedDegrees(graph.edges, graph.n);
+    return graph.names.filter((_, i) => inDeg[i] !== outDeg[i]);
+}
+
+
+// =============================================================================
+// Isomorphism puzzle helpers
+// =============================================================================
+
+/** Vertex-count range for isomorphism puzzles.  Change [min, max] to tune difficulty. */
+const ISO_PUZZLE_N_RANGE = [4, 6];
+
+// ---------------------------------------------------------------------------
+// Structural invariants
+// ---------------------------------------------------------------------------
+
+/**
+ * Count undirected triangles (unordered triples of mutually adjacent vertices).
+ * @param {Edge[]} edges
+ * @param {number} n
+ * @returns {number}
+ */
+function countTriangles(edges, n) {
+    const adj = Array.from({ length: n }, () => new Set());
+    for (const { source, target } of edges) {
+        const s = vertexIndex(source), t = vertexIndex(target);
+        if (s !== t) { adj[s].add(t); adj[t].add(s); }
+    }
+    let count = 0;
+    for (let u = 0; u < n; u++)
+        for (const v of adj[u]) if (v > u)
+            for (const w of adj[v]) if (w > v && adj[u].has(w)) count++;
+    return count;
+}
+
+/**
+ * Count connected components (undirected BFS over all vertices).
+ * @param {Edge[]} edges
+ * @param {number} n
+ * @returns {number}
+ */
+function componentCount(edges, n) {
+    const visited = new Uint8Array(n);
+    const adj     = Array.from({ length: n }, () => []);
+    for (const { source, target } of edges) {
+        const s = vertexIndex(source), t = vertexIndex(target);
+        if (s !== t) { adj[s].push(t); adj[t].push(s); }
+    }
+    let comps = 0;
+    for (let i = 0; i < n; i++) {
+        if (visited[i]) continue;
+        comps++;
+        const queue = [i]; visited[i] = 1;
+        while (queue.length)
+            for (const nb of adj[queue.pop()])
+                if (!visited[nb]) { visited[nb] = 1; queue.push(nb); }
+    }
+    return comps;
+}
+
+/**
+ * Collect the five quick structural invariants used to discriminate isomorphism.
+ * @param {object} graph
+ * @returns {{ n, edgeCount, degSeq, components, triangles }}
+ */
+function graphInvariants(graph) {
+    return {
+        n:          graph.n,
+        edgeCount:  graph.edges.length,
+        degSeq:     degreeSequence(graph.edges, graph.n).join(','),
+        components: componentCount(graph.edges, graph.n),
+        triangles:  countTriangles(graph.edges, graph.n),
+    };
+}
+
+/**
+ * Check whether a user-supplied reason for non-isomorphism is actually true
+ * for the given pair of graphs.
+ * @param {object} g1
+ * @param {object} g2
+ * @param {string} reason
+ * @returns {boolean}
+ */
+function checkNeitherReason(g1, g2, reason) {
+    const i1 = graphInvariants(g1);
+    const i2 = graphInvariants(g2);
+    switch (reason) {
+        case 'diff_vertices':   return i1.n          !== i2.n;
+        case 'diff_edges':      return i1.edgeCount  !== i2.edgeCount;
+        case 'diff_degree_seq': return i1.degSeq     !== i2.degSeq;
+        case 'diff_components': return i1.components !== i2.components;
+        case 'diff_triangles':  return i1.triangles  !== i2.triangles;
+    }
+    return false;
+}
+
+// ---------------------------------------------------------------------------
+// Graph transformers
+// ---------------------------------------------------------------------------
+
+/**
+ * Return a new graph with the same names but edges re-wired by permutation sigma.
+ * sigma[i] = j means vertex index i in g1 maps to vertex index j in g2.
+ * @param {object}   graph
+ * @param {number[]} sigma  permutation of length graph.n
+ * @returns {object}
+ */
+function applyPermutation(graph, sigma) {
+    const edges = graph.edges.map(e => ({
+        source: vertexId(sigma[vertexIndex(e.source)]),
+        target: vertexId(sigma[vertexIndex(e.target)]),
+        label:  e.label,
+    }));
+    return { ...graph, edges };
+}
+
+/**
+ * Verify a student-supplied isomorphism witness for two undirected simple graphs.
+ * @param {object}                  g1
+ * @param {object}                  g2
+ * @param {Object.<string,string>}  nameMap  { g1Label: g2Label, … }
+ * @returns {boolean}
+ */
+function verifyIsomorphismWitness(g1, g2, nameMap) {
+    if (Object.keys(nameMap).length !== g1.n) return false;
+
+    const g1Set = new Set(g1.names);
+    const g2Set = new Set(g2.names);
+    for (const [k, v] of Object.entries(nameMap)) {
+        if (!g1Set.has(k) || !g2Set.has(v)) return false;
+    }
+    // Must be a bijection
+    if (new Set(Object.values(nameMap)).size !== g2.n) return false;
+
+    // Build g2 edge set keyed by sorted name pairs
+    const g2EdgeSet = new Set(
+        g2.edges.map(e => {
+            const s = vertexLabel(e.source, g2.names);
+            const t = vertexLabel(e.target, g2.names);
+            return [s, t].sort().join('--');
+        })
+    );
+    if (g2EdgeSet.size !== g1.edges.length) return false;
+
+    for (const e of g1.edges) {
+        const s = nameMap[vertexLabel(e.source, g1.names)];
+        const t = nameMap[vertexLabel(e.target, g1.names)];
+        if (!s || !t) return false;
+        if (!g2EdgeSet.has([s, t].sort().join('--'))) return false;
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// Internal helpers for puzzle generation
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate a random connected undirected simple graph suitable for iso puzzles.
+ * @param {number} n
+ * @returns {object}
+ */
+function _isoBaseGraph(n) {
+    const minE = n - 1;
+    const maxE = Math.min(Math.floor(n * 1.5), (n * (n - 1)) / 2);
+    const target = Math.floor(Math.random() * (maxE - minE + 1)) + minE;
+    return {
+        n,
+        names:     makeLabels(n),
+        directed:  false,
+        edgeLabel: null,
+        edges:     _toEdges(_simpleGraph(n, target)),
+    };
+}
+
+/**
+ * Random spanning tree returned as index pairs [[a,b], …].
+ * @param {number} n
+ * @returns {Array<[number,number]>}
+ */
+function _randomSpanningTreePairs(n) {
+    const order = shuffle(Array.from({ length: n }, (_, i) => i));
+    return order.slice(1).map((v, i) => [order[i], v]);
+}
+
+/**
+ * Attempt up to maxSwaps random 2-opt degree-preserving swaps until the
+ * triangle count of the graph changes.  Returns the modified graph, or null
+ * if no triangle-changing swap was found.
+ *
+ * A 2-opt swap: pick two edges (a−b) and (c−d) with all 4 endpoints distinct
+ * and neither a−c nor b−d already present; replace with a−c and b−d.
+ * This is degree-preserving by construction.
+ * @param {object} graph
+ * @param {number} [maxSwaps=80]
+ * @returns {object|null}
+ */
+function _swapToChangeTriangles(graph, maxSwaps = 80) {
+    const origTri = countTriangles(graph.edges, graph.n);
+    let edges = graph.edges.map(e => ({ ...e }));
+
+    for (let attempt = 0; attempt < maxSwaps; attempt++) {
+        const simples = edges.filter(e => vertexIndex(e.source) !== vertexIndex(e.target));
+        if (simples.length < 2) break;
+
+        const i = Math.floor(Math.random() * simples.length);
+        let   j = Math.floor(Math.random() * (simples.length - 1));
+        if (j >= i) j++;
+
+        const ea = simples[i], eb = simples[j];
+        const a = vertexIndex(ea.source), b = vertexIndex(ea.target);
+        const c = vertexIndex(eb.source), d = vertexIndex(eb.target);
+        if (new Set([a, b, c, d]).size < 4) continue;
+
+        const edgeSet = new Set(edges.map(e => {
+            const s = vertexIndex(e.source), t = vertexIndex(e.target);
+            return `${Math.min(s, t)}-${Math.max(s, t)}`;
+        }));
+        const k1 = `${Math.min(a, c)}-${Math.max(a, c)}`;
+        const k2 = `${Math.min(b, d)}-${Math.max(b, d)}`;
+        if (edgeSet.has(k1) || edgeSet.has(k2)) continue;
+
+        // Tentatively apply the swap
+        const trial = edges.map(e =>
+            e === ea ? { ...e, source: vertexId(a), target: vertexId(c) } :
+            e === eb ? { ...e, source: vertexId(b), target: vertexId(d) } : e
+        );
+        const newTri = countTriangles(trial, graph.n);
+        if (newTri !== origTri) return { ...graph, edges: trial };
+        edges = trial; // continue walking from new state
+    }
+    return null;
+}
+
+// ---------------------------------------------------------------------------
+// Neither-reason sub-generators
+// ---------------------------------------------------------------------------
+
+function _neitherByReason(reason, n, nMin, nMax) {
+    switch (reason) {
+
+        case 'diff_vertices': {
+            const n1 = Math.floor(Math.random() * (nMax - nMin)) + nMin;
+            const n2 = n1 < nMax ? n1 + 1 : n1 - 1;
+            return { g1: _isoBaseGraph(n1), g2: _isoBaseGraph(n2) };
+        }
+
+        case 'diff_edges': {
+            for (let attempt = 0; attempt < 40; attempt++) {
+                const g1 = _isoBaseGraph(n);
+                const g2 = _isoBaseGraph(n);
+                if (g1.edges.length !== g2.edges.length) return { g1, g2 };
+            }
+            return null;
+        }
+
+        case 'diff_degree_seq': {
+            // Prefer pairs with the same edge count for a cleaner puzzle
+            for (let attempt = 0; attempt < 50; attempt++) {
+                const g1 = _isoBaseGraph(n);
+                const g2 = _isoBaseGraph(n);
+                const d1 = degreeSequence(g1.edges, n).join(',');
+                const d2 = degreeSequence(g2.edges, n).join(',');
+                if (g1.edges.length === g2.edges.length && d1 !== d2) return { g1, g2 };
+            }
+            // Fallback: any different degree sequence
+            for (let attempt = 0; attempt < 30; attempt++) {
+                const g1 = _isoBaseGraph(n);
+                const g2 = _isoBaseGraph(n);
+                const d1 = degreeSequence(g1.edges, n).join(',');
+                const d2 = degreeSequence(g2.edges, n).join(',');
+                if (d1 !== d2) return { g1, g2 };
+            }
+            return null;
+        }
+
+        case 'diff_components': {
+            if (n < 4) return null;
+            // g1 is connected; g2 is deliberately disconnected (two components)
+            const g1    = _isoBaseGraph(n);
+            const split = Math.max(2, Math.floor(n / 2));
+            const e1 = _randomSpanningTreePairs(split).map(([a, b]) =>
+                ({ source: vertexId(a), target: vertexId(b), label: null }));
+            const e2 = _randomSpanningTreePairs(n - split).map(([a, b]) =>
+                ({ source: vertexId(a + split), target: vertexId(b + split), label: null }));
+            const g2 = { n, names: makeLabels(n), directed: false, edgeLabel: null, edges: [...e1, ...e2] };
+            if (componentCount(g2.edges, n) > 1) return { g1, g2 };
+            return null;
+        }
+
+        case 'diff_triangles': {
+            // Strategy A: 2-opt swap that changes triangles while preserving degree sequence
+            for (let attempt = 0; attempt < 20; attempt++) {
+                const g1      = _isoBaseGraph(n);
+                const swapped = _swapToChangeTriangles(g1);
+                if (!swapped) continue;
+                const d1 = degreeSequence(g1.edges, n).join(',');
+                const d2 = degreeSequence(swapped.edges, n).join(',');
+                if (d1 === d2) return { g1, g2: swapped };
+            }
+            // Strategy B: two independent graphs, same n/|E|/degSeq, different triangles
+            for (let attempt = 0; attempt < 40; attempt++) {
+                const g1 = _isoBaseGraph(n);
+                const g2 = _isoBaseGraph(n);
+                const i1 = graphInvariants(g1);
+                const i2 = graphInvariants(g2);
+                if (i1.edgeCount === i2.edgeCount &&
+                    i1.degSeq    === i2.degSeq    &&
+                    i1.triangles !== i2.triangles) return { g1, g2 };
+            }
+            // Strategy C: just different triangle counts (any degree sequences)
+            for (let attempt = 0; attempt < 40; attempt++) {
+                const g1 = _isoBaseGraph(n);
+                const g2 = _isoBaseGraph(n);
+                if (countTriangles(g1.edges, n) !== countTriangles(g2.edges, n)) return { g1, g2 };
+            }
+            return null;
+        }
+    }
+    return null;
+}
+
+// ---------------------------------------------------------------------------
+// Public puzzle factory
+// ---------------------------------------------------------------------------
+
+/**
+ * Return true when two undirected simple graphs have identical edge sets
+ * (same n and same set of sorted label pairs).
+ * @param {object} ga
+ * @param {object} gb
+ * @returns {boolean}
+ */
+function _graphsEqual(ga, gb) {
+    if (ga.n !== gb.n || ga.edges.length !== gb.edges.length) return false;
+    const key = e => {
+        const s = vertexLabel(e.source, ga.names);
+        const t = vertexLabel(e.target, ga.names);
+        return [s, t].sort().join('--');
+    };
+    const setA = new Set(ga.edges.map(key));
+    const setB = new Set(gb.edges.map(e => {
+        const s = vertexLabel(e.source, gb.names);
+        const t = vertexLabel(e.target, gb.names);
+        return [s, t].sort().join('--');
+    }));
+    if (setA.size !== setB.size) return false;
+    for (const k of setA) if (!setB.has(k)) return false;
+    return true;
+}
+
+/**
+ * Generate a random isomorphism puzzle consisting of two undirected simple graphs.
+ *
+ * Returns an object extended with:
+ *   scenario   'equal' | 'isomorphic' | 'neither'
+ *   witness    { [g1Label]: g2Label }   (only for 'isomorphic')
+ *   reason     string                  (only for 'neither')
+ *
+ * @returns {{ g1: object, g2: object, scenario: string, witness?: object, reason?: string }}
+ */
+function generateIsoPuzzle() {
+    const [nMin, nMax] = ISO_PUZZLE_N_RANGE;
+    const n    = Math.floor(Math.random() * (nMax - nMin + 1)) + nMin;
+    const roll = Math.random();
+
+    // ── Equal (⅓) ─────────────────────────────────────────────────────────────
+    if (roll < 1 / 3) {
+        const g = _isoBaseGraph(n);
+        return { g1: g, g2: g, scenario: 'equal' };
+    }
+
+    // ── Isomorphic (⅓) ────────────────────────────────────────────────────────
+    if (roll < 2 / 3) {
+        // Outer loop: try different base graphs.
+        // Inner loop: try many permutations of the same base graph before giving up.
+        // This handles highly-symmetric graphs (K_n, cycles, etc.) where most or
+        // all permutations are automorphisms.
+        for (let baseAttempt = 0; baseAttempt < 10; baseAttempt++) {
+            const g1    = _isoBaseGraph(n);
+            const perms = Array.from({ length: n }, (_, i) => i);
+            for (let permAttempt = 0; permAttempt < 20; permAttempt++) {
+                const sigma = shuffle(perms.slice());
+                if (sigma.every((v, i) => v === i)) continue;          // identity
+                const g2 = applyPermutation(g1, sigma);
+                if (_graphsEqual(g1, g2)) continue;                    // automorphism
+                const witness = {};
+                for (let i = 0; i < n; i++) witness[g1.names[i]] = g1.names[sigma[i]];
+                return { g1, g2, scenario: 'isomorphic', witness };
+            }
+            // All permutations of this graph were automorphisms — try a new base graph.
+        }
+        // Every candidate base graph was fully symmetric.  Fall through to 'neither'
+        // rather than quietly returning 'equal', so the scenario distribution stays fair.
+    }
+
+    // ── Neither (⅓) — pick one of 5 sub-reasons ──────────────────────────────
+    const reasons = shuffle(['diff_vertices', 'diff_edges', 'diff_degree_seq',
+                             'diff_components', 'diff_triangles']);
+    for (const reason of reasons) {
+        const result = _neitherByReason(reason, n, nMin, nMax);
+        if (result) return { ...result, scenario: 'neither', reason };
+    }
+
+    // Ultimate fallback
+    const g1 = _isoBaseGraph(n);
+    const g2 = _isoBaseGraph(n + (n < nMax ? 1 : -1));
+    return { g1, g2, scenario: 'neither', reason: 'diff_vertices' };
 }

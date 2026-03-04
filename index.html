@@ -23,6 +23,7 @@
             <button id="mode-make" class="mode-btn active">Make A Graph</button>
             <button id="mode-degree" class="mode-btn">Degree Sequences</button>
             <button id="mode-eulerian" class="mode-btn">Eulerian Graphs</button>
+            <button id="mode-iso" class="mode-btn">Isomorphism</button>
         </div>
         <!-- Make A Graph mode: create, edit, and export graphs -->
         <div id="make-graph-panel" class="mode-panel">
@@ -164,7 +165,7 @@
         <!-- Eulerian Graphs Mode -->
         <div id="eulerian-panel" class="mode-panel" style="display:none;">
             <div class="game-info">
-                <p>Is the graph Eulerian? If so, find an Eulerian circuit. If not, Eulerize it!</p>
+                <p>Is the graph Eulerian? If so, find an Eulerian circuit. If not, identify or fix the problem!</p>
             </div>
             <div class="mode-options-panel">
                 <button id="eulerian-reset-btn" class="reset-session-btn">Reset</button>
@@ -218,7 +219,24 @@
                 </div>
             </div>
 
-            <!-- Part 2b: Eulerize (shown when NOT Eulerian) -->
+            <!-- Part 2b: Identify mismatched vertices (shown when NOT Eulerian + directed) -->
+            <div id="eulerian-part2-identify" class="eulerian-section" style="display:none;">
+                <div class="training-actions">
+                    <h2>Part 2 — Identify the problem vertices</h2>
+                    <p class="graphic-prompt-subtitle">Select every vertex whose in-degree and out-degree are not equal.</p>
+                    <div id="eulerian-identify-checkboxes" style="margin-top:12px; display:flex; gap:16px; flex-wrap:wrap;"></div>
+                    <div style="margin-top:12px;">
+                        <button id="eulerian-identify-submit-btn" class="submit-btn">Submit</button>
+                    </div>
+                </div>
+                <div id="eulerian-identify-feedback" class="training-feedback" style="display:none;">
+                    <p id="eulerian-identify-feedback-text"></p>
+                    <button id="eulerian-identify-try-again" class="submit-btn" style="display:none;">Try Again</button>
+                    <button id="eulerian-identify-next" class="submit-btn" style="display:none;">Next Question</button>
+                </div>
+            </div>
+
+            <!-- Part 2c: Eulerize (shown when NOT Eulerian + undirected) -->
             <div id="eulerian-part2-eulerize" class="eulerian-section" style="display:none;">
                 <div class="training-actions">
                     <h2>Part 2 — Eulerize the graph</h2>
@@ -247,7 +265,110 @@
             </div>
         </div>
 
+        <!-- Isomorphism Mode -->
+        <div id="iso-panel" class="mode-panel" style="display:none;">
+            <div class="game-info">
+                <p>Are these two graphs equal, isomorphic, or neither?</p>
+            </div>
+            <div class="mode-options-panel">
+                <button id="iso-reset-btn" class="reset-session-btn">Reset</button>
+            </div>
+
+            <!-- Graphs prompt (stacked inside a graphic card like Eulerian) -->
+            <div class="graphic-prompt">
+                <h2>Here are two graphs...</h2>
+                <p class="graphic-prompt-subtitle">Compare their structure and relationships.</p>
+                <div class="iso-graphs-row">
+                <div class="iso-graph-col" id="iso-col-1">
+                    <h3 class="iso-graph-label">Graph 1</h3>
+                    <div id="iso-graph-area-1" role="img" aria-label="Graph 1 diagram"
+                        aria-describedby="iso-graph-description-1"></div>
+                    <p id="iso-graph-description-1" class="sr-only"></p>
+                    <div class="zoom-controls">
+                        <button class="zoom-button zoom-in">Zoom In</button>
+                        <button class="zoom-button zoom-out">Zoom Out</button>
+                    </div>
+                </div>
+                <div class="iso-graph-col" id="iso-col-2">
+                    <h3 class="iso-graph-label">Graph 2</h3>
+                    <div id="iso-graph-area-2" role="img" aria-label="Graph 2 diagram"
+                        aria-describedby="iso-graph-description-2"></div>
+                    <p id="iso-graph-description-2" class="sr-only"></p>
+                    <div class="zoom-controls">
+                        <button class="zoom-button zoom-in">Zoom In</button>
+                        <button class="zoom-button zoom-out">Zoom Out</button>
+                    </div>
+                </div>
+                </div>
+                <p class="hint">Hint: You can click and drag vertices to get a better look. Try rearranging them to get them to match up. Only click isomorphic if they are not also equal.</p>
+            </div>
+
+            <!-- Part 1: Equal / Isomorphic / Neither -->
+            <div id="iso-part1" class="iso-section">
+                <div class="training-actions">
+                    <h2>Part 1 — How are these graphs related?</h2>
+                    <div class="eulerian-btn-row">
+                        <button id="iso-equal-btn" class="eulerian-choice-btn">Equal</button>
+                        <button id="iso-iso-btn" class="eulerian-choice-btn">Isomorphic</button>
+                        <button id="iso-neither-btn" class="eulerian-choice-btn">Neither</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Part 1 wrong -->
+            <div id="iso-part1-wrong" class="training-feedback incorrect" style="display:none;">
+                <h2>Incorrect</h2>
+                <p id="iso-part1-wrong-text"></p>
+                <button id="iso-next-from-wrong" class="submit-btn">Next Question</button>
+            </div>
+
+            <!-- Part 2a: Reason for neither -->
+            <div id="iso-part2-reason" class="iso-section" style="display:none;">
+                <div class="training-actions">
+                    <h2>Part 2 — Why are they not isomorphic?</h2>
+                    <p class="graphic-prompt-subtitle">Select the best reason.</p>
+                    <div id="iso-reason-radios" style="margin-top:12px; display:flex; flex-direction:column; gap:10px;"></div>
+                    <div style="margin-top:14px;">
+                        <button id="iso-reason-submit-btn" class="submit-btn">Submit</button>
+                    </div>
+                </div>
+                <div id="iso-reason-feedback" class="training-feedback" style="display:none;">
+                    <p id="iso-reason-feedback-text"></p>
+                    <button id="iso-reason-try-again" class="submit-btn" style="display:none;">Try Again</button>
+                    <button id="iso-reason-next"      class="submit-btn" style="display:none;">Next Question</button>
+                </div>
+            </div>
+
+            <!-- Part 2b: Isomorphism mapping -->
+            <div id="iso-part2-mapping" class="iso-section" style="display:none;">
+                <div class="training-actions">
+                    <h2>Part 2 — Specify the isomorphism</h2>
+                    <p class="graphic-prompt-subtitle">For each vertex in Graph 1, select the corresponding vertex in Graph 2.</p>
+                    <div id="iso-mapping-container" style="margin-top:12px;"></div>
+                    <div style="margin-top:14px;">
+                        <button id="iso-mapping-submit-btn" class="submit-btn">Submit</button>
+                    </div>
+                </div>
+                <div id="iso-mapping-feedback" class="training-feedback" style="display:none;">
+                    <p id="iso-mapping-feedback-text"></p>
+                    <button id="iso-mapping-try-again" class="submit-btn" style="display:none;">Try Again</button>
+                    <button id="iso-mapping-next"      class="submit-btn" style="display:none;">Next Question</button>
+                </div>
+            </div>
+
+            <!-- Score -->
+            <div class="training-stats">
+                <h2>Score</h2>
+                <div class="stats-display">
+                    <p>Questions: <span id="iso-total">0</span></p>
+                    <p>Points earned: <span id="iso-points">0.0</span></p>
+                    <p>Score: <span id="iso-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
     </div>
+
     <!-- Screen reader live region: announces graph changes politely -->
     <div id="graph-sr-announcer" class="sr-only" aria-live="polite" aria-atomic="true" role="status"></div>
 
