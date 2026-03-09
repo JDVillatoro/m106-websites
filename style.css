@@ -509,6 +509,10 @@ button:hover {
   background: #e74c3c;
 }
 
+.eulerian-choice-btn.selected {
+  box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.35);
+}
+
 /* Eulerize edge-add rows */
 .eulerian-edge-row {
   display: flex;

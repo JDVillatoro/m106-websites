@@ -24,6 +24,9 @@
             <button id="mode-degree" class="mode-btn">Degree Sequences</button>
             <button id="mode-eulerian" class="mode-btn">Eulerian Graphs</button>
             <button id="mode-iso" class="mode-btn">Isomorphism</button>
+            <button id="mode-planar" class="mode-btn">Planar Graphs</button>
+            <button id="mode-coloring" class="mode-btn">Graph Coloring</button>
+            <button id="mode-applications" class="mode-btn">Applications</button>
         </div>
         <!-- Make A Graph mode: create, edit, and export graphs -->
         <div id="make-graph-panel" class="mode-panel">
@@ -367,6 +370,175 @@
             </div>
         </div>
 
+        <!-- Planar Graphs Mode -->
+        <div id="planar-panel" class="mode-panel" style="display:none;">
+            <div class="game-info">
+                <p>Can you tell if this graph is planar?</p>
+            </div>
+            <div class="mode-options-panel">
+                <button id="planar-reset-btn" class="reset-session-btn">Reset</button>
+            </div>
+
+            <div class="graphic-prompt">
+                <h2>Here is a graph...</h2>
+                <p class="graphic-prompt-subtitle">Can you tell if it's a planar graph?</p>
+                <div id="planar-graph-area" role="img" aria-label="Graph diagram"
+                    aria-describedby="planar-graph-description"></div>
+                <p id="planar-graph-description" class="sr-only"></p>
+                <div id="planar-zoom-controls" class="zoom-controls">
+                    <button class="zoom-button zoom-in">Zoom In</button>
+                    <button class="zoom-button zoom-out">Zoom Out</button>
+                </div>
+                <p class="hint">Hint: Try clicking and dragging the vertices to see if you can untangle the graph.</p>
+            </div>
+
+            <div id="planar-part1" class="eulerian-section">
+                <div class="training-actions">
+                    <h2>Part 1 — Is this graph planar?</h2>
+                    <div class="eulerian-btn-row">
+                        <button id="planar-yes-btn" class="eulerian-choice-btn">Planar</button>
+                        <button id="planar-no-btn" class="eulerian-choice-btn">Not Planar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="planar-part2-planar" class="eulerian-section" style="display:none;">
+                <div class="training-actions">
+                    <h2>That's right the graph is planar!</h2>
+                    <p class="graphic-prompt-subtitle">Part 2 — How many vertices, edges, and faces does this graph have?</p>
+                    <div style="margin-top:8px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                        <label for="planar-vertices-input">Vertices:</label>
+                        <input class="text-input" type="number" id="planar-vertices-input" min="0" style="width:100px;" />
+                        <label for="planar-edges-input">Edges:</label>
+                        <input class="text-input" type="number" id="planar-edges-input" min="0" style="width:100px;" />
+                        <label for="planar-faces-input">Faces:</label>
+                        <input class="text-input" type="number" id="planar-faces-input" min="0" style="width:100px;" />
+                        <button id="planar-planar-submit-btn" class="submit-btn" style="margin-top:0;">Submit</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="planar-part2-nonplanar" class="eulerian-section" style="display:none;">
+                <div class="training-actions">
+                    <h2>That's right the graph is not planar!</h2>
+                    <p class="graphic-prompt-subtitle">Part 2 — Can you tell why?</p>
+                    <div class="eulerian-btn-row">
+                        <button id="planar-k5-btn" class="eulerian-choice-btn">It contains a K5 subgraph</button>
+                        <button id="planar-k33-btn" class="eulerian-choice-btn">It contains a K3,3 subgraph</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="planar-feedback" class="training-feedback" style="display:none;">
+                <h2 id="planar-feedback-title">Feedback</h2>
+                <p id="planar-feedback-text"></p>
+                <button id="planar-next-btn" class="submit-btn">Next Question</button>
+            </div>
+
+            <div class="training-stats">
+                <h2>Score</h2>
+                <div class="stats-display">
+                    <p>Questions: <span id="planar-total">0</span></p>
+                    <p>Points earned: <span id="planar-points">0.0</span></p>
+                    <p>Score: <span id="planar-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Graph Coloring Mode -->
+        <div id="coloring-panel" class="mode-panel" style="display:none;">
+            <div class="game-info">
+                <p>Can you color the graph?</p>
+            </div>
+            <div class="mode-options-panel">
+                <button id="coloring-reset-btn" class="reset-session-btn">Reset</button>
+            </div>
+
+            <div class="graphic-prompt">
+                <h2>Here is a graph...</h2>
+                <p class="graphic-prompt-subtitle">Can you color the graph?</p>
+                <div id="coloring-graph-area" role="img" aria-label="Graph diagram"
+                    aria-describedby="coloring-graph-description"></div>
+                <p id="coloring-graph-description" class="sr-only"></p>
+                <div id="coloring-zoom-controls" class="zoom-controls">
+                    <button class="zoom-button zoom-in">Zoom In</button>
+                    <button class="zoom-button zoom-out">Zoom Out</button>
+                </div>
+                <p class="hint">Hint: It can be helpful to arrange the vertices in a way where there are not too many crossings.</p>
+            </div>
+
+            <div id="coloring-actions" class="eulerian-section">
+                <div class="training-actions">
+                    <h2 id="coloring-task-title">Color the graph using at most <span id="coloring-limit-label">3</span> colors.</h2>
+                    <p id="coloring-task-subtitle" class="graphic-prompt-subtitle" style="display:none;"></p>
+                    <p id="coloring-greedy-rule" class="graphic-prompt-subtitle" style="display:none;"></p>
+                    <p id="coloring-order-text" class="graphic-prompt-subtitle" style="display:none;"></p>
+                    <div id="coloring-assignments" style="margin-top:10px;"></div>
+                    <button id="coloring-submit-btn" class="submit-btn">Submit</button>
+                </div>
+            </div>
+
+            <div id="coloring-feedback" class="training-feedback" style="display:none;">
+                <h2 id="coloring-feedback-title">Feedback</h2>
+                <p id="coloring-feedback-text"></p>
+                <button id="coloring-next-btn" class="submit-btn">Next Question</button>
+            </div>
+
+            <div class="training-stats">
+                <h2>Score</h2>
+                <div class="stats-display">
+                    <p>Questions: <span id="coloring-total">0</span></p>
+                    <p>Points earned: <span id="coloring-points">0.0</span></p>
+                    <p>Score: <span id="coloring-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applications Mode -->
+        <div id="applications-panel" class="mode-panel" style="display:none;">
+            <div class="game-info">
+                <p>Solve real-world optimization puzzles modeled by graphs.</p>
+            </div>
+            <div class="mode-options-panel">
+                <button id="applications-reset-btn" class="reset-session-btn">Reset</button>
+            </div>
+
+            <div class="graphic-prompt">
+                <h2 id="applications-prompt-title">Can you find the optimal schedule?</h2>
+                <p id="applications-subtitle" class="graphic-prompt-subtitle"></p>
+                <p id="applications-intro" style="margin-top:8px;"></p>
+                <p id="applications-details" style="margin-top:8px;"></p>
+                <div id="applications-committee-list"></div>
+                <div id="applications-distance-table-wrap" style="display:none; margin-top:10px; overflow-x:auto;">
+                    <div id="applications-distance-table"></div>
+                </div>
+                <p id="applications-instructions" style="margin-top:10px;"></p>
+            </div>
+
+            <div id="applications-actions" class="eulerian-section">
+                <div class="training-actions">
+                    <h2>Assign resources</h2>
+                    <div id="applications-assignment-list" style="margin-top:10px;"></div>
+                    <button id="applications-submit-btn" class="submit-btn">Submit</button>
+                </div>
+            </div>
+
+            <div id="applications-feedback" class="training-feedback" style="display:none;">
+                <h2 id="applications-feedback-title">Feedback</h2>
+                <p id="applications-feedback-text"></p>
+                <button id="applications-next-btn" class="submit-btn">Try Again</button>
+            </div>
+
+            <div class="training-stats">
+                <h2>Score</h2>
+                <div class="stats-display">
+                    <p>Attempts: <span id="applications-total">0</span></p>
+                    <p>Points earned: <span id="applications-points">0.0</span></p>
+                    <p>Score: <span id="applications-accuracy">0%</span></p>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Screen reader live region: announces graph changes politely -->
@@ -375,6 +547,13 @@
     <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
     <script src="cytoscape-svg.js"></script>
     <script src="graph.js"></script>
+    <script src="make-mode.js"></script>
+    <script src="degree-mode.js"></script>
+    <script src="eulerian-mode.js"></script>
+    <script src="iso-mode.js"></script>
+    <script src="planar-mode.js"></script>
+    <script src="graph-coloring-mode.js"></script>
+    <script src="applications-mode.js"></script>
     <script src="script.js"></script>
 </body>
 

@@ -1251,6 +1251,858 @@ function getMismatchedVertices(graph) {
 
 
 // =============================================================================
+// Planar graph puzzle helpers
+// =============================================================================
+
+const PLANAR_PUZZLE_CONFIG = {
+    nMin: 6,
+    nMax: 8,
+    planarExtraEdgeFactorMin: 1.15,
+    planarExtraEdgeFactorMax: 1.55,
+    nonPlanarExtraEdgeSlackMax: 2,
+};
+
+function _randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function _edgeKey(a, b) {
+    return a < b ? `${a}-${b}` : `${b}-${a}`;
+}
+
+function _circlePositions(n) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+        const a = (2 * Math.PI * i) / n;
+        pts.push({ x: Math.cos(a), y: Math.sin(a) });
+    }
+    return pts;
+}
+
+function _ccw(a, b, c) {
+    return (c.y - a.y) * (b.x - a.x) > (b.y - a.y) * (c.x - a.x);
+}
+
+function _segmentsIntersect(p1, p2, p3, p4) {
+    return _ccw(p1, p3, p4) !== _ccw(p2, p3, p4) && _ccw(p1, p2, p3) !== _ccw(p1, p2, p4);
+}
+
+function _wouldCrossAny(a, b, indexEdges, pos) {
+    for (const e of indexEdges) {
+        if (e.s === a || e.s === b || e.t === a || e.t === b) continue;
+        if (_segmentsIntersect(pos[a], pos[b], pos[e.s], pos[e.t])) return true;
+    }
+    return false;
+}
+
+function _generateConnectedPlanarIndexEdges(n, targetEdges) {
+    const maxPlanarEdges = Math.max(n - 1, 3 * n - 6);
+    const wanted = Math.max(n - 1, Math.min(targetEdges, maxPlanarEdges));
+
+    const indexEdges = _randomSpanningTree(n);
+    const edgeSet = new Set(indexEdges.map(e => _edgeKey(e.s, e.t)));
+    const pos = _circlePositions(n);
+
+    let guard = 0;
+    while (indexEdges.length < wanted && guard < 4000) {
+        guard++;
+        const a = _randInt(0, n - 1);
+        const b = _randInt(0, n - 1);
+        if (a === b) continue;
+
+        const key = _edgeKey(a, b);
+        if (edgeSet.has(key)) continue;
+        if (_wouldCrossAny(a, b, indexEdges, pos)) continue;
+
+        indexEdges.push({ s: a, t: b });
+        edgeSet.add(key);
+    }
+
+    return indexEdges;
+}
+
+function _makePlanarPuzzleGraph(n) {
+    const factor = PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMin
+        + Math.random() * (PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMax - PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMin);
+    const target = Math.min(3 * n - 6, Math.max(n - 1, Math.round(n * factor)));
+    const indexEdges = _generateConnectedPlanarIndexEdges(n, target);
+
+    return {
+        n,
+        names: makeLabels(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(indexEdges),
+        isPlanar: true,
+        obstruction: null,
+        planarCounts: {
+            vertices: n,
+            edges: indexEdges.length,
+            faces: 2 - n + indexEdges.length,
+        },
+    };
+}
+
+function _injectK5(indexEdges, n) {
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i)).slice(0, 5);
+    const required = [];
+    for (let i = 0; i < vertices.length; i++) {
+        for (let j = i + 1; j < vertices.length; j++) {
+            required.push({ s: vertices[i], t: vertices[j] });
+        }
+    }
+    return { required, witnessVertices: vertices };
+}
+
+function _injectK33(indexEdges, n) {
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i)).slice(0, 6);
+    const left = vertices.slice(0, 3);
+    const right = vertices.slice(3, 6);
+    const required = [];
+    for (const a of left) {
+        for (const b of right) required.push({ s: a, t: b });
+    }
+    return { required, witnessVertices: vertices, left, right };
+}
+
+function _makeNonPlanarPuzzleGraph(n) {
+    const base = _makePlanarPuzzleGraph(n);
+    let indexEdges = base.edges.map(e => ({ s: vertexIndex(e.source), t: vertexIndex(e.target) }));
+    const baseEdgeCount = indexEdges.length;
+
+    const makeK33 = (n >= 6) && Math.random() < 0.5;
+    const obstruction = makeK33 ? 'K3,3' : 'K5';
+    const injected = makeK33 ? _injectK33(indexEdges, n) : _injectK5(indexEdges, n);
+
+    const edgeSet = new Set(indexEdges.map(e => _edgeKey(e.s, e.t)));
+    const coreSet = new Set();
+
+    for (const e of injected.required) {
+        const key = _edgeKey(e.s, e.t);
+        coreSet.add(key);
+        if (!edgeSet.has(key)) {
+            indexEdges.push({ s: e.s, t: e.t });
+            edgeSet.add(key);
+        }
+    }
+
+    const target = baseEdgeCount + _randInt(0, Math.min(PLANAR_PUZZLE_CONFIG.nonPlanarExtraEdgeSlackMax, indexEdges.length - baseEdgeCount));
+    const removable = shuffle(indexEdges.filter(e => !coreSet.has(_edgeKey(e.s, e.t))));
+
+    for (const cand of removable) {
+        if (indexEdges.length <= target) break;
+        const key = _edgeKey(cand.s, cand.t);
+        const trial = indexEdges.filter(e => !(e.s === cand.s && e.t === cand.t) && !(e.s === cand.t && e.t === cand.s));
+        if (_indexEdgesConnected(trial, n)) {
+            indexEdges = trial;
+            edgeSet.delete(key);
+        }
+    }
+
+    return {
+        n,
+        names: makeLabels(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(indexEdges),
+        isPlanar: false,
+        obstruction,
+        witnessVertices: injected.witnessVertices.map(v => vertexId(v)),
+        planarCounts: null,
+    };
+}
+
+/**
+ * Generate a random planar-classification puzzle graph.
+ *
+ * Returns a graph object extended with:
+ *   isPlanar {boolean}
+ *   planarCounts {{vertices:number,edges:number,faces:number}|null}
+ *   obstruction {'K5'|'K3,3'|null}
+ *
+ * @returns {object}
+ */
+function generatePlanarGraphPuzzle() {
+    const n = _randInt(PLANAR_PUZZLE_CONFIG.nMin, PLANAR_PUZZLE_CONFIG.nMax);
+    const shouldBePlanar = Math.random() < 0.5;
+    return shouldBePlanar ? _makePlanarPuzzleGraph(n) : _makeNonPlanarPuzzleGraph(n);
+}
+
+
+// =============================================================================
+// Graph coloring puzzle helpers
+// =============================================================================
+
+const GRAPH_COLORING_CONFIG = {
+    nMin: 5,
+    nMax: 8,
+    bipartiteWeight: 0.25,
+    planarWeight: 0.50,
+    k5Weight: 0.25,
+    generationMaxChromatic: 5,
+    promptMaxColors: 6,
+};
+
+function _makeNumberNames(n) {
+    return Array.from({ length: n }, (_, i) => String(i + 1));
+}
+
+function _dedupeIndexEdges(indexEdges) {
+    const seen = new Set();
+    const out = [];
+    for (const e of indexEdges) {
+        const key = _edgeKey(e.s, e.t);
+        if (e.s === e.t || seen.has(key)) continue;
+        seen.add(key);
+        out.push({ s: Math.min(e.s, e.t), t: Math.max(e.s, e.t) });
+    }
+    return out;
+}
+
+function _buildAdjFromIndexEdges(indexEdges, n) {
+    const adj = Array.from({ length: n }, () => new Set());
+    for (const { s, t } of indexEdges) {
+        if (s === t) continue;
+        adj[s].add(t);
+        adj[t].add(s);
+    }
+    return adj;
+}
+
+function _isColorableWithK(indexEdges, n, k) {
+    if (k <= 0) return false;
+    const adj = _buildAdjFromIndexEdges(indexEdges, n);
+
+    for (let i = 0; i < n; i++) {
+        if (adj[i].has(i)) return false;
+    }
+
+    const order = Array.from({ length: n }, (_, i) => i)
+        .sort((a, b) => adj[b].size - adj[a].size);
+    const color = new Array(n).fill(-1);
+
+    function dfs(pos) {
+        if (pos >= order.length) return true;
+        const v = order[pos];
+
+        const used = new Set();
+        for (const nb of adj[v]) {
+            if (color[nb] !== -1) used.add(color[nb]);
+        }
+
+        for (let c = 0; c < k; c++) {
+            if (used.has(c)) continue;
+            color[v] = c;
+            if (dfs(pos + 1)) return true;
+            color[v] = -1;
+        }
+        return false;
+    }
+
+    return dfs(0);
+}
+
+function chromaticNumber(graph, maxColors = 6) {
+    if (!graph || !Array.isArray(graph.edges)) return null;
+    const n = Number(graph.n) || 0;
+    const indexEdges = _dedupeIndexEdges(
+        graph.edges.map(e => ({ s: vertexIndex(e.source), t: vertexIndex(e.target) }))
+    );
+
+    for (let k = 1; k <= maxColors; k++) {
+        if (_isColorableWithK(indexEdges, n, k)) return k;
+    }
+    return null;
+}
+
+function _makeBipartiteColoringGraph(n) {
+    const leftSize = _randInt(2, n - 2);
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
+    const left = vertices.slice(0, leftSize);
+    const right = vertices.slice(leftSize);
+
+    const edgeSet = new Set();
+    const edges = [];
+    const addEdge = (a, b) => {
+        const key = _edgeKey(a, b);
+        if (a === b || edgeSet.has(key)) return false;
+        edgeSet.add(key);
+        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
+        return true;
+    };
+
+    for (const r of right) addEdge(r, left[_randInt(0, left.length - 1)]);
+    for (const l of left) addEdge(l, right[_randInt(0, right.length - 1)]);
+
+    const target = Math.max(n + 1, Math.min(Math.floor(1.7 * n), left.length * right.length));
+    let guard = 0;
+    while (edges.length < target && guard < 3000) {
+        guard++;
+        addEdge(left[_randInt(0, left.length - 1)], right[_randInt(0, right.length - 1)]);
+    }
+
+    return {
+        n,
+        names: _makeNumberNames(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(edges),
+        flavor: 'bipartite',
+    };
+}
+
+function _makePlanarColoringGraph(n) {
+    const g = _makePlanarPuzzleGraph(n);
+    return {
+        n: g.n,
+        names: _makeNumberNames(g.n),
+        directed: false,
+        edgeLabel: null,
+        edges: g.edges.slice(),
+        flavor: 'planar',
+    };
+}
+
+function _makeK5ColoringGraph(n) {
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
+    const core = vertices.slice(0, 5);
+    const extras = vertices.slice(5);
+
+    const edgeSet = new Set();
+    const edges = [];
+    const addEdge = (a, b) => {
+        const key = _edgeKey(a, b);
+        if (a === b || edgeSet.has(key)) return;
+        edgeSet.add(key);
+        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
+    };
+
+    for (let i = 0; i < core.length; i++) {
+        for (let j = i + 1; j < core.length; j++) addEdge(core[i], core[j]);
+    }
+
+    for (const v of extras) {
+        const shuffledCore = shuffle(core.slice());
+        const degreeToCore = _randInt(2, 4);
+        for (let i = 0; i < degreeToCore; i++) addEdge(v, shuffledCore[i]);
+    }
+
+    return {
+        n,
+        names: _makeNumberNames(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(edges),
+        flavor: 'k5',
+    };
+}
+
+/**
+ * Generate a random graph-coloring puzzle.
+ *
+ * Returns a graph object extended with:
+ *   minColors {number}       exact chromatic number (<= 5)
+ *   maxColorsAllowed {number}
+ *   flavor {'bipartite'|'planar'|'k5'}
+ *
+ * @returns {object}
+ */
+function generateGraphColoringPuzzle() {
+    for (let attempt = 0; attempt < 60; attempt++) {
+        const n = _randInt(GRAPH_COLORING_CONFIG.nMin, GRAPH_COLORING_CONFIG.nMax);
+        const roll = Math.random();
+
+        let graph;
+        if (roll < GRAPH_COLORING_CONFIG.bipartiteWeight) {
+            graph = _makeBipartiteColoringGraph(n);
+        } else if (roll < GRAPH_COLORING_CONFIG.bipartiteWeight + GRAPH_COLORING_CONFIG.planarWeight) {
+            graph = _makePlanarColoringGraph(n);
+        } else {
+            graph = _makeK5ColoringGraph(Math.max(n, 5));
+        }
+
+        const minColors = chromaticNumber(graph, GRAPH_COLORING_CONFIG.generationMaxChromatic);
+        if (!minColors || minColors > GRAPH_COLORING_CONFIG.generationMaxChromatic) continue;
+
+        const plusOne = minColors + 1;
+        const requested = plusOne === graph.n ? minColors : plusOne;
+        const maxColorsAllowed = Math.min(GRAPH_COLORING_CONFIG.promptMaxColors, requested);
+
+        return { ...graph, minColors, maxColorsAllowed };
+    }
+
+    const fallback = _makeBipartiteColoringGraph(6);
+    return { ...fallback, minColors: 2, maxColorsAllowed: 3 };
+}
+
+/**
+ * Validate a full vertex coloring for an undirected graph.
+ *
+ * @param {object} graph
+ * @param {Object.<string,string>} colorByVertexId map from vertex id ('v0',...)
+ * @param {number} [minColors]
+ * @returns {{
+ *   ok: boolean,
+ *   reason?: 'incomplete'|'conflict',
+ *   v1?: string,
+ *   v2?: string,
+ *   color?: string,
+ *   usedColors?: number,
+ *   isMinimal?: boolean,
+ * }}
+ */
+function validateGraphColoring(graph, colorByVertexId, minColors) {
+    if (!graph || !Array.isArray(graph.edges)) return { ok: false, reason: 'incomplete' };
+
+    const n = Number(graph.n) || 0;
+    const names = Array.isArray(graph.names) ? graph.names : _makeNumberNames(n);
+    const normalize = c => String(c || '').trim().toLowerCase();
+
+    const used = new Set();
+    for (let i = 0; i < n; i++) {
+        const vid = vertexId(i);
+        const c = normalize(colorByVertexId ? colorByVertexId[vid] : '');
+        if (!c) return { ok: false, reason: 'incomplete' };
+        used.add(c);
+    }
+
+    for (const e of graph.edges) {
+        const s = e.source;
+        const t = e.target;
+        const cs = normalize(colorByVertexId[s]);
+        const ct = normalize(colorByVertexId[t]);
+        if (cs && ct && cs === ct) {
+            const si = vertexIndex(s);
+            const ti = vertexIndex(t);
+            return {
+                ok: false,
+                reason: 'conflict',
+                v1: names[si] || String(si + 1),
+                v2: names[ti] || String(ti + 1),
+                color: cs,
+            };
+        }
+    }
+
+    const usedColors = used.size;
+    return {
+        ok: true,
+        usedColors,
+        isMinimal: typeof minColors === 'number' ? usedColors === minColors : false,
+    };
+}
+
+/**
+ * Compute the deterministic greedy-color assignment for a given vertex order.
+ * For each vertex in order, assign the first available color not used by
+ * already-colored neighbors.
+ *
+ * @param {object} graph
+ * @param {string[]} vertexOrderIds e.g. ['v0','v3','v1',...]
+ * @param {string[]} colorOrder tokens in priority order, e.g. ['a','b','c','d','e','f']
+ * @returns {{ assignment: Object.<string,string>, ok: boolean }}
+ */
+function computeGreedyColoring(graph, vertexOrderIds, colorOrder) {
+    if (!graph || !Array.isArray(graph.edges)) return { assignment: {}, ok: false };
+
+    const n = Number(graph.n) || 0;
+    const order = Array.isArray(vertexOrderIds) && vertexOrderIds.length === n
+        ? vertexOrderIds.slice()
+        : Array.from({ length: n }, (_, i) => vertexId(i));
+    const colors = Array.isArray(colorOrder) && colorOrder.length > 0
+        ? colorOrder.slice()
+        : ['a', 'b', 'c', 'd', 'e', 'f'];
+
+    const adj = Array.from({ length: n }, () => new Set());
+    for (const e of graph.edges) {
+        const s = vertexIndex(e.source);
+        const t = vertexIndex(e.target);
+        if (s === t) continue;
+        adj[s].add(t);
+        adj[t].add(s);
+    }
+
+    const assignment = {};
+    for (const vid of order) {
+        const v = vertexIndex(vid);
+        const used = new Set();
+        for (const nb of adj[v]) {
+            const nbColor = assignment[vertexId(nb)];
+            if (nbColor) used.add(nbColor);
+        }
+        const chosen = colors.find(c => !used.has(c));
+        if (!chosen) return { assignment, ok: false };
+        assignment[vid] = chosen;
+    }
+
+    return { assignment, ok: true };
+}
+
+/**
+ * Validate a user coloring against the greedy-coloring algorithm, reporting
+ * the first vertex (in the specified order) where the color differs from the
+ * required greedy choice.
+ *
+ * @param {object} graph
+ * @param {string[]} vertexOrderIds
+ * @param {Object.<string,string>} userColorByVertexId
+ * @param {string[]} colorOrder
+ * @returns {{
+ *   ok: boolean,
+ *   reason?: 'incomplete'|'incorrect',
+ *   vertexId?: string,
+ *   vertexLabel?: string,
+ *   expected?: string,
+ *   got?: string,
+ * }}
+ */
+function validateGreedyColoring(graph, vertexOrderIds, userColorByVertexId, colorOrder) {
+    const n = Number(graph?.n) || 0;
+    const names = Array.isArray(graph?.names) ? graph.names : _makeNumberNames(n);
+    const order = Array.isArray(vertexOrderIds) && vertexOrderIds.length === n
+        ? vertexOrderIds.slice()
+        : Array.from({ length: n }, (_, i) => vertexId(i));
+
+    const normalized = {};
+    for (let i = 0; i < n; i++) {
+        const vid = vertexId(i);
+        normalized[vid] = String(userColorByVertexId?.[vid] || '').trim().toLowerCase();
+    }
+
+    const { assignment, ok } = computeGreedyColoring(graph, order, colorOrder);
+    if (!ok) {
+        return { ok: false, reason: 'incorrect' };
+    }
+
+    for (const vid of order) {
+        const got = normalized[vid];
+        if (!got) {
+            return {
+                ok: false,
+                reason: 'incomplete',
+                vertexId: vid,
+                vertexLabel: names[vertexIndex(vid)] || String(vertexIndex(vid) + 1),
+            };
+        }
+
+        const expected = assignment[vid];
+        if (got !== expected) {
+            return {
+                ok: false,
+                reason: 'incorrect',
+                vertexId: vid,
+                vertexLabel: names[vertexIndex(vid)] || String(vertexIndex(vid) + 1),
+                expected,
+                got,
+            };
+        }
+    }
+
+    return { ok: true };
+}
+
+
+// =============================================================================
+// Applications puzzle helpers
+// =============================================================================
+
+const APPLICATIONS_COMMITTEE_NAMES = [
+    'Appeals Board', 'Welcoming Committee', 'Oversight Panel', 'Ethics Subcommittee', 'Grievance Council',
+    'Advisory Circle', 'Review Board', 'Standards Committee', 'Nominations Panel', 'Steering Group',
+    'Transition Team', 'Allocation Board', 'Credentials Committee', 'Incident Review Panel', 'Social Committee',
+    'Recognition Board', 'Continuity Group', 'Founding Council', 'Exceptions Committee', 'Peripheral Affairs Bureau',
+];
+
+const APPLICATIONS_MEMBER_NAMES = [
+    'Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank', 'Grace', 'Heidi', 'Ivan', 'Judy',
+    'Karl', 'Leo', 'Mallory', 'Nina', 'Oscar', 'Peggy', 'Quentin', 'Rupert', 'Sybil', 'Trent',
+    'Uma', 'Victor', 'Walter', 'Xavier', 'Yvonne', 'Zara',
+];
+
+const APPLICATIONS_LOCATION_NAMES = [
+    'Downtown', 'Uptown', 'Suburbia', 'Industrial Park', 'University District', 'Waterfront',
+    'Historic Quarter', 'Business Center', 'Residential Area', 'Cultural Hub', 'Tech Park', 'Greenbelt',
+    'Airport', 'Shopping District', 'Entertainment Zone', 'Medical Center', 'Government Plaza', 'Sports Complex',
+];
+
+const APPLICATIONS_FREQUENCY_OPTIONS = ['540 kHz', '600 kHz', '700 kHz', '800 kHz', '900 kHz', '1000 kHz'];
+
+function _pickUniqueNames(pool, count, fallbackPrefix) {
+    const shuffled = shuffle(pool.slice());
+    const out = [];
+    for (let i = 0; i < count; i++) {
+        if (i < shuffled.length) out.push(shuffled[i]);
+        else out.push(`${fallbackPrefix} ${i + 1}`);
+    }
+    return out;
+}
+
+function _generateSchedulingApplicationsPuzzle() {
+    const base = generateGraphColoringPuzzle();
+    const committeeNames = _pickUniqueNames(APPLICATIONS_COMMITTEE_NAMES, base.n, 'Committee');
+
+    const committeeMembers = Array.from({ length: base.n }, () => []);
+    const availableMembers = shuffle(APPLICATIONS_MEMBER_NAMES.slice());
+    let syntheticMemberCounter = 1;
+
+    function takeMemberName() {
+        if (availableMembers.length > 0) return availableMembers.pop();
+        const name = `Member ${syntheticMemberCounter}`;
+        syntheticMemberCounter++;
+        return name;
+    }
+
+    for (let i = 0; i < base.n; i++) {
+        committeeMembers[i].push(takeMemberName());
+        if (Math.random() < 0.35) committeeMembers[i].push(takeMemberName());
+    }
+
+    for (const e of base.edges) {
+        const s = vertexIndex(e.source);
+        const t = vertexIndex(e.target);
+        const shared = takeMemberName();
+        committeeMembers[s].push(shared);
+        committeeMembers[t].push(shared);
+    }
+
+    const committees = Array.from({ length: base.n }, (_, i) => ({
+        vertexId: vertexId(i),
+        name: committeeNames[i],
+        members: Array.from(new Set(committeeMembers[i])),
+    }));
+
+    const namesById = Object.fromEntries(committees.map(c => [c.vertexId, c.name]));
+
+    return {
+        type: 'scheduling',
+        n: base.n,
+        names: committeeNames,
+        committees,
+        edges: base.edges.slice(),
+        minResources: base.minColors,
+        namesById,
+    };
+}
+
+function _distance(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return Math.hypot(dx, dy);
+}
+
+function _generateSeparatedPoints(n, minSep, maxTries = 4000) {
+    const pts = [];
+    let tries = 0;
+    while (pts.length < n && tries < maxTries) {
+        tries++;
+        const p = { x: Math.random() * 2, y: Math.random() * 2 };
+        let ok = true;
+        for (const q of pts) {
+            if (_distance(p, q) < minSep) { ok = false; break; }
+        }
+        if (ok) pts.push(p);
+    }
+    return pts.length === n ? pts : null;
+}
+
+function _pairwiseDistances(points) {
+    const n = points.length;
+    const d = Array.from({ length: n }, () => new Array(n).fill(0));
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const dist = _distance(points[i], points[j]);
+            d[i][j] = dist;
+            d[j][i] = dist;
+        }
+    }
+    return d;
+}
+
+function _mstBottleneckDistance(dist) {
+    const n = dist.length;
+    const edges = [];
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            edges.push({ i, j, w: dist[i][j] });
+        }
+    }
+    edges.sort((a, b) => a.w - b.w);
+
+    const parent = Array.from({ length: n }, (_, i) => i);
+    const rank = new Array(n).fill(0);
+    const find = x => {
+        while (parent[x] !== x) {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
+        }
+        return x;
+    };
+    const unite = (a, b) => {
+        const ra = find(a);
+        const rb = find(b);
+        if (ra === rb) return false;
+        if (rank[ra] < rank[rb]) parent[ra] = rb;
+        else if (rank[rb] < rank[ra]) parent[rb] = ra;
+        else { parent[rb] = ra; rank[ra]++; }
+        return true;
+    };
+
+    let used = 0;
+    let bottleneck = 0;
+    for (const e of edges) {
+        if (!unite(e.i, e.j)) continue;
+        used++;
+        if (e.w > bottleneck) bottleneck = e.w;
+        if (used === n - 1) break;
+    }
+    return bottleneck;
+}
+
+function _buildInterferenceGraphFromDistance(dist, threshold) {
+    const n = dist.length;
+    const indexEdges = [];
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            if (dist[i][j] <= threshold) indexEdges.push({ s: i, t: j });
+        }
+    }
+    return _toEdges(indexEdges);
+}
+
+function _generateInterferenceApplicationsPuzzle() {
+    for (let attempt = 0; attempt < 60; attempt++) {
+        const n = _randInt(GRAPH_COLORING_CONFIG.nMin, GRAPH_COLORING_CONFIG.nMax);
+        const points = _generateSeparatedPoints(n, 0.05);
+        if (!points) continue;
+
+        const dist = _pairwiseDistances(points);
+        let minDist = Infinity;
+        let diameter = 0;
+        for (let i = 0; i < n; i++) {
+            for (let j = i + 1; j < n; j++) {
+                const dij = dist[i][j];
+                if (dij < minDist) minDist = dij;
+                if (dij > diameter) diameter = dij;
+            }
+        }
+
+        const connectThreshold = _mstBottleneckDistance(dist);
+        const halfDiameter = diameter / 2;
+        const thresholdRaw = halfDiameter >= connectThreshold
+            ? connectThreshold + Math.random() * (halfDiameter - connectThreshold)
+            : halfDiameter;
+
+        const targetMinMiles = Number((_randInt(100, 500) / 100).toFixed(2));
+        const scale = targetMinMiles / minDist;
+        const thresholdMiles = Number((thresholdRaw * scale).toFixed(2));
+
+        const edgeList = _buildInterferenceGraphFromDistance(dist, thresholdRaw);
+        const graph = {
+            n,
+            names: _pickUniqueNames(APPLICATIONS_LOCATION_NAMES, n, 'Station'),
+            directed: false,
+            edgeLabel: null,
+            edges: edgeList,
+        };
+
+        const minResources = chromaticNumber(graph, APPLICATIONS_FREQUENCY_OPTIONS.length);
+        if (!minResources || minResources > APPLICATIONS_FREQUENCY_OPTIONS.length) continue;
+
+        const normalizedDistance = Array.from({ length: n }, (_, i) =>
+            Array.from({ length: n }, (_, j) => Number((dist[i][j] * scale).toFixed(2)))
+        );
+
+        return {
+            type: 'interference',
+            n,
+            names: graph.names,
+            stations: graph.names.slice(),
+            edges: graph.edges,
+            minResources,
+            thresholdMiles,
+            distanceMiles: normalizedDistance,
+            frequencyOptions: APPLICATIONS_FREQUENCY_OPTIONS.slice(),
+            namesById: Object.fromEntries(Array.from({ length: n }, (_, i) => [vertexId(i), graph.names[i]])),
+        };
+    }
+
+    const fallback = _generateSchedulingApplicationsPuzzle();
+    return {
+        type: 'interference',
+        n: fallback.n,
+        names: fallback.names,
+        stations: fallback.names.slice(),
+        edges: fallback.edges,
+        minResources: fallback.minResources,
+        thresholdMiles: 3,
+        distanceMiles: Array.from({ length: fallback.n }, (_, i) =>
+            Array.from({ length: fallback.n }, (_, j) => (i === j ? 0 : 3.01))
+        ),
+        frequencyOptions: APPLICATIONS_FREQUENCY_OPTIONS.slice(),
+        namesById: fallback.namesById,
+    };
+}
+
+function generateApplicationsPuzzle() {
+    return Math.random() < 0.5
+        ? _generateSchedulingApplicationsPuzzle()
+        : _generateInterferenceApplicationsPuzzle();
+}
+
+function _sharedMembersForEdge(puzzle, sourceId, targetId) {
+    if (!puzzle || puzzle.type !== 'scheduling') return [];
+    const committees = Array.isArray(puzzle.committees) ? puzzle.committees : [];
+    const byId = Object.fromEntries(committees.map(c => [c.vertexId, c]));
+    const s = byId[sourceId];
+    const t = byId[targetId];
+    if (!s || !t) return [];
+    const sSet = new Set(s.members || []);
+    return (t.members || []).filter(m => sSet.has(m));
+}
+
+function validateApplicationsAssignment(puzzle, assignmentByVertexId) {
+    if (!puzzle || !Array.isArray(puzzle.edges)) return { ok: false, reason: 'incomplete' };
+
+    const n = Number(puzzle.n) || 0;
+    const used = new Set();
+
+    for (let i = 0; i < n; i++) {
+        const vid = vertexId(i);
+        const value = String(assignmentByVertexId?.[vid] || '').trim();
+        if (!value) return { ok: false, reason: 'incomplete' };
+        used.add(value);
+    }
+
+    for (const e of puzzle.edges) {
+        const a = String(assignmentByVertexId?.[e.source] || '').trim();
+        const b = String(assignmentByVertexId?.[e.target] || '').trim();
+        if (!a || !b) return { ok: false, reason: 'incomplete' };
+        if (a === b) {
+            const shared = _sharedMembersForEdge(puzzle, e.source, e.target);
+            return {
+                ok: false,
+                reason: 'conflict',
+                v1Id: e.source,
+                v2Id: e.target,
+                v1Name: puzzle.namesById?.[e.source] || e.source,
+                v2Name: puzzle.namesById?.[e.target] || e.target,
+                sharedMember: shared[0] || null,
+            };
+        }
+    }
+
+    const usedCount = used.size;
+    const minResources = Number(puzzle.minResources) || usedCount;
+    return {
+        ok: true,
+        usedCount,
+        minResources,
+        optimal: usedCount === minResources,
+    };
+}
+
+
+// =============================================================================
 // Isomorphism puzzle helpers
 // =============================================================================
 
