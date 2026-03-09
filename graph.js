@@ -1257,7 +1257,7 @@ function getMismatchedVertices(graph) {
 const PLANAR_PUZZLE_CONFIG = {
     nMin: 6,
     nMax: 8,
-    planarExtraEdgeFactorMin: 1.15,
+    planarExtraEdgeFactorMin: 1.14,
     planarExtraEdgeFactorMax: 1.55,
     nonPlanarExtraEdgeSlackMax: 2,
 };
@@ -1270,13 +1270,60 @@ function _edgeKey(a, b) {
     return a < b ? `${a}-${b}` : `${b}-${a}`;
 }
 
-function _circlePositions(n) {
-    const pts = [];
-    for (let i = 0; i < n; i++) {
-        const a = (2 * Math.PI * i) / n;
-        pts.push({ x: Math.cos(a), y: Math.sin(a) });
+function _isColinear(a, b, c, eps = 1e-6) {
+    const area2 = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+    return Math.abs(area2) <= eps;
+}
+
+function _generateNonColinearPoints(n, maxAttempts = 120) {
+    const minSep = 0.08;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const pts = [];
+        let ok = true;
+
+        for (let i = 0; i < n; i++) {
+            let placed = false;
+
+            for (let tries = 0; tries < 1200 && !placed; tries++) {
+                const p = { x: Math.random(), y: Math.random() };
+
+                let tooClose = false;
+                for (const q of pts) {
+                    const dx = p.x - q.x;
+                    const dy = p.y - q.y;
+                    if ((dx * dx + dy * dy) < (minSep * minSep)) {
+                        tooClose = true;
+                        break;
+                    }
+                }
+                if (tooClose) continue;
+
+                let colinear = false;
+                for (let a = 0; a < pts.length && !colinear; a++) {
+                    for (let b = a + 1; b < pts.length; b++) {
+                        if (_isColinear(pts[a], pts[b], p)) {
+                            colinear = true;
+                            break;
+                        }
+                    }
+                }
+                if (colinear) continue;
+
+                pts.push(p);
+                placed = true;
+            }
+
+            if (!placed) {
+                ok = false;
+                break;
+            }
+        }
+
+        if (ok && pts.length === n) return pts;
     }
-    return pts;
+
+    return null;
 }
 
 function _ccw(a, b, c) {
@@ -1296,26 +1343,39 @@ function _wouldCrossAny(a, b, indexEdges, pos) {
 }
 
 function _generateConnectedPlanarIndexEdges(n, targetEdges) {
-    const maxPlanarEdges = Math.max(n - 1, 3 * n - 6);
-    const wanted = Math.max(n - 1, Math.min(targetEdges, maxPlanarEdges));
+    void targetEdges;
 
-    const indexEdges = _randomSpanningTree(n);
-    const edgeSet = new Set(indexEdges.map(e => _edgeKey(e.s, e.t)));
-    const pos = _circlePositions(n);
+    let points = _generateNonColinearPoints(n);
+    if (!points) points = Array.from({ length: n }, () => ({ x: Math.random(), y: Math.random() }));
 
-    let guard = 0;
-    while (indexEdges.length < wanted && guard < 4000) {
-        guard++;
-        const a = _randInt(0, n - 1);
-        const b = _randInt(0, n - 1);
-        if (a === b) continue;
+    const root = _randInt(0, n - 1);
+    const indexEdges = [];
+    const edgeSet = new Set();
 
-        const key = _edgeKey(a, b);
-        if (edgeSet.has(key)) continue;
-        if (_wouldCrossAny(a, b, indexEdges, pos)) continue;
-
-        indexEdges.push({ s: a, t: b });
+    // Build a connected non-crossing seed (spanning tree) as a random-root star
+    for (let v = 0; v < n; v++) {
+        if (v === root) continue;
+        const key = _edgeKey(root, v);
+        indexEdges.push({ s: root, t: v });
         edgeSet.add(key);
+    }
+
+    // Add random non-crossing edges until no more can be added (maximal)
+    while (true) {
+        const candidates = [];
+        for (let a = 0; a < n; a++) {
+            for (let b = a + 1; b < n; b++) {
+                const key = _edgeKey(a, b);
+                if (edgeSet.has(key)) continue;
+                if (_wouldCrossAny(a, b, indexEdges, points)) continue;
+                candidates.push({ s: a, t: b, key });
+            }
+        }
+
+        if (candidates.length === 0) break;
+        const pick = candidates[_randInt(0, candidates.length - 1)];
+        indexEdges.push({ s: pick.s, t: pick.t });
+        edgeSet.add(pick.key);
     }
 
     return indexEdges;
@@ -1325,7 +1385,20 @@ function _makePlanarPuzzleGraph(n) {
     const factor = PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMin
         + Math.random() * (PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMax - PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMin);
     const target = Math.min(3 * n - 6, Math.max(n - 1, Math.round(n * factor)));
-    const indexEdges = _generateConnectedPlanarIndexEdges(n, target);
+    let indexEdges = _generateConnectedPlanarIndexEdges(n, target);
+
+    // Sparsify toward target while preserving connectedness
+    while (indexEdges.length > target) {
+        const removableIdx = [];
+        for (let i = 0; i < indexEdges.length; i++) {
+            const trial = indexEdges.filter((_, j) => j !== i);
+            if (_indexEdgesConnected(trial, n)) removableIdx.push(i);
+        }
+        if (removableIdx.length === 0) break;
+
+        const drop = removableIdx[_randInt(0, removableIdx.length - 1)];
+        indexEdges = indexEdges.filter((_, i) => i !== drop);
+    }
 
     return {
         n,

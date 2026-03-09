@@ -12,9 +12,9 @@ const APPLICATIONS_COPY = {
         feedbackOptimal: n => `Great job! You found the optimal schedule using ${n} time slots.`,
         feedbackClose: n => `That schedule works but you can do better! You can schedule the meetings in ${n} time slots.`,
         feedbackFar: (n, m) => `That schedule works but you can do much better! You can schedule the meetings in ${n} time slots and you used ${m} time slots.`,
-        feedbackConflict: (member, a, b) => member
-            ? `That schedule doesn't work because ${member} is scheduled for both ${a} and ${b} at the same time.`
-            : `That schedule doesn't work because ${a} and ${b} are scheduled at the same time and share a committee member.`,
+        feedbackConflict: (member, a, b, timeSlot) => member
+            ? `That schedule doesn't work because ${member} is scheduled for both ${a} and ${b} at ${timeSlot}.`
+            : `That schedule doesn't work because ${a} and ${b} are both scheduled at ${timeSlot} and share a committee member.`,
     },
     interference: {
         prompt: 'Can you find the optimal frequency assignment?',
@@ -35,6 +35,16 @@ const APPLICATIONS_ORGANIZATIONS = [
     'Community Operations Council',
     'City Services Collaborative',
 ];
+
+const TIME_SLOTS = [
+    '9am-10am',
+    '10am-11am',
+    '11am-12pm',
+    '1pm-2pm',
+    '2pm-3pm',
+    '3pm-4pm',
+    '4pm-5pm',
+]
 
 function loadApplicationsStats() {
     try {
@@ -67,6 +77,28 @@ function clearApplicationsSelectionHighlights() {
         sel.style.outline = '';
         sel.style.borderColor = '';
         sel.style.boxShadow = '';
+        sel.style.backgroundColor = '';
+    });
+}
+
+function setApplicationsAssignmentFrozen(frozen) {
+    document.querySelectorAll('#applications-assignment-list select').forEach(sel => {
+        sel.disabled = !!frozen;
+    });
+    const submitBtn = document.getElementById('applications-submit-btn');
+    if (submitBtn) submitBtn.disabled = !!frozen;
+}
+
+function highlightApplicationsConflictChoices(result) {
+    const conflictIds = [result?.v1Id, result?.v2Id].filter(Boolean);
+    conflictIds.forEach(vid => {
+        const idx = vertexIndex(vid);
+        const sel = document.getElementById(`applications-select-${idx}`);
+        if (!sel) return;
+        sel.style.outline = '2px solid #e74c3c';
+        sel.style.borderColor = '#e74c3c';
+        sel.style.boxShadow = '0 0 0 2px rgba(231, 76, 60, 0.2)';
+        sel.style.backgroundColor = '#fff5f5';
     });
 }
 
@@ -95,17 +127,21 @@ function renderApplicationsCommitteeList(puzzle) {
     if (!container) return;
     container.innerHTML = '';
 
-    const ul = document.createElement('ul');
-    ul.style.margin = '8px 0 0 20px';
-    ul.style.padding = '0';
-
     puzzle.committees.forEach(c => {
-        const li = document.createElement('li');
-        li.textContent = `${c.name}: ${c.members.join(', ')}`;
-        ul.appendChild(li);
-    });
+        const title = document.createElement('h3');
+        title.textContent = c.name;
+        title.style.margin = '10px 0 4px 0';
+        title.style.fontSize = '1rem';
 
-    container.appendChild(ul);
+        const members = document.createElement('p');
+        const sortedMembers = (Array.isArray(c.members) ? c.members.slice() : [])
+            .sort((a, b) => String(a).localeCompare(String(b)));
+        members.textContent = sortedMembers.join(', ');
+        members.style.margin = '0 0 8px 0';
+
+        container.appendChild(title);
+        container.appendChild(members);
+    });
 }
 
 function renderApplicationsDistanceTable(puzzle) {
@@ -174,8 +210,7 @@ function getApplicationsChoices(puzzle) {
     if (puzzle.type === 'interference') {
         return Array.isArray(puzzle.frequencyOptions) ? puzzle.frequencyOptions.slice() : [];
     }
-    const minCount = Math.max(Number(puzzle.minResources) || 0, Number(puzzle.n) || 0);
-    return Array.from({ length: minCount }, (_, i) => `Time Slot ${i + 1}`);
+    return TIME_SLOTS.slice();
 }
 
 function isApplicationsPuzzleSolvable(puzzle) {
@@ -250,6 +285,7 @@ function resetApplicationsUI() {
     if (actions) actions.style.display = '';
     if (feedback) feedback.style.display = 'none';
     clearApplicationsSelectionHighlights();
+    setApplicationsAssignmentFrozen(false);
 }
 
 function renderApplicationsPrompt(puzzle) {
@@ -319,7 +355,8 @@ function buildApplicationsFeedbackMessage(puzzle, result) {
 
     if (result.reason === 'conflict') {
         if (puzzle.type === 'scheduling') {
-            return APPLICATIONS_COPY.scheduling.feedbackConflict(result.sharedMember, result.v1Name, result.v2Name);
+            const timeSlot = String(modeStates.applications.selection?.[result.v1Id] || 'the same time slot');
+            return APPLICATIONS_COPY.scheduling.feedbackConflict(result.sharedMember, result.v1Name, result.v2Name, timeSlot);
         }
         return APPLICATIONS_COPY.interference.feedbackConflict(result.v1Name, result.v2Name, puzzle.thresholdMiles);
     }
@@ -374,20 +411,16 @@ function bindApplicationsControls() {
                 nextLabel: (result.ok && result.optimal) ? 'Next Question' : 'Try Again',
             });
 
-            const actions = get('applications-actions');
-            if (actions) actions.style.display = 'none';
+            setApplicationsAssignmentFrozen(true);
+            if (!result.ok && result.reason === 'conflict') {
+                highlightApplicationsConflictChoices(result);
+            }
         };
     }
 
     const nextBtn = get('applications-next-btn');
     if (nextBtn && !nextBtn.dataset.bound) {
         nextBtn.dataset.bound = '1';
-        nextBtn.onclick = () => {
-            if (modeStates.applications.lastFeedbackWasCorrect) {
-                startApplicationsTrial();
-            } else {
-                resetApplicationsUI();
-            }
-        };
+        nextBtn.onclick = () => startApplicationsTrial();
     }
 }

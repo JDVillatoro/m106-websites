@@ -79,7 +79,10 @@ function startPlanarTrial() {
     modeStates.planar.part2Scored = false;
 
     const cy = getCy('planar');
-    if (cy) draw_graph(puzzle, cy);
+    if (cy) {
+        const order = shuffle(Array.from({ length: puzzle.n }, (_, i) => i));
+        drawGraphCircle(puzzle, cy, order);
+    }
     updateGraphAria('planar-graph-description', puzzle, true);
 
     resetPlanarUI();
