@@ -4,6 +4,18 @@
 
 let planarNonPlanarChoice = null;
 
+const PLANAR_MODE_CONFIG = {
+    nMin: 6,
+    nMax: 8,
+    planarExtraEdgeFactorMin: 1.14,
+    planarExtraEdgeFactorMax: 1.55,
+    nonPlanarExtraEdgeSlackMax: 2,
+};
+
+function _planarRandInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
 function loadPlanarStats() {
     try {
         const raw = localStorage.getItem('graph_planar_stats');
@@ -71,7 +83,24 @@ function showPlanarFeedback({ correct, message, nextLabel }) {
 }
 
 function startPlanarTrial() {
-    const puzzle = generatePlanarGraphPuzzle();
+    const n = _planarRandInt(PLANAR_MODE_CONFIG.nMin, PLANAR_MODE_CONFIG.nMax);
+    const shouldBePlanar = Math.random() < 0.5;
+
+    let graph;
+    let obstruction = null;
+
+    if (shouldBePlanar) {
+        graph = generatePlanarGraph(
+            n,
+            PLANAR_MODE_CONFIG.planarExtraEdgeFactorMin,
+            PLANAR_MODE_CONFIG.planarExtraEdgeFactorMax,
+        );
+    } else {
+        obstruction = (n >= 6 && Math.random() < 0.5) ? 'K3,3' : 'K5';
+        graph = generateNonPlanarGraph(n, obstruction, PLANAR_MODE_CONFIG.nonPlanarExtraEdgeSlackMax);
+    }
+
+    const puzzle = { ...graph, isPlanar: shouldBePlanar, obstruction };
 
     modeStates.planar.currentPuzzle = puzzle;
     modeStates.planar.graph = puzzle;
@@ -163,8 +192,10 @@ function bindPlanarControls() {
             const e = Number(get('planar-edges-input')?.value);
             const f = Number(get('planar-faces-input')?.value);
 
-            const expected = puzzle.planarCounts;
-            const correct = (v === expected.vertices && e === expected.edges && f === expected.faces);
+            const expectedV = vertexCount(puzzle);
+            const expectedE = edgeCount(puzzle);
+            const expectedF = faceCount(puzzle);
+            const correct = (v === expectedV && e === expectedE && f === expectedF);
 
             get('planar-part2-planar').style.display = 'none';
             planarSubmitBtn.style.display = 'none';
@@ -184,7 +215,7 @@ function bindPlanarControls() {
             } else {
                 showPlanarFeedback({
                     correct: false,
-                    message: `The graph has ${expected.vertices} vertices, ${expected.edges} edges, and ${expected.faces} faces.`,
+                    message: `The graph has ${expectedV} vertices, ${expectedE} edges, and ${expectedF} faces.`,
                     nextLabel: 'Try Again',
                 });
             }

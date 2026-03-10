@@ -34,6 +34,130 @@ const COLORING_COPY = {
     },
 };
 
+const COLORING_PUZZLE_CONFIG = {
+    nMin: 5,
+    nMax: 8,
+    bipartiteWeight: 0.25,
+    planarWeight: 0.50,
+    k5Weight: 0.25,
+    generationMaxChromatic: 5,
+    promptMaxColors: 6,
+};
+
+function _makeColoringNumberNames(n) {
+    return Array.from({ length: n }, (_, i) => String(i + 1));
+}
+
+function _makeBipartiteColoringPuzzleGraph(n) {
+    const leftSize = _randInt(2, n - 2);
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
+    const left = vertices.slice(0, leftSize);
+    const right = vertices.slice(leftSize);
+
+    const edgeSet = new Set();
+    const edges = [];
+    const addEdge = (a, b) => {
+        const key = _edgeKey(a, b);
+        if (a === b || edgeSet.has(key)) return false;
+        edgeSet.add(key);
+        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
+        return true;
+    };
+
+    for (const r of right) addEdge(r, left[_randInt(0, left.length - 1)]);
+    for (const l of left) addEdge(l, right[_randInt(0, right.length - 1)]);
+
+    const target = Math.max(n + 1, Math.min(Math.floor(1.7 * n), left.length * right.length));
+    let guard = 0;
+    while (edges.length < target && guard < 3000) {
+        guard++;
+        addEdge(left[_randInt(0, left.length - 1)], right[_randInt(0, right.length - 1)]);
+    }
+
+    return {
+        n,
+        names: _makeColoringNumberNames(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(edges),
+        flavor: 'bipartite',
+    };
+}
+
+function _makePlanarColoringPuzzleGraph(n) {
+    const g = generatePlanarGraph(n, 1.14, 1.55);
+    return {
+        n: g.n,
+        names: _makeColoringNumberNames(g.n),
+        directed: false,
+        edgeLabel: null,
+        edges: g.edges.slice(),
+        flavor: 'planar',
+    };
+}
+
+function _makeK5ColoringPuzzleGraph(n) {
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
+    const core = vertices.slice(0, 5);
+    const extras = vertices.slice(5);
+
+    const edgeSet = new Set();
+    const edges = [];
+    const addEdge = (a, b) => {
+        const key = _edgeKey(a, b);
+        if (a === b || edgeSet.has(key)) return;
+        edgeSet.add(key);
+        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
+    };
+
+    for (let i = 0; i < core.length; i++) {
+        for (let j = i + 1; j < core.length; j++) addEdge(core[i], core[j]);
+    }
+
+    for (const v of extras) {
+        const shuffledCore = shuffle(core.slice());
+        const degreeToCore = _randInt(2, 4);
+        for (let i = 0; i < degreeToCore; i++) addEdge(v, shuffledCore[i]);
+    }
+
+    return {
+        n,
+        names: _makeColoringNumberNames(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(edges),
+        flavor: 'k5',
+    };
+}
+
+function generateGraphColoringPuzzle() {
+    for (let attempt = 0; attempt < 60; attempt++) {
+        const n = _randInt(COLORING_PUZZLE_CONFIG.nMin, COLORING_PUZZLE_CONFIG.nMax);
+        const roll = Math.random();
+
+        let graph;
+        if (roll < COLORING_PUZZLE_CONFIG.bipartiteWeight) {
+            graph = _makeBipartiteColoringPuzzleGraph(n);
+        } else if (roll < COLORING_PUZZLE_CONFIG.bipartiteWeight + COLORING_PUZZLE_CONFIG.planarWeight) {
+            graph = _makePlanarColoringPuzzleGraph(n);
+        } else {
+            graph = _makeK5ColoringPuzzleGraph(Math.max(n, 5));
+        }
+
+        const minColors = chromaticNumber(graph, COLORING_PUZZLE_CONFIG.generationMaxChromatic);
+        if (!minColors || minColors > COLORING_PUZZLE_CONFIG.generationMaxChromatic) continue;
+
+        const plusOne = minColors + 1;
+        const requested = plusOne === graph.n ? minColors : plusOne;
+        const maxColorsAllowed = Math.min(COLORING_PUZZLE_CONFIG.promptMaxColors, requested);
+
+        return { ...graph, minColors, maxColorsAllowed };
+    }
+
+    const fallback = _makeBipartiteColoringPuzzleGraph(6);
+    return { ...fallback, minColors: 2, maxColorsAllowed: 3 };
+}
+
 function pickColoringCaseType() {
     return Math.random() < 0.5 ? 'freeform' : 'greedy';
 }

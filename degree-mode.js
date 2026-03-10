@@ -135,7 +135,7 @@ function startDegreeSequence() {
 
     const ds = modeStates.degree;
     ds.graph = graph;
-    ds.expectedSeq = degreeSequence(graph.edges, n);
+    ds.expectedSeq = degreeSequence(graph);
 
     const cy = getCy('degree');
     if (cy) draw_graph(graph, cy);

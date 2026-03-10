@@ -1,6 +1,332 @@
 // ---------------------------------------------------------------------------
 // Eulerian graphs Mode
 // ---------------------------------------------------------------------------
+
+// ---- Complexity heuristics ------------------------------------------------
+// Applied to every puzzle graph to keep it legible regardless of vertex count.
+//
+//   1. Max degree of any vertex <= EULER_PUZZLE_MAX_DEG
+//   2. For every vertex v, mean degree of closed neighbourhood
+//      {v} U neighbors(v) <= EULER_PUZZLE_MAX_NBR_MEAN
+//
+// For directed graphs "degree" = in-degree + out-degree; "neighbour" means
+// adjacent in either direction.
+
+const EULER_PUZZLE_MAX_DEG = 5;
+const EULER_PUZZLE_MAX_NBR_MEAN = 3.5;
+
+/**
+ * Return true when `edges` satisfies both puzzle complexity heuristics.
+ * @param {Edge[]} edges
+ * @param {number} n
+ * @param {boolean} directed
+ * @returns {boolean}
+ */
+function _puzzleComplexityOk(edges, n, directed) {
+    const deg = new Array(n).fill(0);
+    const adj = Array.from({ length: n }, () => new Set());
+
+    for (const { source, target } of edges) {
+        const s = vertexIndex(source);
+        const t = vertexIndex(target);
+        if (s === t) {
+            if (!directed) deg[s] += 2;
+            continue;
+        }
+        deg[s]++;
+        deg[t]++;
+        adj[s].add(t);
+        adj[t].add(s);
+    }
+
+    for (let v = 0; v < n; v++) {
+        if (deg[v] > EULER_PUZZLE_MAX_DEG) return false;
+        const closed = [v, ...adj[v]];
+        const mean = closed.reduce((sum, u) => sum + deg[u], 0) / closed.length;
+        if (mean > EULER_PUZZLE_MAX_NBR_MEAN) return false;
+    }
+    return true;
+}
+
+/**
+ * Pick a random target edge count appropriate for an undirected puzzle graph.
+ * @param {number} n
+ * @returns {number}
+ */
+function _puzzleEdgeTarget(n) {
+    const lo = n;
+    const hi = Math.min(Math.floor(1.8 * n), (n * (n - 1)) / 2);
+    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
+}
+
+/** @returns {object} graph */
+function _makeEulerianDigraph(n) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const g = generateEulerianDigraph(n);
+        if (_puzzleComplexityOk(g.edges, n, true)) return g;
+    }
+    return generateEulerianDigraph(n);
+}
+
+/** @returns {object} graph */
+function _makeNonEulerianDigraph(n) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const g = generateEulerianDigraph(n);
+        if (!_puzzleComplexityOk(g.edges, n, true)) continue;
+        const candidates = shuffle(g.edges.slice());
+        for (const cand of candidates) {
+            const trial = g.edges.filter(e => e !== cand);
+            if (isStronglyConnected({ ...g, edges: trial })) {
+                return { ...g, edges: trial };
+            }
+        }
+    }
+    return _makeEulerianDigraph(n);
+}
+
+/** @returns {object} graph */
+function _makeEulerianSimple(n) {
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g = generateEulerianSimpleGraph(n, _puzzleEdgeTarget(n));
+        if (_puzzleComplexityOk(g.edges, n, false)) return g;
+    }
+    return generateEulerianSimpleGraph(n, n);
+}
+
+/** @returns {object} graph */
+function _makeNonEulerianSimple(n) {
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g = generateEulerianSimpleGraph(n, _puzzleEdgeTarget(n));
+        if (!_puzzleComplexityOk(g.edges, n, false)) continue;
+        let edges = g.edges.slice();
+        const numDelete = Math.random() < 0.5 ? 1 : 2;
+        let deleted = 0;
+        for (const cand of shuffle(edges.slice())) {
+            if (deleted >= numDelete) break;
+            const trial = edges.filter(e => e !== cand);
+            if (isConnected({ ...g, edges: trial }) && getOddVertices({ ...g, edges: trial }).length > 0) {
+                edges = trial;
+                deleted++;
+            }
+        }
+        if (deleted > 0) return { ...g, edges };
+    }
+    return _makeEulerianSimple(n);
+}
+
+/** @returns {object} graph */
+function _makeEulerianMulti(n) {
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g = generateEulerianMultigraph(n, _puzzleEdgeTarget(n));
+        if (_puzzleComplexityOk(g.edges, n, false)) return g;
+    }
+    return generateEulerianMultigraph(n, n);
+}
+
+/** @returns {object} graph */
+function _makeNonEulerianMulti(n) {
+    for (let attempt = 0; attempt < 25; attempt++) {
+        const g = generateEulerianMultigraph(n, _puzzleEdgeTarget(n));
+        if (!_puzzleComplexityOk(g.edges, n, false)) continue;
+        let edges = g.edges.slice();
+        const numDelete = Math.random() < 0.5 ? 1 : 2;
+        let deleted = 0;
+        for (const cand of shuffle(edges.slice())) {
+            if (deleted >= numDelete) break;
+            const trial = edges.filter(e => e !== cand);
+            if (isConnected({ ...g, edges: trial }) && getOddVertices({ ...g, edges: trial }).length > 0) {
+                edges = trial;
+                deleted++;
+            }
+        }
+        if (deleted > 0) return { ...g, edges };
+    }
+    return _makeEulerianMulti(n);
+}
+
+/**
+ * Generate a random Eulerian graph puzzle.
+ * @returns {object}
+ */
+function generateEulerianGraphPuzzle() {
+    const n = Math.floor(Math.random() * 6) + 4;
+    const scenario = Math.floor(Math.random() * 6);
+
+    const makers = [
+        _makeEulerianDigraph,
+        _makeNonEulerianDigraph,
+        _makeEulerianSimple,
+        _makeNonEulerianSimple,
+        _makeEulerianMulti,
+        _makeNonEulerianMulti,
+    ];
+    const graph = makers[scenario](n);
+    const isMulti = graph.edgeLabel === 'name';
+
+    let isEulerian;
+    if (graph.directed) {
+        const { inDeg, outDeg } = getDirectedDegrees(graph);
+        const balanced = inDeg.every((d, i) => d === outDeg[i]);
+        isEulerian = balanced && isStronglyConnected(graph);
+    } else {
+        isEulerian = isConnected(graph) && getOddVertices(graph).length === 0;
+    }
+
+    return { ...graph, isEulerian, isMulti };
+}
+
+/**
+ * Check whether a sequence of vertex display-names forms a valid Eulerian
+ * circuit in a simple undirected graph.
+ * @param {string[]} circuit
+ * @param {object} graph
+ * @param {boolean} requireCircuit
+ * @returns {boolean}
+ */
+function validateEulerianCircuitSimple(circuit, graph, requireCircuit) {
+    if (circuit.length < 2) return false;
+    if (requireCircuit && circuit[0] !== circuit[circuit.length - 1]) return false;
+
+    const pool = graph.edges.map(e => ({
+        a: vertexLabel(e.source, graph.names),
+        b: vertexLabel(e.target, graph.names),
+        used: false,
+    }));
+
+    for (let step = 0; step < circuit.length - 1; step++) {
+        const u = circuit[step], v = circuit[step + 1];
+        const ei = pool.findIndex(e => !e.used && ((e.a === u && e.b === v) || (e.a === v && e.b === u)));
+        if (ei === -1) return false;
+        pool[ei].used = true;
+    }
+    return pool.every(e => e.used);
+}
+
+/**
+ * Check whether an alternating vertex/edge-label string is a valid Eulerian
+ * circuit in a multigraph, e.g. "AaBbCcA".
+ * @param {string} input
+ * @param {object} graph
+ * @param {boolean} requireCircuit
+ * @returns {boolean}
+ */
+function validateEulerianCircuitMulti(input, graph, requireCircuit) {
+    const tokens = input.match(/[A-Z]|[a-z]/g);
+    if (!tokens || tokens.length < 3) return false;
+    for (let i = 0; i < tokens.length; i++) {
+        if (i % 2 === 0 && !/[A-Z]/.test(tokens[i])) return false;
+        if (i % 2 === 1 && !/[a-z]/.test(tokens[i])) return false;
+    }
+    if (tokens.length % 2 === 0) return false;
+    if (requireCircuit && tokens[0] !== tokens[tokens.length - 1]) return false;
+
+    const edgeUsed = new Array(graph.edges.length).fill(false);
+
+    for (let i = 0; i < tokens.length - 2; i += 2) {
+        const u = tokens[i], edgeLbl = tokens[i + 1], v = tokens[i + 2];
+        const ei = graph.edges.findIndex((e, idx) =>
+            !edgeUsed[idx] &&
+            e.label === edgeLbl &&
+            ((vertexLabel(e.source, graph.names) === u && vertexLabel(e.target, graph.names) === v) ||
+             (vertexLabel(e.source, graph.names) === v && vertexLabel(e.target, graph.names) === u))
+        );
+        if (ei === -1) return false;
+        edgeUsed[ei] = true;
+    }
+    return edgeUsed.every(Boolean);
+}
+
+/**
+ * Check whether a sequence of vertex display-names is a valid Eulerian circuit
+ * in a directed graph.
+ * @param {string[]} circuit
+ * @param {object} graph
+ * @returns {boolean}
+ */
+function validateEulerianCircuitDigraph(circuit, graph) {
+    if (circuit.length < 2) return false;
+    if (circuit[0] !== circuit[circuit.length - 1]) return false;
+
+    const pool = graph.edges.map(e => ({
+        a: vertexLabel(e.source, graph.names),
+        b: vertexLabel(e.target, graph.names),
+        used: false,
+    }));
+
+    for (let step = 0; step < circuit.length - 1; step++) {
+        const u = circuit[step], v = circuit[step + 1];
+        const ei = pool.findIndex(e => !e.used && e.a === u && e.b === v);
+        if (ei === -1) return false;
+        pool[ei].used = true;
+    }
+    return pool.every(e => e.used);
+}
+
+/**
+ * Validate whether adding a set of edges to a graph makes it Eulerian.
+ * Added edges must duplicate existing edges (no new vertex relationships).
+ * @param {object} graph
+ * @param {Array<{from: string, to: string}>} addedEdges
+ * @returns {{ ok: boolean, reason?: string, bad?: string[], oddVertices?: string[] }}
+ */
+function validateEulerization(graph, addedEdges) {
+    const { names, directed, edges: origEdges } = graph;
+
+    const origSet = new Set(origEdges.map(e => {
+        const a = vertexLabel(e.source, names), b = vertexLabel(e.target, names);
+        if (a === b) return null;
+        return directed ? `${a}->${b}` : [a, b].sort().join('--');
+    }).filter(Boolean));
+
+    const combined = origEdges
+        .map(e => ({ s: vertexLabel(e.source, names), t: vertexLabel(e.target, names) }))
+        .filter(e => e.s !== e.t);
+
+    const invalidVertices = [];
+    const nonDuplicates = [];
+
+    for (const ae of addedEdges) {
+        if (!ae.from || !ae.to) continue;
+        const from = ae.from.trim().toUpperCase();
+        const to = ae.to.trim().toUpperCase();
+
+        if (!names.includes(from) || !names.includes(to)) {
+            invalidVertices.push(`${from}–${to}`);
+            continue;
+        }
+        if (from === to) continue;
+
+        const key = directed ? `${from}->${to}` : [from, to].sort().join('--');
+        if (!origSet.has(key)) {
+            nonDuplicates.push(directed ? `${from}→${to}` : `${from}–${to}`);
+            continue;
+        }
+        combined.push({ s: from, t: to });
+    }
+
+    if (invalidVertices.length > 0) {
+        return { ok: false, reason: 'invalid_vertices', bad: invalidVertices };
+    }
+    if (nonDuplicates.length > 0) {
+        return { ok: false, reason: 'not_duplicate', bad: nonDuplicates };
+    }
+
+    if (directed) {
+        const inDeg = Object.fromEntries(names.map(nm => [nm, 0]));
+        const outDeg = Object.fromEntries(names.map(nm => [nm, 0]));
+        for (const { s, t } of combined) { outDeg[s]++; inDeg[t]++; }
+        const oddVertices = names.filter(nm => inDeg[nm] !== outDeg[nm]);
+        if (oddVertices.length > 0) return { ok: false, reason: 'not_eulerian', oddVertices };
+    } else {
+        const deg = Object.fromEntries(names.map(nm => [nm, 0]));
+        for (const { s, t } of combined) { deg[s]++; deg[t]++; }
+        const oddVertices = names.filter(nm => deg[nm] % 2 !== 0);
+        if (oddVertices.length > 0) return { ok: false, reason: 'not_eulerian', oddVertices };
+    }
+
+    return { ok: true };
+}
+
 function loadEulerianStats() {
     try {
         const raw = localStorage.getItem('graph_eulerian_stats');
@@ -146,7 +472,7 @@ function startEulerianTrial() {
         } else if (puzzle.directed) {
             hint.textContent = 'Enter the vertices of an Eulerian circuit in order, e.g. ABCDA';
         } else {
-            const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
+            const oddCount = getOddVertices(puzzle).length;
             hint.textContent = oddCount === 0
                 ? 'Enter the vertices of an Eulerian circuit in order, e.g. ABCA'
                 : 'Enter the vertices of an Eulerian circuit in order, e.g. ABCD';
@@ -224,7 +550,7 @@ function bindEulerianControls() {
                         if (puzzle.directed) {
                             title.textContent = 'Part 2 — Find an Eulerian circuit';
                         } else {
-                            const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
+                            const oddCount = getOddVertices(puzzle).length;
                             title.textContent = oddCount === 0
                                 ? 'Part 2 — Find an Eulerian circuit'
                                 : 'Part 2 — Find an Eulerian circuit';
@@ -441,14 +767,14 @@ function bindEulerianControls() {
             let valid = false;
 
             if (puzzle.isMulti) {
-                const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
+                const oddCount = getOddVertices(puzzle).length;
                 valid = validateEulerianCircuitMulti(raw, puzzle, oddCount === 0);
             } else if (puzzle.directed) {
                 const circuit = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
                 valid = validateEulerianCircuitDigraph(circuit, puzzle);
             } else {
                 const circuit = raw.toUpperCase().split('').filter(c => /[A-Z]/.test(c));
-                const oddCount = getOddVertices(puzzle.edges, puzzle.n).length;
+                const oddCount = getOddVertices(puzzle).length;
                 valid = validateEulerianCircuitSimple(circuit, puzzle, oddCount === 0);
             }
 

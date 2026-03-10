@@ -66,12 +66,24 @@ function vertexLabel(id, names) {
 }
 
 /**
- * Generate default vertex labels: A–H for n ≤ 8, else 1, 2, 3, …
+ * Generate default vertex labels.
+ * Uses alphabetic labels first (A..Z, AA..AZ, BA.., ...), then falls back
+ * to numeric labels only if n is very large.
  * @param {number} n
  * @returns {string[]}
  */
 function makeLabels(n) {
-    if (n <= 9) return Array.from({ length: n }, (_, i) => String.fromCharCode(65 + i));
+    const alphaLabel = (idx) => {
+        let x = idx;
+        let out = '';
+        do {
+            out = String.fromCharCode(65 + (x % 26)) + out;
+            x = Math.floor(x / 26) - 1;
+        } while (x >= 0);
+        return out;
+    };
+
+    if (n <= 702) return Array.from({ length: n }, (_, i) => alphaLabel(i));
     return Array.from({ length: n }, (_, i) => String(i + 1));
 }
 
@@ -89,6 +101,13 @@ function vertexIds(n) {
 // Fisher-Yates shuffle (in-place, returns the array)
 // ---------------------------------------------------------------------------
 
+/**
+ * In-place Fisher-Yates shuffle.
+ * Produces a uniformly random permutation of the input array.
+ * @template T
+ * @param {T[]} arr
+ * @returns {T[]}
+ */
 function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -105,11 +124,12 @@ function shuffle(arr) {
 /**
  * Compute the degree of every vertex in an undirected graph.
  * Self-loops contribute 2 to their vertex's degree (standard convention).
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {number[]}  degree[i] = degree of vi
  */
-function getDegrees(edges, n) {
+function getDegrees(graph) {
+    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
+    const n = Number(graph?.n) || 0;
     const deg = new Array(n).fill(0);
     for (const { source, target } of edges) {
         const s = vertexIndex(source);
@@ -123,32 +143,31 @@ function getDegrees(edges, n) {
 /**
  * Return the indices of vertices with odd degree.
  * By the handshaking lemma this list always has even length.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {number[]}
  */
-function getOddVertices(edges, n) {
-    return getDegrees(edges, n)
+function getOddVertices(graph) {
+    return getDegrees(graph)
         .reduce((acc, d, i) => { if (d % 2 !== 0) acc.push(i); return acc; }, []);
 }
 
 /**
  * Return the degree sequence (sorted non-decreasing) for a graph of n vertices.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {number[]}
  */
-function degreeSequence(edges, n) {
-    return getDegrees(edges, n).sort((a, b) => a - b);
+function degreeSequence(graph) {
+    return getDegrees(graph).sort((a, b) => a - b);
 }
 
 /**
  * Compute in-degree and out-degree for every vertex in a directed graph.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {{ inDeg: number[], outDeg: number[] }}
  */
-function getDirectedDegrees(edges, n) {
+function getDirectedDegrees(graph) {
+    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
+    const n = Number(graph?.n) || 0;
     const inDeg  = new Array(n).fill(0);
     const outDeg = new Array(n).fill(0);
     for (const { source, target } of edges) {
@@ -166,11 +185,12 @@ function getDirectedDegrees(edges, n) {
 /**
  * Build an undirected adjacency list (as Sets of indices) for n vertices.
  * Self-loops are ignored for connectivity purposes.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {Set<number>[]}
  */
-function buildAdjList(edges, n) {
+function buildAdjList(graph) {
+    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
+    const n = Number(graph?.n) || 0;
     const adj = Array.from({ length: n }, () => new Set());
     for (const { source, target } of edges) {
         const s = vertexIndex(source);
@@ -181,16 +201,42 @@ function buildAdjList(edges, n) {
 }
 
 /**
- * BFS from vertex 0; returns number of vertices reachable (including 0).
- * @param {Set<number>[]} adj
- * @param {number} n
+ * Count vertices reachable from a start vertex using BFS.
+ *
+ * Preferred signature: reachableCount(graph, startVertex)
+ *   - graph: { n, edges }
+ *   - startVertex: vertex index (number) or vertex id ("vN")
+ *
+ * Backward-compatible signature (legacy): reachableCount(adj, startIndex)
+ *   - adj: adjacency list as Set<number>[]
+ *
+ * Invalid/absent start vertices return 0.
+ * @param {object|Set<number>[]} graphOrAdj
+ * @param {number|string} [startVertex=0]
  * @returns {number}
  */
-function reachableCount(adj, n) {
+function reachableCount(graphOrAdj, startVertex = 0) {
+    let n = 0;
+    let adj = [];
+
+    // Legacy form: reachableCount(adjList, startIndex)
+    if (Array.isArray(graphOrAdj) && graphOrAdj.every(s => s instanceof Set)) {
+        adj = graphOrAdj;
+        n = adj.length;
+    } else {
+        const graph = graphOrAdj || {};
+        n = Number(graph.n) || 0;
+        adj = buildAdjList(graph);
+    }
+
     if (n === 0) return 0;
+
+    const start = typeof startVertex === 'string' ? vertexIndex(startVertex) : Number(startVertex);
+    if (!Number.isInteger(start) || start < 0 || start >= n) return 0;
+
     const visited = new Uint8Array(n);
-    const queue = [0];
-    visited[0] = 1;
+    const queue = [start];
+    visited[start] = 1;
     let count = 1;
     while (queue.length) {
         for (const nb of adj[queue.pop()]) {
@@ -202,23 +248,25 @@ function reachableCount(adj, n) {
 
 /**
  * Test undirected connectivity for a graph of n vertices.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
+ * @param {number|string} [startVertex=0]
  * @returns {boolean}
  */
-function isConnected(edges, n) {
+function isConnected(graph, startVertex = 0) {
+    const n = Number(graph?.n) || 0;
     if (n <= 1) return true;
-    return reachableCount(buildAdjList(edges, n), n) === n;
+    return reachableCount(graph, startVertex) === n;
 }
 
 /**
  * Test strong connectivity for a directed graph of n vertices.
  * Uses two BFS passes (forward and reversed adjacency).
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {boolean}
  */
-function isStronglyConnected(edges, n) {
+function isStronglyConnected(graph) {
+    const n = Number(graph?.n) || 0;
+    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
     if (n <= 1) return true;
 
     // Build directed and reversed adjacency lists
@@ -231,6 +279,12 @@ function isStronglyConnected(edges, n) {
         rev[t].push(s);
     }
 
+    /**
+     * BFS reachability count from vertex 0 over a directed adjacency list.
+     * Used by isStronglyConnected on both forward and reverse graphs.
+     * @param {number[][]} adj
+     * @returns {number}
+     */
     function bfsCount(adj) {
         const visited = new Uint8Array(n);
         const queue = [0];
@@ -255,11 +309,12 @@ function isStronglyConnected(edges, n) {
 /**
  * Test whether the edge list contains any parallel edges.
  * For directed graphs, u→v and v→u are considered distinct.
- * @param {Edge[]} edges
- * @param {boolean} directed
+ * @param {object} graph
  * @returns {boolean}
  */
-function isMultiGraph(edges, directed) {
+function isMultiGraph(graph) {
+    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
+    const directed = !!graph?.directed;
     const seen = new Set();
     for (const { source, target } of edges) {
         const key = directed
@@ -356,6 +411,9 @@ function graphToCSV(graph) {
 
 /**
  * Generate a random spanning tree on n vertices (as index pairs).
+ * Implementation: shuffle vertices and connect consecutive vertices in that
+ * random order (a random Hamiltonian path).
+ * Note: this does not sample uniformly from all labeled spanning trees.
  * @param {number} n
  * @returns {Array<{s: number, t: number}>}
  */
@@ -407,6 +465,10 @@ function _indexEdgesConnected(indexEdges, n) {
 
 /**
  * Generate a random connected simple graph with approximately targetEdges edges.
+ * Strategy:
+ *   1) Build a minimal connected simple graph (spanning tree backbone).
+ *   2) Clamp/choose targetEdges in [n-1, n(n-1)/2].
+ *   3) Add random non-duplicate edges until targetEdges is reached.
  * @param {number} n
  * @param {number} [targetEdges]
  * @returns {Array<{s: number, t: number}>}  index-pair edges
@@ -529,7 +591,7 @@ function generateEulerianSimpleGraph(n, targetEdges, maxRerolls = 30) {
     for (let roll = 0; roll < maxRerolls; roll++) {
         const indexEdges = _simpleGraph(n, targetEdges);
         const edgeSet    = new Set(indexEdges.map(({ s, t }) => `${Math.min(s,t)}-${Math.max(s,t)}`));
-        const odds       = shuffle(getOddVertices(_toEdges(indexEdges), n));
+        const odds       = shuffle(getOddVertices({ n, edges: _toEdges(indexEdges) }));
 
         if (odds.length === 0) {
             return { n, names: makeLabels(n), directed: false, edgeLabel: null, edges: _toEdges(indexEdges) };
@@ -560,7 +622,7 @@ function generateEulerianMultigraph(n, targetEdges) {
     const base = generateConnectedMultigraph(n, targetEdges, { allowLoops: false, allowMultiple: true });
     const indexEdges = base.edges.map(e => ({ s: vertexIndex(e.source), t: vertexIndex(e.target) }));
     const edgeSet    = new Set(indexEdges.map(({ s, t }) => `${Math.min(s,t)}-${Math.max(s,t)}`));
-    const odds       = shuffle(getOddVertices(base.edges, n));
+    const odds       = shuffle(getOddVertices(base));
 
     if (odds.length === 0) return base;
 
@@ -632,7 +694,7 @@ function generateMSCDigraph(n) {
             const idx  = edges.indexOf(cand);
             if (idx === -1) continue;
             const trial = edges.filter((_, i) => i !== idx);
-            if (isStronglyConnected(trial, n)) { edges.splice(idx, 1); removed = true; }
+            if (isStronglyConnected({ n, edges: trial, directed: true })) { edges.splice(idx, 1); removed = true; }
         }
         if (!removed) break;
     }
@@ -648,7 +710,7 @@ function generateMSCDigraph(n) {
  * @returns {Edge[]}
  */
 function _eulerizeDigraph(edges, n) {
-    const { inDeg, outDeg } = getDirectedDegrees(edges, n);
+    const { inDeg, outDeg } = getDirectedDegrees({ n, edges, directed: true });
 
     // Build surplus (more out than in) and deficit (more in than out) lists
     const sources = []; // need more in-edges
@@ -805,368 +867,6 @@ function generateRandomGraph(n, numComponents = 1) {
 }
 
 
-// ---------------------------------------------------------------------------
-// Eulerian Graph puzzle generators
-// ---------------------------------------------------------------------------
-
-// ---- Complexity heuristics ------------------------------------------------
-// Applied to every puzzle graph to keep it legible regardless of vertex count.
-//
-//   1. Max degree of any vertex ≤ PUZZLE_MAX_DEG
-//   2. For every vertex v, mean degree of closed neighbourhood
-//      {v} ∪ neighbors(v)  ≤  PUZZLE_MAX_NBR_MEAN
-//
-// For directed graphs "degree" = in-degree + out-degree; "neighbour" means
-// adjacent in either direction.
-
-const _PUZZLE_MAX_DEG      = 5;
-const _PUZZLE_MAX_NBR_MEAN = 3.5;
-
-/**
- * Return true when `edges` satisfies both puzzle complexity heuristics.
- * @param {Edge[]} edges
- * @param {number} n
- * @param {boolean} directed
- * @returns {boolean}
- */
-function _puzzleComplexityOk(edges, n, directed) {
-    const deg = new Array(n).fill(0);
-    const adj = Array.from({ length: n }, () => new Set());
-
-    for (const { source, target } of edges) {
-        const s = vertexIndex(source);
-        const t = vertexIndex(target);
-        if (s === t) {
-            if (!directed) deg[s] += 2;
-            continue;
-        }
-        deg[s]++;
-        deg[t]++;
-        adj[s].add(t);
-        adj[t].add(s);
-    }
-
-    for (let v = 0; v < n; v++) {
-        if (deg[v] > _PUZZLE_MAX_DEG) return false;
-        const closed = [v, ...adj[v]];
-        const mean   = closed.reduce((sum, u) => sum + deg[u], 0) / closed.length;
-        if (mean > _PUZZLE_MAX_NBR_MEAN) return false;
-    }
-    return true;
-}
-
-/**
- * Pick a random target edge count appropriate for an undirected puzzle graph
- * on n vertices. Stays well below the density that would fail the heuristics.
- * Range: [n, floor(1.8 · n)] capped at the complete-graph edge count.
- * @param {number} n
- * @returns {number}
- */
-function _puzzleEdgeTarget(n) {
-    const lo  = n;
-    const hi  = Math.min(Math.floor(1.8 * n), (n * (n - 1)) / 2);
-    return Math.floor(Math.random() * (hi - lo + 1)) + lo;
-}
-
-// ---- Per-type makers -------------------------------------------------------
-
-/** @returns {object} graph */
-function _makeEulerianDigraph(n) {
-    for (let attempt = 0; attempt < 20; attempt++) {
-        const g = generateEulerianDigraph(n);
-        if (_puzzleComplexityOk(g.edges, n, true)) return g;
-    }
-    return generateEulerianDigraph(n); // best effort
-}
-
-/** @returns {object} graph */
-function _makeNonEulerianDigraph(n) {
-    for (let attempt = 0; attempt < 20; attempt++) {
-        const g  = generateEulerianDigraph(n);
-        if (!_puzzleComplexityOk(g.edges, n, true)) continue;
-        const candidates = shuffle(g.edges.slice());
-        for (const cand of candidates) {
-            const trial = g.edges.filter(e => e !== cand);
-            if (isStronglyConnected(trial, n)) {
-                return { ...g, edges: trial }; // fewer edges → still passes heuristics
-            }
-        }
-    }
-    return _makeEulerianDigraph(n);
-}
-
-/** @returns {object} graph */
-function _makeEulerianSimple(n) {
-    for (let attempt = 0; attempt < 25; attempt++) {
-        const g = generateEulerianSimpleGraph(n, _puzzleEdgeTarget(n));
-        if (_puzzleComplexityOk(g.edges, n, false)) return g;
-    }
-    return generateEulerianSimpleGraph(n, n); // sparse fallback
-}
-
-/** @returns {object} graph */
-function _makeNonEulerianSimple(n) {
-    for (let attempt = 0; attempt < 25; attempt++) {
-        const g   = generateEulerianSimpleGraph(n, _puzzleEdgeTarget(n));
-        if (!_puzzleComplexityOk(g.edges, n, false)) continue;
-        let edges = g.edges.slice();
-        const numDelete = Math.random() < 0.5 ? 1 : 2;
-        let deleted = 0;
-        for (const cand of shuffle(edges.slice())) {
-            if (deleted >= numDelete) break;
-            const trial = edges.filter(e => e !== cand);
-            if (isConnected(trial, n) && getOddVertices(trial, n).length > 0) {
-                edges = trial;
-                deleted++;
-            }
-        }
-        if (deleted > 0) return { ...g, edges };
-    }
-    return _makeEulerianSimple(n);
-}
-
-/** @returns {object} graph */
-function _makeEulerianMulti(n) {
-    for (let attempt = 0; attempt < 25; attempt++) {
-        const g = generateEulerianMultigraph(n, _puzzleEdgeTarget(n));
-        if (_puzzleComplexityOk(g.edges, n, false)) return g;
-    }
-    return generateEulerianMultigraph(n, n); // sparse fallback
-}
-
-/** @returns {object} graph */
-function _makeNonEulerianMulti(n) {
-    for (let attempt = 0; attempt < 25; attempt++) {
-        const g   = generateEulerianMultigraph(n, _puzzleEdgeTarget(n));
-        if (!_puzzleComplexityOk(g.edges, n, false)) continue;
-        let edges = g.edges.slice();
-        const numDelete = Math.random() < 0.5 ? 1 : 2;
-        let deleted = 0;
-        for (const cand of shuffle(edges.slice())) {
-            if (deleted >= numDelete) break;
-            const trial = edges.filter(e => e !== cand);
-            if (isConnected(trial, n) && getOddVertices(trial, n).length > 0) {
-                edges = trial;
-                deleted++;
-            }
-        }
-        if (deleted > 0) return { ...g, edges };
-    }
-    return _makeEulerianMulti(n);
-}
-
-/**
- * Generate a random Eulerian graph puzzle.
- *
- * Returns a graph object extended with:
- *   isEulerian  {boolean}  — ground-truth answer
- *   isMulti     {boolean}  — true when edge labels are edge-names (for circuit input format)
- *
- * @returns {object}
- */
-function generateEulerianGraphPuzzle() {
-    const n        = Math.floor(Math.random() * 6) + 4;   // 4–9 vertices
-    const scenario = Math.floor(Math.random() * 6);
-
-    const makers = [
-        _makeEulerianDigraph,
-        _makeNonEulerianDigraph,
-        _makeEulerianSimple,
-        _makeNonEulerianSimple,
-        _makeEulerianMulti,
-        _makeNonEulerianMulti,
-    ];
-    const graph   = makers[scenario](n);
-    const isMulti = graph.edgeLabel === 'name';
-
-    // Determine ground truth
-    let isEulerian;
-    if (graph.directed) {
-        const { inDeg, outDeg } = getDirectedDegrees(graph.edges, n);
-        const balanced = inDeg.every((d, i) => d === outDeg[i]);
-        isEulerian = balanced && isStronglyConnected(graph.edges, n);
-    } else {
-        isEulerian = isConnected(graph.edges, n) && getOddVertices(graph.edges, n).length === 0;
-    }
-
-    return { ...graph, isEulerian, isMulti };
-}
-
-
-// ---------------------------------------------------------------------------
-// Eulerian circuit validation
-// ---------------------------------------------------------------------------
-
-/**
- * Check whether a sequence of vertex display-names forms a valid Eulerian
- * circuit in a simple undirected graph.
- * @param {string[]} circuit            - display names e.g. ["A","B","C","A"]
- * @param {object}   graph
- * @param {boolean}  requireCircuit
- * @returns {boolean}
- */
-function validateEulerianCircuitSimple(circuit, graph, requireCircuit) {
-    if (circuit.length < 2) return false;
-    if (requireCircuit && circuit[0] !== circuit[circuit.length - 1]) return false;
-
-    const pool = graph.edges.map(e => ({
-        a: vertexLabel(e.source, graph.names),
-        b: vertexLabel(e.target, graph.names),
-        used: false,
-    }));
-
-    for (let step = 0; step < circuit.length - 1; step++) {
-        const u = circuit[step], v = circuit[step + 1];
-        const ei = pool.findIndex(e => !e.used && ((e.a === u && e.b === v) || (e.a === v && e.b === u)));
-        if (ei === -1) return false;
-        pool[ei].used = true;
-    }
-    return pool.every(e => e.used);
-}
-
-/**
- * Check whether an alternating vertex/edge-label string is a valid Eulerian
- * circuit in a multigraph, e.g. "AaBbCcA".
- * @param {string}  input
- * @param {object}  graph
- * @param {boolean} requireCircuit
- * @returns {boolean}
- */
-function validateEulerianCircuitMulti(input, graph, requireCircuit) {
-    const tokens = input.match(/[A-Z]|[a-z]/g);
-    if (!tokens || tokens.length < 3) return false;
-    for (let i = 0; i < tokens.length; i++) {
-        if (i % 2 === 0 && !/[A-Z]/.test(tokens[i])) return false;
-        if (i % 2 === 1 && !/[a-z]/.test(tokens[i])) return false;
-    }
-    if (tokens.length % 2 === 0) return false;
-    if (requireCircuit && tokens[0] !== tokens[tokens.length - 1]) return false;
-
-    const edgeUsed = new Array(graph.edges.length).fill(false);
-
-    for (let i = 0; i < tokens.length - 2; i += 2) {
-        const u = tokens[i], edgeLbl = tokens[i + 1], v = tokens[i + 2];
-        const ei = graph.edges.findIndex((e, idx) =>
-            !edgeUsed[idx] &&
-            e.label === edgeLbl &&
-            ((vertexLabel(e.source, graph.names) === u && vertexLabel(e.target, graph.names) === v) ||
-             (vertexLabel(e.source, graph.names) === v && vertexLabel(e.target, graph.names) === u))
-        );
-        if (ei === -1) return false;
-        edgeUsed[ei] = true;
-    }
-    return edgeUsed.every(Boolean);
-}
-
-/**
- * Check whether a sequence of vertex display-names is a valid Eulerian circuit
- * in a directed graph.
- * @param {string[]} circuit
- * @param {object}   graph
- * @returns {boolean}
- */
-function validateEulerianCircuitDigraph(circuit, graph) {
-    if (circuit.length < 2) return false;
-    if (circuit[0] !== circuit[circuit.length - 1]) return false;
-
-    const pool = graph.edges.map(e => ({
-        a: vertexLabel(e.source, graph.names),
-        b: vertexLabel(e.target, graph.names),
-        used: false,
-    }));
-
-    for (let step = 0; step < circuit.length - 1; step++) {
-        const u = circuit[step], v = circuit[step + 1];
-        const ei = pool.findIndex(e => !e.used && e.a === u && e.b === v);
-        if (ei === -1) return false;
-        pool[ei].used = true;
-    }
-    return pool.every(e => e.used);
-}
-
-/**
- * Validate whether adding a set of edges to a graph makes it Eulerian.
- * Added edges must duplicate existing edges (no new vertex relationships).
- *
- * Returns a result object rather than a bare boolean so the caller can
- * display specific feedback for each failure mode:
- *
- *   { ok: true }
- *     — the eulerization is correct.
- *
- *   { ok: false, reason: 'invalid_vertices', bad: ['X', 'Y'] }
- *     — one or more added edges reference vertex names that don't exist.
- *
- *   { ok: false, reason: 'not_duplicate', bad: ['A→C', ...] }
- *     — one or more added edges don't duplicate an existing edge.
- *
- *   { ok: false, reason: 'not_eulerian', oddVertices: ['A', 'C'] }
- *     — all added edges are valid duplicates but the graph is still not Eulerian;
- *       oddVertices lists the vertices that still have odd degree.
- *
- * @param {object}  graph
- * @param {Array<{from: string, to: string}>} addedEdges
- * @returns {{ ok: boolean, reason?: string, bad?: string[], oddVertices?: string[] }}
- */
-function validateEulerization(graph, addedEdges) {
-    const { names, directed, edges: origEdges } = graph;
-
-    const origSet = new Set(origEdges.map(e => {
-        const a = vertexLabel(e.source, names), b = vertexLabel(e.target, names);
-        if (a === b) return null;
-        return directed ? `${a}->${b}` : [a, b].sort().join('--');
-    }).filter(Boolean));
-
-    const combined = origEdges
-        .map(e => ({ s: vertexLabel(e.source, names), t: vertexLabel(e.target, names) }))
-        .filter(e => e.s !== e.t);
-
-    const invalidVertices = [];
-    const nonDuplicates   = [];
-
-    for (const ae of addedEdges) {
-        if (!ae.from || !ae.to) continue;
-        const from = ae.from.trim().toUpperCase();
-        const to   = ae.to.trim().toUpperCase();
-
-        if (!names.includes(from) || !names.includes(to)) {
-            invalidVertices.push(`${from}–${to}`);
-            continue;
-        }
-        if (from === to) continue;  // self-loops are silently skipped
-
-        const key = directed ? `${from}->${to}` : [from, to].sort().join('--');
-        if (!origSet.has(key)) {
-            nonDuplicates.push(directed ? `${from}→${to}` : `${from}–${to}`);
-            continue;
-        }
-        combined.push({ s: from, t: to });
-    }
-
-    if (invalidVertices.length > 0) {
-        return { ok: false, reason: 'invalid_vertices', bad: invalidVertices };
-    }
-    if (nonDuplicates.length > 0) {
-        return { ok: false, reason: 'not_duplicate', bad: nonDuplicates };
-    }
-
-    // Check whether the combined graph is now Eulerian
-    if (directed) {
-        const inDeg  = Object.fromEntries(names.map(nm => [nm, 0]));
-        const outDeg = Object.fromEntries(names.map(nm => [nm, 0]));
-        for (const { s, t } of combined) { outDeg[s]++; inDeg[t]++; }
-        const oddVertices = names.filter(nm => inDeg[nm] !== outDeg[nm]);
-        if (oddVertices.length > 0) return { ok: false, reason: 'not_eulerian', oddVertices };
-    } else {
-        const deg = Object.fromEntries(names.map(nm => [nm, 0]));
-        for (const { s, t } of combined) { deg[s]++; deg[t]++; }
-        const oddVertices = names.filter(nm => deg[nm] % 2 !== 0);
-        if (oddVertices.length > 0) return { ok: false, reason: 'not_eulerian', oddVertices };
-    }
-
-    return { ok: true };
-}
-
 /**
  * Minimum number of edges needed to Eulerize a connected undirected graph,
  * where added edges must duplicate existing edges (Chinese Postman approach).
@@ -1181,7 +881,7 @@ function validateEulerization(graph, addedEdges) {
  * @returns {number}
  */
 function minEulerizeEdges(graph) {
-    const odds = getOddVertices(graph.edges, graph.n); // vertex indices
+    const odds = getOddVertices(graph); // vertex indices
     const k = odds.length;
     if (k === 0) return 0;
 
@@ -1245,7 +945,7 @@ function minEulerizeEdges(graph) {
  * @returns {string[]}
  */
 function getMismatchedVertices(graph) {
-    const { inDeg, outDeg } = getDirectedDegrees(graph.edges, graph.n);
+    const { inDeg, outDeg } = getDirectedDegrees(graph);
     return graph.names.filter((_, i) => inDeg[i] !== outDeg[i]);
 }
 
@@ -1253,14 +953,6 @@ function getMismatchedVertices(graph) {
 // =============================================================================
 // Planar graph puzzle helpers
 // =============================================================================
-
-const PLANAR_PUZZLE_CONFIG = {
-    nMin: 6,
-    nMax: 8,
-    planarExtraEdgeFactorMin: 1.14,
-    planarExtraEdgeFactorMax: 1.55,
-    nonPlanarExtraEdgeSlackMax: 2,
-};
 
 function _randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -1381,13 +1073,57 @@ function _generateConnectedPlanarIndexEdges(n, targetEdges) {
     return indexEdges;
 }
 
-function _makePlanarPuzzleGraph(n) {
-    const factor = PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMin
-        + Math.random() * (PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMax - PLANAR_PUZZLE_CONFIG.planarExtraEdgeFactorMin);
+/**
+ * Count vertices in a graph object.
+ * @param {object} graph
+ * @returns {number}
+ */
+function vertexCount(graph) {
+    return Number(graph?.n) || 0;
+}
+
+/**
+ * Count edges in a graph object.
+ * @param {object} graph
+ * @returns {number}
+ */
+function edgeCount(graph) {
+    return Array.isArray(graph?.edges) ? graph.edges.length : 0;
+}
+
+/**
+ * Compute face count using Euler's formula F = 2 - V + E.
+ *
+ * Note: this is valid for connected planar embeddings. The function does not
+ * validate planarity or connectedness of the input graph.
+ * @param {object} graph
+ * @returns {number}
+ */
+function faceCount(graph) {
+    return 2 - vertexCount(graph) + edgeCount(graph);
+}
+
+/**
+ * Generate a connected planar graph using a geometric non-crossing strategy.
+ *
+ * Strategy:
+ *   1) Build a maximal connected non-crossing graph from random non-colinear
+ *      points by repeatedly adding non-crossing candidate edges.
+ *   2) Pick a target edge count in [n-1, 3n-6] via factor range.
+ *   3) Sparsify by removing random removable edges while preserving
+ *      connectedness until the target is reached.
+ *
+ * @param {number} n
+ * @param {number} planarExtraEdgeFactorMin
+ * @param {number} planarExtraEdgeFactorMax
+ * @returns {object}
+ */
+function generatePlanarGraph(n, planarExtraEdgeFactorMin, planarExtraEdgeFactorMax) {
+    const factor = planarExtraEdgeFactorMin
+        + Math.random() * (planarExtraEdgeFactorMax - planarExtraEdgeFactorMin);
     const target = Math.min(3 * n - 6, Math.max(n - 1, Math.round(n * factor)));
     let indexEdges = _generateConnectedPlanarIndexEdges(n, target);
 
-    // Sparsify toward target while preserving connectedness
     while (indexEdges.length > target) {
         const removableIdx = [];
         for (let i = 0; i < indexEdges.length; i++) {
@@ -1406,13 +1142,6 @@ function _makePlanarPuzzleGraph(n) {
         directed: false,
         edgeLabel: null,
         edges: _toEdges(indexEdges),
-        isPlanar: true,
-        obstruction: null,
-        planarCounts: {
-            vertices: n,
-            edges: indexEdges.length,
-            faces: 2 - n + indexEdges.length,
-        },
     };
 }
 
@@ -1438,14 +1167,29 @@ function _injectK33(indexEdges, n) {
     return { required, witnessVertices: vertices, left, right };
 }
 
-function _makeNonPlanarPuzzleGraph(n) {
-    const base = _makePlanarPuzzleGraph(n);
+/**
+ * Generate a connected non-planar graph by injecting a required obstruction
+ * into a planar base graph.
+ *
+ * Strategy:
+ *   1) Start from a generated connected planar base graph.
+ *   2) Inject all edges of a required K5 or K3,3 obstruction among sampled
+ *      vertices.
+ *   3) Randomly remove non-core edges while keeping connectedness to control
+ *      density.
+ *
+ * @param {number} n
+ * @param {'K5'|'K3,3'} type
+ * @param {number} nonPlanarExtraEdgeSlackMax
+ * @returns {object}
+ */
+function generateNonPlanarGraph(n, type, nonPlanarExtraEdgeSlackMax) {
+    const base = generatePlanarGraph(n, 1.14, 1.55);
     let indexEdges = base.edges.map(e => ({ s: vertexIndex(e.source), t: vertexIndex(e.target) }));
     const baseEdgeCount = indexEdges.length;
 
-    const makeK33 = (n >= 6) && Math.random() < 0.5;
-    const obstruction = makeK33 ? 'K3,3' : 'K5';
-    const injected = makeK33 ? _injectK33(indexEdges, n) : _injectK5(indexEdges, n);
+    const obstruction = type;
+    const injected = obstruction === 'K3,3' ? _injectK33(indexEdges, n) : _injectK5(indexEdges, n);
 
     const edgeSet = new Set(indexEdges.map(e => _edgeKey(e.s, e.t)));
     const coreSet = new Set();
@@ -1459,7 +1203,7 @@ function _makeNonPlanarPuzzleGraph(n) {
         }
     }
 
-    const target = baseEdgeCount + _randInt(0, Math.min(PLANAR_PUZZLE_CONFIG.nonPlanarExtraEdgeSlackMax, indexEdges.length - baseEdgeCount));
+    const target = baseEdgeCount + _randInt(0, Math.min(nonPlanarExtraEdgeSlackMax, indexEdges.length - baseEdgeCount));
     const removable = shuffle(indexEdges.filter(e => !coreSet.has(_edgeKey(e.s, e.t))));
 
     for (const cand of removable) {
@@ -1478,43 +1222,13 @@ function _makeNonPlanarPuzzleGraph(n) {
         directed: false,
         edgeLabel: null,
         edges: _toEdges(indexEdges),
-        isPlanar: false,
-        obstruction,
-        witnessVertices: injected.witnessVertices.map(v => vertexId(v)),
-        planarCounts: null,
     };
-}
-
-/**
- * Generate a random planar-classification puzzle graph.
- *
- * Returns a graph object extended with:
- *   isPlanar {boolean}
- *   planarCounts {{vertices:number,edges:number,faces:number}|null}
- *   obstruction {'K5'|'K3,3'|null}
- *
- * @returns {object}
- */
-function generatePlanarGraphPuzzle() {
-    const n = _randInt(PLANAR_PUZZLE_CONFIG.nMin, PLANAR_PUZZLE_CONFIG.nMax);
-    const shouldBePlanar = Math.random() < 0.5;
-    return shouldBePlanar ? _makePlanarPuzzleGraph(n) : _makeNonPlanarPuzzleGraph(n);
 }
 
 
 // =============================================================================
 // Graph coloring puzzle helpers
 // =============================================================================
-
-const GRAPH_COLORING_CONFIG = {
-    nMin: 5,
-    nMax: 8,
-    bipartiteWeight: 0.25,
-    planarWeight: 0.50,
-    k5Weight: 0.25,
-    generationMaxChromatic: 5,
-    promptMaxColors: 6,
-};
 
 function _makeNumberNames(n) {
     return Array.from({ length: n }, (_, i) => String(i + 1));
@@ -1588,125 +1302,8 @@ function chromaticNumber(graph, maxColors = 6) {
     return null;
 }
 
-function _makeBipartiteColoringGraph(n) {
-    const leftSize = _randInt(2, n - 2);
-    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
-    const left = vertices.slice(0, leftSize);
-    const right = vertices.slice(leftSize);
-
-    const edgeSet = new Set();
-    const edges = [];
-    const addEdge = (a, b) => {
-        const key = _edgeKey(a, b);
-        if (a === b || edgeSet.has(key)) return false;
-        edgeSet.add(key);
-        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
-        return true;
-    };
-
-    for (const r of right) addEdge(r, left[_randInt(0, left.length - 1)]);
-    for (const l of left) addEdge(l, right[_randInt(0, right.length - 1)]);
-
-    const target = Math.max(n + 1, Math.min(Math.floor(1.7 * n), left.length * right.length));
-    let guard = 0;
-    while (edges.length < target && guard < 3000) {
-        guard++;
-        addEdge(left[_randInt(0, left.length - 1)], right[_randInt(0, right.length - 1)]);
-    }
-
-    return {
-        n,
-        names: _makeNumberNames(n),
-        directed: false,
-        edgeLabel: null,
-        edges: _toEdges(edges),
-        flavor: 'bipartite',
-    };
-}
-
-function _makePlanarColoringGraph(n) {
-    const g = _makePlanarPuzzleGraph(n);
-    return {
-        n: g.n,
-        names: _makeNumberNames(g.n),
-        directed: false,
-        edgeLabel: null,
-        edges: g.edges.slice(),
-        flavor: 'planar',
-    };
-}
-
-function _makeK5ColoringGraph(n) {
-    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
-    const core = vertices.slice(0, 5);
-    const extras = vertices.slice(5);
-
-    const edgeSet = new Set();
-    const edges = [];
-    const addEdge = (a, b) => {
-        const key = _edgeKey(a, b);
-        if (a === b || edgeSet.has(key)) return;
-        edgeSet.add(key);
-        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
-    };
-
-    for (let i = 0; i < core.length; i++) {
-        for (let j = i + 1; j < core.length; j++) addEdge(core[i], core[j]);
-    }
-
-    for (const v of extras) {
-        const shuffledCore = shuffle(core.slice());
-        const degreeToCore = _randInt(2, 4);
-        for (let i = 0; i < degreeToCore; i++) addEdge(v, shuffledCore[i]);
-    }
-
-    return {
-        n,
-        names: _makeNumberNames(n),
-        directed: false,
-        edgeLabel: null,
-        edges: _toEdges(edges),
-        flavor: 'k5',
-    };
-}
-
-/**
- * Generate a random graph-coloring puzzle.
- *
- * Returns a graph object extended with:
- *   minColors {number}       exact chromatic number (<= 5)
- *   maxColorsAllowed {number}
- *   flavor {'bipartite'|'planar'|'k5'}
- *
- * @returns {object}
- */
-function generateGraphColoringPuzzle() {
-    for (let attempt = 0; attempt < 60; attempt++) {
-        const n = _randInt(GRAPH_COLORING_CONFIG.nMin, GRAPH_COLORING_CONFIG.nMax);
-        const roll = Math.random();
-
-        let graph;
-        if (roll < GRAPH_COLORING_CONFIG.bipartiteWeight) {
-            graph = _makeBipartiteColoringGraph(n);
-        } else if (roll < GRAPH_COLORING_CONFIG.bipartiteWeight + GRAPH_COLORING_CONFIG.planarWeight) {
-            graph = _makePlanarColoringGraph(n);
-        } else {
-            graph = _makeK5ColoringGraph(Math.max(n, 5));
-        }
-
-        const minColors = chromaticNumber(graph, GRAPH_COLORING_CONFIG.generationMaxChromatic);
-        if (!minColors || minColors > GRAPH_COLORING_CONFIG.generationMaxChromatic) continue;
-
-        const plusOne = minColors + 1;
-        const requested = plusOne === graph.n ? minColors : plusOne;
-        const maxColorsAllowed = Math.min(GRAPH_COLORING_CONFIG.promptMaxColors, requested);
-
-        return { ...graph, minColors, maxColorsAllowed };
-    }
-
-    const fallback = _makeBipartiteColoringGraph(6);
-    return { ...fallback, minColors: 2, maxColorsAllowed: 3 };
-}
+// Puzzle-specific graph-coloring generation now lives in graph-coloring-mode.js
+// so each mode can tune puzzle distributions independently.
 
 /**
  * Validate a full vertex coloring for an undirected graph.
@@ -1902,6 +1499,15 @@ const APPLICATIONS_LOCATION_NAMES = [
 
 const APPLICATIONS_FREQUENCY_OPTIONS = ['540 kHz', '600 kHz', '700 kHz', '800 kHz', '900 kHz', '1000 kHz'];
 
+const APPLICATIONS_SCHEDULING_CONFIG = {
+    nMin: 5,
+    nMax: 8,
+    bipartiteWeight: 0.25,
+    planarWeight: 0.50,
+    k5Weight: 0.25,
+    generationMaxChromatic: 5,
+};
+
 function _pickUniqueNames(pool, count, fallbackPrefix) {
     const shuffled = shuffle(pool.slice());
     const out = [];
@@ -1912,8 +1518,111 @@ function _pickUniqueNames(pool, count, fallbackPrefix) {
     return out;
 }
 
+function _makeBipartiteApplicationsGraph(n) {
+    const leftSize = _randInt(2, n - 2);
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
+    const left = vertices.slice(0, leftSize);
+    const right = vertices.slice(leftSize);
+
+    const edgeSet = new Set();
+    const edges = [];
+    const addEdge = (a, b) => {
+        const key = _edgeKey(a, b);
+        if (a === b || edgeSet.has(key)) return false;
+        edgeSet.add(key);
+        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
+        return true;
+    };
+
+    for (const r of right) addEdge(r, left[_randInt(0, left.length - 1)]);
+    for (const l of left) addEdge(l, right[_randInt(0, right.length - 1)]);
+
+    const target = Math.max(n + 1, Math.min(Math.floor(1.7 * n), left.length * right.length));
+    let guard = 0;
+    while (edges.length < target && guard < 3000) {
+        guard++;
+        addEdge(left[_randInt(0, left.length - 1)], right[_randInt(0, right.length - 1)]);
+    }
+
+    return {
+        n,
+        names: _makeNumberNames(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(edges),
+    };
+}
+
+function _makePlanarApplicationsGraph(n) {
+    const g = generatePlanarGraph(n, 1.14, 1.55);
+    return {
+        n: g.n,
+        names: _makeNumberNames(g.n),
+        directed: false,
+        edgeLabel: null,
+        edges: g.edges.slice(),
+    };
+}
+
+function _makeK5ApplicationsGraph(n) {
+    const vertices = shuffle(Array.from({ length: n }, (_, i) => i));
+    const core = vertices.slice(0, 5);
+    const extras = vertices.slice(5);
+
+    const edgeSet = new Set();
+    const edges = [];
+    const addEdge = (a, b) => {
+        const key = _edgeKey(a, b);
+        if (a === b || edgeSet.has(key)) return;
+        edgeSet.add(key);
+        edges.push({ s: Math.min(a, b), t: Math.max(a, b) });
+    };
+
+    for (let i = 0; i < core.length; i++) {
+        for (let j = i + 1; j < core.length; j++) addEdge(core[i], core[j]);
+    }
+
+    for (const v of extras) {
+        const shuffledCore = shuffle(core.slice());
+        const degreeToCore = _randInt(2, 4);
+        for (let i = 0; i < degreeToCore; i++) addEdge(v, shuffledCore[i]);
+    }
+
+    return {
+        n,
+        names: _makeNumberNames(n),
+        directed: false,
+        edgeLabel: null,
+        edges: _toEdges(edges),
+    };
+}
+
+function _generateSchedulingBaseGraph() {
+    for (let attempt = 0; attempt < 60; attempt++) {
+        const n = _randInt(APPLICATIONS_SCHEDULING_CONFIG.nMin, APPLICATIONS_SCHEDULING_CONFIG.nMax);
+        const roll = Math.random();
+
+        let graph;
+        if (roll < APPLICATIONS_SCHEDULING_CONFIG.bipartiteWeight) {
+            graph = _makeBipartiteApplicationsGraph(n);
+        } else if (roll < APPLICATIONS_SCHEDULING_CONFIG.bipartiteWeight + APPLICATIONS_SCHEDULING_CONFIG.planarWeight) {
+            graph = _makePlanarApplicationsGraph(n);
+        } else {
+            graph = _makeK5ApplicationsGraph(Math.max(n, 5));
+        }
+
+        const minResources = chromaticNumber(graph, APPLICATIONS_SCHEDULING_CONFIG.generationMaxChromatic);
+        if (!minResources || minResources > APPLICATIONS_SCHEDULING_CONFIG.generationMaxChromatic) continue;
+
+        return { graph, minResources };
+    }
+
+    const fallback = _makeBipartiteApplicationsGraph(6);
+    return { graph: fallback, minResources: 2 };
+}
+
 function _generateSchedulingApplicationsPuzzle() {
-    const base = generateGraphColoringPuzzle();
+    const { graph: base, minResources } = _generateSchedulingBaseGraph();
     const committeeNames = _pickUniqueNames(APPLICATIONS_COMMITTEE_NAMES, base.n, 'Committee');
 
     const committeeMembers = Array.from({ length: base.n }, () => []);
@@ -1954,7 +1663,7 @@ function _generateSchedulingApplicationsPuzzle() {
         names: committeeNames,
         committees,
         edges: base.edges.slice(),
-        minResources: base.minColors,
+        minResources,
         namesById,
     };
 }
@@ -2046,7 +1755,7 @@ function _buildInterferenceGraphFromDistance(dist, threshold) {
 
 function _generateInterferenceApplicationsPuzzle() {
     for (let attempt = 0; attempt < 60; attempt++) {
-        const n = _randInt(GRAPH_COLORING_CONFIG.nMin, GRAPH_COLORING_CONFIG.nMax);
+        const n = _randInt(APPLICATIONS_SCHEDULING_CONFIG.nMin, APPLICATIONS_SCHEDULING_CONFIG.nMax);
         const points = _generateSeparatedPoints(n, 0.05);
         if (!points) continue;
 
@@ -2190,11 +1899,12 @@ const ISO_PUZZLE_N_RANGE = [4, 6];
 
 /**
  * Count undirected triangles (unordered triples of mutually adjacent vertices).
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {number}
  */
-function countTriangles(edges, n) {
+function countTriangles(graph) {
+    const n = Number(graph?.n) || 0;
+    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
     const adj = Array.from({ length: n }, () => new Set());
     for (const { source, target } of edges) {
         const s = vertexIndex(source), t = vertexIndex(target);
@@ -2209,11 +1919,12 @@ function countTriangles(edges, n) {
 
 /**
  * Count connected components (undirected BFS over all vertices).
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {number}
  */
-function componentCount(edges, n) {
+function componentCount(graph) {
+    const n = Number(graph?.n) || 0;
+    const edges = Array.isArray(graph?.edges) ? graph.edges : [];
     const visited = new Uint8Array(n);
     const adj     = Array.from({ length: n }, () => []);
     for (const { source, target } of edges) {
@@ -2241,9 +1952,9 @@ function graphInvariants(graph) {
     return {
         n:          graph.n,
         edgeCount:  graph.edges.length,
-        degSeq:     degreeSequence(graph.edges, graph.n).join(','),
-        components: componentCount(graph.edges, graph.n),
-        triangles:  countTriangles(graph.edges, graph.n),
+        degSeq:     degreeSequence(graph).join(','),
+        components: componentCount(graph),
+        triangles:  countTriangles(graph),
     };
 }
 
@@ -2370,7 +2081,7 @@ function _randomSpanningTreePairs(n) {
  * @returns {object|null}
  */
 function _swapToChangeTriangles(graph, maxSwaps = 80) {
-    const origTri = countTriangles(graph.edges, graph.n);
+    const origTri = countTriangles(graph);
     let edges = graph.edges.map(e => ({ ...e }));
 
     for (let attempt = 0; attempt < maxSwaps; attempt++) {
@@ -2399,7 +2110,7 @@ function _swapToChangeTriangles(graph, maxSwaps = 80) {
             e === ea ? { ...e, source: vertexId(a), target: vertexId(c) } :
             e === eb ? { ...e, source: vertexId(b), target: vertexId(d) } : e
         );
-        const newTri = countTriangles(trial, graph.n);
+        const newTri = countTriangles({ ...graph, edges: trial });
         if (newTri !== origTri) return { ...graph, edges: trial };
         edges = trial; // continue walking from new state
     }
@@ -2433,16 +2144,16 @@ function _neitherByReason(reason, n, nMin, nMax) {
             for (let attempt = 0; attempt < 50; attempt++) {
                 const g1 = _isoBaseGraph(n);
                 const g2 = _isoBaseGraph(n);
-                const d1 = degreeSequence(g1.edges, n).join(',');
-                const d2 = degreeSequence(g2.edges, n).join(',');
+                const d1 = degreeSequence(g1).join(',');
+                const d2 = degreeSequence(g2).join(',');
                 if (g1.edges.length === g2.edges.length && d1 !== d2) return { g1, g2 };
             }
             // Fallback: any different degree sequence
             for (let attempt = 0; attempt < 30; attempt++) {
                 const g1 = _isoBaseGraph(n);
                 const g2 = _isoBaseGraph(n);
-                const d1 = degreeSequence(g1.edges, n).join(',');
-                const d2 = degreeSequence(g2.edges, n).join(',');
+                const d1 = degreeSequence(g1).join(',');
+                const d2 = degreeSequence(g2).join(',');
                 if (d1 !== d2) return { g1, g2 };
             }
             return null;
@@ -2458,7 +2169,7 @@ function _neitherByReason(reason, n, nMin, nMax) {
             const e2 = _randomSpanningTreePairs(n - split).map(([a, b]) =>
                 ({ source: vertexId(a + split), target: vertexId(b + split), label: null }));
             const g2 = { n, names: makeLabels(n), directed: false, edgeLabel: null, edges: [...e1, ...e2] };
-            if (componentCount(g2.edges, n) > 1) return { g1, g2 };
+            if (componentCount(g2) > 1) return { g1, g2 };
             return null;
         }
 
@@ -2468,8 +2179,8 @@ function _neitherByReason(reason, n, nMin, nMax) {
                 const g1      = _isoBaseGraph(n);
                 const swapped = _swapToChangeTriangles(g1);
                 if (!swapped) continue;
-                const d1 = degreeSequence(g1.edges, n).join(',');
-                const d2 = degreeSequence(swapped.edges, n).join(',');
+                const d1 = degreeSequence(g1).join(',');
+                const d2 = degreeSequence(swapped).join(',');
                 if (d1 === d2) return { g1, g2: swapped };
             }
             // Strategy B: two independent graphs, same n/|E|/degSeq, different triangles
@@ -2486,7 +2197,7 @@ function _neitherByReason(reason, n, nMin, nMax) {
             for (let attempt = 0; attempt < 40; attempt++) {
                 const g1 = _isoBaseGraph(n);
                 const g2 = _isoBaseGraph(n);
-                if (countTriangles(g1.edges, n) !== countTriangles(g2.edges, n)) return { g1, g2 };
+                if (countTriangles(g1) !== countTriangles(g2)) return { g1, g2 };
             }
             return null;
         }
