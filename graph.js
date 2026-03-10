@@ -1889,7 +1889,9 @@ const APPLICATIONS_COMMITTEE_NAMES = [
 const APPLICATIONS_MEMBER_NAMES = [
     'Alice', 'Bob', 'Charlie', 'David', 'Eve', 'Frank', 'Grace', 'Heidi', 'Ivan', 'Judy',
     'Karl', 'Leo', 'Mallory', 'Nina', 'Oscar', 'Peggy', 'Quentin', 'Rupert', 'Sybil', 'Trent',
-    'Uma', 'Victor', 'Walter', 'Xavier', 'Yvonne', 'Zara',
+    'Uma', 'Victor', 'Walter', 'Xavier', 'Yvonne', 'Zara', 'Abby', 'Ben', 'Cathy', 'Derek', 
+    'Ella', 'Fred', 'Gina', 'Hank', 'Ivy', 'Jack', 'Kara', 'Liam', 'Mona', 'Nate', 'Olivia', 
+    'Paul', 'Queen', 'Ralph', 'Sara', 'Tom', 'Una', 'Vince', 'Wendy', 'Xander', 'Yara', 'Zane',
 ];
 
 const APPLICATIONS_LOCATION_NAMES = [
