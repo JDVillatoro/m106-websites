@@ -58,6 +58,7 @@ const CY_CONFIG = {
     coloring: { containerId: 'coloring-graph-area', panelId: 'coloring-panel' },
     iso1:     { containerId: 'iso-graph-area-1',    panelId: 'iso-col-1' },
     iso2:     { containerId: 'iso-graph-area-2',    panelId: 'iso-col-2' },
+    hamiltonian: { containerId: 'ham-graph-area',   panelId: 'hamiltonian-panel' },
 };
 
 window._cy = {};   // mode → cytoscape instance
@@ -229,6 +230,7 @@ const modeStates = {
     planar:   { graph: null, stats: { total: 0, points: 0 }, _initialized: false, currentPuzzle: null, part1Scored: false, part2Scored: false },
     coloring: { graph: null, stats: { total: 0, points: 0 }, _initialized: false, currentPuzzle: null, selection: {} },
     applications: { stats: { total: 0, points: 0 }, _initialized: false, currentPuzzle: null, selection: {}, lastFeedbackWasCorrect: false, organizationName: null },
+    hamiltonian: { graph: null, stats: { total: 0, points: 0 }, _initialized: false, currentPuzzle: null, part1Scored: false, part2Scored: false },
 };
 let currentMode = 'make';
 
@@ -242,6 +244,7 @@ const modeIsoBtn = document.getElementById('mode-iso');
 const modePlanarBtn = document.getElementById('mode-planar');
 const modeColoringBtn = document.getElementById('mode-coloring');
 const modeApplicationsBtn = document.getElementById('mode-applications');
+const modeHamiltonianBtn = document.getElementById('mode-hamiltonian');
 
 function setMode(mode) {
     document.querySelectorAll('.mode-panel').forEach(p => p.style.display = 'none');
@@ -249,7 +252,7 @@ function setMode(mode) {
     const activate = id => document.getElementById(id)?.classList.add('active');
     const deactivate = id => document.getElementById(id)?.classList.remove('active');
 
-    ['mode-make', 'mode-degree', 'mode-eulerian', 'mode-iso', 'mode-planar', 'mode-coloring', 'mode-applications'].forEach(deactivate);
+    ['mode-make', 'mode-degree', 'mode-eulerian', 'mode-iso', 'mode-planar', 'mode-coloring', 'mode-applications', 'mode-hamiltonian'].forEach(deactivate);
 
     if (mode === 'make') {
         activate('mode-make');
@@ -358,6 +361,24 @@ function setMode(mode) {
             modeStates.applications._initialized = true;
             setTimeout(() => startApplicationsTrial(), 30);
         }
+    } else if (mode === 'hamiltonian') {
+        activate('mode-hamiltonian');
+        document.getElementById('hamiltonian-panel').style.display = '';
+        currentMode = 'hamiltonian';
+        if (!modeStates.hamiltonian._initialized) {
+            loadHamiltonianStats();
+            bindHamiltonianControls();
+            modeStates.hamiltonian._initialized = true;
+            setTimeout(() => startHamiltonianTrial(), 30);
+        } else {
+            const p = modeStates.hamiltonian.currentPuzzle;
+            if (p) setTimeout(() => {
+                // Only reveal weights if Part 1 has already been answered correctly
+                const showW = p.showWeights && modeStates.hamiltonian.part1Scored;
+                _hamDrawGraph(p, showW);
+                updateGraphAria('ham-graph-description', p, true);
+            }, 30);
+        }
     }
 }
 
@@ -368,6 +389,7 @@ modeIsoBtn && modeIsoBtn.addEventListener('click', () => setMode('iso'));
 modePlanarBtn && modePlanarBtn.addEventListener('click', () => setMode('planar'));
 modeColoringBtn && modeColoringBtn.addEventListener('click', () => setMode('coloring'));
 modeApplicationsBtn && modeApplicationsBtn.addEventListener('click', () => setMode('applications'));
+modeHamiltonianBtn && modeHamiltonianBtn.addEventListener('click', () => setMode('hamiltonian'));
 
 // ---------------------------------------------------------------------------
 // Initial load

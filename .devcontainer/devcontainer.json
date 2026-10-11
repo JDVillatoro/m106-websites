@@ -2,5 +2,5 @@
   "name": "Simple Web Dev Container",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
   "forwardPorts": [8080],
-  "postStartCommand": "setsid -f python3 -m http.server 8080 --directory /workspaces/M106-Graph-Theory > /tmp/server.log 2>&1"
+  "postStartCommand": "setsid -f python3 -m http.server 8080 --directory ${containerWorkspaceFolder} > /tmp/server.log 2>&1"
 }
