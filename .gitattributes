@@ -1,0 +1,2 @@
+# Store text files with Unix line endings, even if edited on Windows.
+* text=auto eol=lf

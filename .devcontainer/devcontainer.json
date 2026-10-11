@@ -1,0 +1,32 @@
+{
+  "name": "M106 websites",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+  // Node, for helper scripts such as graph-theory/update-graph-md-refs.js.
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+  // Runs in WSL before the container starts: the Claude login folder below
+  // must exist, or the mount fails.
+  "initializeCommand": "mkdir -p ${localEnv:HOME}/.claude-container",
+  // The image's built-in non-root user (uid 1000, same as the WSL account).
+  "remoteUser": "vscode",
+  // Claude Code keeps its login and settings in ~/.claude-container in WSL,
+  // shared by every project's container, so the login survives rebuilds.
+  "mounts": [
+    "source=${localEnv:HOME}/.claude-container,target=/home/vscode/.claude,type=bind"
+  ],
+  "remoteEnv": {
+    "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+  },
+  // Serve the whole repo at http://localhost:8080/ (each site in its own
+  // folder, e.g. /graph-theory/). The log is shown by .vscode/tasks.json.
+  "forwardPorts": [8080],
+  "postStartCommand": "setsid -f python3 -m http.server 8080 --directory ${containerWorkspaceFolder} > /tmp/server.log 2>&1",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "anthropic.claude-code"
+      ]
+    }
+  }
+}

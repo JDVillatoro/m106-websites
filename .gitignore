@@ -1,0 +1,15 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code sandbox placeholders (see ~/CLAUDE.md)
+.claude/
+.mcp.json
+
+# Misc
+.env
