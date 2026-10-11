@@ -2345,7 +2345,7 @@ function generateIsoPuzzle() {
 // =============================================================================
 //
 // TODO(refactor): this section was written before the 2026-03-10 refactor (see
-// WORK_SESSION_HANDOFF_2026-03-10.md). Its helpers still take (edges, n)
+// notes/WORK_SESSION_HANDOFF_2026-03-10.md). Its helpers still take (edges, n)
 // instead of a graph object, and the puzzle generation and validation here are
 // Hamiltonian-mode policy that the target architecture puts in
 // hamiltonian-mode.js. Only the shared helpers (cut vertices, leaves,
