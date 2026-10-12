@@ -3,10 +3,10 @@
 // Ported from legacy/graph-theory/make-mode.js.
 
 import {
-  vertexId, makeLabels, graphToDescription, generateRandomGraph, generateSimpleGraph,
+  vertexId, makeLabels, generateRandomGraph, generateSimpleGraph,
   generateMSCDigraph, generateEulerianDigraph, generateEulerianSimpleGraph, generateEulerianMultigraph,
 } from '../lib/graph.js';
-import { createGraphView } from '../lib/render.js';
+import { createGraphView, graphToDescription } from '../lib/render.js';
 import { escapeHtml, loadStylesheet } from '../../shared/js/ui.js';
 
 const GENERATORS = {

@@ -59,37 +59,53 @@ Delete this file when the last pass is done.
 
 ## Pass 2: move mode code into the modes
 
-- [ ] **Applications** (section "Applications puzzle helpers":
-      `generateApplicationsPuzzle`, `validateApplicationsAssignment`, the
-      `APPLICATIONS_*` names and their helpers) → `modes/applications.js`.
-      Has a `TODO(refactor)` at the top of `graph.js`.
-- [ ] **Hamiltonian**: `generateHamiltonianPuzzle`, the
+Moved code is unchanged except where it called `graph.js`'s private helpers
+(`_randInt`, `_edgeKey`, `_toEdges`, `_makeNumberNames`, `_simpleGraph`).
+Following `modes/coloring.js`, each mode has small local copies of those
+instead (some duplication between modes is allowed); `_simpleGraph` became
+calls to `generateSimpleGraph`, which wraps it. Each mode's header comment
+says what was moved.
+
+- [x] **Applications** (`generateApplicationsPuzzle`,
+      `validateApplicationsAssignment`, the `APPLICATIONS_*` names and their
+      helpers) → `modes/applications.js`. The `APPLICATIONS_*` constants are
+      no longer exported (nothing else uses them). Its `TODO(refactor)` is gone.
+- [x] **Hamiltonian**: `generateHamiltonianPuzzle`, the
       `validateHamiltonianCycle*` functions, `_parseHamCycleInput`,
-      `_makeHamiltonian*`, `_simulateNN`/`_simulateSE` →
-      `modes/hamiltonian.js`. Cut vertices, leaves and bipartite parts stay
-      in `lib/` (see pass 3). Has a `TODO(refactor)`.
-- [ ] **Isomorphism**: `generateIsoPuzzle`, `ISO_PUZZLE_N_RANGE`,
-      `_neitherByReason`, `_swapToChangeTriangles`, `_isoBaseGraph` →
-      `modes/iso.js`. Invariants (`countTriangles`, `componentCount`,
-      `graphInvariants`), `applyPermutation` and
-      `verifyIsomorphismWitness` stay. Decide where `checkNeitherReason`
-      goes (it checks a student's reason, so probably the mode).
-- [ ] **Planar, coloring, Eulerian**: look at what's puzzle tuning rather than
-      math (e.g. the `planarExtraEdgeFactor*` arguments of
-      `generatePlanarGraph`). Move only what's clearly mode design; graph
-      generators that take plain parameters can stay.
-- [ ] `graphToDescription` builds the screen-reader text and the Make a
-      Graph text box: page text, not math. Move it next to its users
-      (`lib/render.js`, `modes/make.js`), or leave it and say why.
+      `_makeHamiltonian*`, `_hamMake*`, `_simulateNN`/`_simulateSE`,
+      `_extractCycleOrder` → `modes/hamiltonian.js`. The mode needs the cut
+      vertex, leaf and bipartite helpers, so they're now exported as
+      `cutVertices`, `leafVertices`, `bipartiteParts`, still taking
+      `(edges, n)` (pass 3), with unit tests in `graph.test.js`. A narrower
+      `TODO(refactor)` above them replaces the old one.
+- [x] **Isomorphism**: `generateIsoPuzzle`, `ISO_PUZZLE_N_RANGE` (no longer
+      exported), `_neitherByReason`, `_swapToChangeTriangles`,
+      `_isoBaseGraph`, `_randomSpanningTreePairs`, `_graphsEqual` →
+      `modes/iso.js`. Decided: `checkNeitherReason` goes to the mode too: it
+      checks a student's answer, and the reason codes are defined there
+      (`ISO_REASON_LABELS`). Its test moved to `iso.test.js`. Invariants,
+      `applyPermutation` and `verifyIsomorphismWitness` stay.
+- [x] **Planar, coloring, Eulerian**: nothing moved. The generators take
+      plain parameters that the modes set (`PLANAR_MODE_CONFIG`,
+      `COLORING_PUZZLE_CONFIG`), and the coloring checks
+      (`validateGraphColoring`, `validateGreedyColoring`) are general
+      algorithms, not wording. One leftover: `generateNonPlanarGraph` builds
+      its planar base with `generatePlanarGraph(n, 1.14, 1.55)`, the same
+      numbers as `PLANAR_MODE_CONFIG`, written into `graph.js`. Making them a
+      parameter would change the function's signature; left for pass 3.
+- [x] `graphToDescription` → `lib/render.js` (it's page text, and
+      `createGraphView` is its main user); `modes/make.js` imports it from
+      there. Its test is in the new `test/graph-theory/render.test.js`.
 
 ## Pass 3: whole graph objects everywhere
 
 Exported functions take a graph object (`{ n, names, directed, edgeLabel,
 edges }`), not `edges, n`.
 
-- [ ] Hamiltonian helpers `_hamCutVertices`, `_hamLeafVertices`,
-      `_hamBipartiteParts` take `(edges, n)`: make them `cutVertices(graph)`,
-      `leafVertices(graph)`, `bipartiteParts(graph)`.
+- [ ] `cutVertices`, `leafVertices`, `bipartiteParts` take `(edges, n)`:
+      make them take a graph (they were renamed and exported in pass 2).
+- [ ] `generateNonPlanarGraph`: pass the planar base's edge factors in
+      instead of the fixed `1.14, 1.55` (see pass 2).
 - [ ] Coloring helpers `_dedupeIndexEdges`, `_buildAdjFromIndexEdges`,
       `_isColorableWithK` work on index pairs; `_buildAdjFromIndexEdges`
       looks like a copy of `_buildAdjList`. Reuse what exists.

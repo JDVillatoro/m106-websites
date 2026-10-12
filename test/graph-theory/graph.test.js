@@ -100,15 +100,15 @@ test('isomorphism helpers', () => {
   // Relabel the kite by a permutation: the invariants don't change.
   const moved = g.applyPermutation(kite, [3, 1, 0, 2]);
   assert.deepEqual(g.graphInvariants(moved), g.graphInvariants(kite));
-  assert.equal(g.checkNeitherReason(square, kite, 'diff_triangles'), true);
-  assert.equal(g.checkNeitherReason(square, kite, 'diff_edges'), false);
 });
 
-test('screen reader description', () => {
-  const { text, isLong } = g.graphToDescription(path3);
-  assert.equal(isLong, false);
-  assert.match(text, /^A graph with 3 vertices and 2 edges\./);
-  assert.match(text, /An edge between A and B\./);
+test('cut vertices, leaves, bipartite parts', () => {
+  // These still take (edges, n); see docs/graph_cleanup_plan.md, pass 3.
+  assert.deepEqual(g.cutVertices(kite.edges, 4), [2]);
+  assert.deepEqual(g.cutVertices(square.edges, 4), []);
+  assert.deepEqual(g.leafVertices(kite.edges, 4), [3]);
+  assert.deepEqual(g.bipartiteParts(square.edges, 4), [[0, 2], [1, 3]]);
+  assert.equal(g.bipartiteParts(triangle.edges, 3), null);
 });
 
 test('random graph: requested number of components', () => {

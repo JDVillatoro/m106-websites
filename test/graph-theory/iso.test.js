@@ -1,8 +1,9 @@
-// Isomorphism mode (graph-theory/modes/iso.js, puzzles from lib/graph.js).
+// Isomorphism mode (graph-theory/modes/iso.js).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateIsoPuzzle } from '../../graph-theory/lib/graph.js';
+import { makeLabels, vertexId } from '../../graph-theory/lib/graph.js';
+import { generateIsoPuzzle, checkNeitherReason } from '../../graph-theory/modes/iso.js';
 import { useBrowser, scoreText, checkScoreSavedAndReset } from '../helpers/browser.js';
 import { graphOnScreen } from '../helpers/graph-on-screen.js';
 
@@ -75,6 +76,17 @@ test('puzzles: the stated relation is the real one, and neither has a listed rea
     assert.equal(relation(g1, g2).kind, p.scenario);
     if (p.scenario === 'neither') assert.notEqual(differingReason(g1, g2), null);
   }
+});
+
+test('neither reasons: true only for a property that differs', () => {
+  const graph = (n, pairs) => ({
+    n, names: makeLabels(n), directed: false, edgeLabel: null,
+    edges: pairs.map(([s, t]) => ({ source: vertexId(s), target: vertexId(t), label: null })),
+  });
+  const square = graph(4, [[0, 1], [1, 2], [2, 3], [3, 0]]);
+  const kite = graph(4, [[0, 1], [1, 2], [2, 0], [2, 3]]);   // triangle with a pendant vertex
+  assert.equal(checkNeitherReason(square, kite, 'diff_triangles'), true);
+  assert.equal(checkNeitherReason(square, kite, 'diff_edges'), false);
 });
 
 const site = useBrowser();

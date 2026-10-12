@@ -10,7 +10,67 @@
 // - lib/graph-view.css, before any graph area is built: Cytoscape measures its
 //   area straight away, so the area's size must already be styled.
 
-import { vertexId, graphToDescription } from './graph.js';
+import { vertexId, vertexIndex, vertexLabel } from './graph.js';
+
+// ---------------------------------------------------------------------------
+// Graph description (for screen readers / alt text)
+// ---------------------------------------------------------------------------
+// Moved here unchanged from lib/graph.js: it's page text, not graph math. Make
+// a Graph also uses it for its alt text box.
+
+/**
+ * Convert a graph object to a plain-English description suitable for screen
+ * readers and alt-text output.
+ * @param {object} graph  - full graph object {n, names, directed, edgeLabel, edges}
+ * @returns {{ text: string, isLong: boolean }}
+ */
+export function graphToDescription(graph) {
+    if (!graph) return { text: 'No graph data available.', isLong: false };
+
+    const n      = Number(graph.n) || 0;
+    const names  = Array.isArray(graph.names)  ? graph.names  : [];
+    const edges  = Array.isArray(graph.edges)  ? graph.edges  : [];
+    const isLong = edges.length > 10 || n > 8;
+
+    const parts = [];
+    parts.push(`A ${graph.directed ? 'directed ' : ''}graph with ${n} ${n === 1 ? 'vertex' : 'vertices'} and ${edges.length} ${edges.length === 1 ? 'edge' : 'edges'}.`);
+
+    if (isLong) parts.push('Note: this graph is large. The following description may be lengthy.');
+
+    for (let i = 0; i < n; i++) {
+        const name = names[i] && String(names[i]).trim();
+        parts.push(name ? `Vertex ${i + 1} labeled ${name}.` : `Vertex ${i + 1}.`);
+    }
+
+    parts.push(edges.length === 0 ? 'There are no edges.' : 'The full edge list is as follows.');
+
+    for (const e of edges) {
+        const src  = vertexLabel(e.source, names);
+        const tgt  = vertexLabel(e.target, names);
+        const lbl  = e.label && String(e.label).trim() !== '' ? String(e.label).trim() : null;
+        const loop = vertexIndex(e.source) === vertexIndex(e.target);
+
+        let sentence;
+        if (graph.directed) {
+            sentence = lbl !== null
+                ? (graph.edgeLabel === 'weight'
+                    ? `A directed edge from ${src} to ${tgt} with weight ${lbl}.`
+                    : `A directed edge from ${src} to ${tgt} labeled ${lbl}.`)
+                : `A directed edge from ${src} to ${tgt}.`;
+        } else if (loop) {
+            sentence = lbl !== null ? `A loop on vertex ${src} labeled ${lbl}.` : `A loop on vertex ${src}.`;
+        } else {
+            sentence = lbl !== null
+                ? (graph.edgeLabel === 'weight'
+                    ? `An edge between ${src} and ${tgt} with weight ${lbl}.`
+                    : `An edge between ${src} and ${tgt} labeled ${lbl}.`)
+                : `An edge between ${src} and ${tgt}.`;
+        }
+        parts.push(sentence);
+    }
+
+    return { text: parts.join(' '), isLong };
+}
 
 /** Cytoscape style, with colors read from the --graph-* tokens in tokens.css. */
 function graphStyle() {

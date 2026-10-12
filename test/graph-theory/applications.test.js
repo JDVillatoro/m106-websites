@@ -1,9 +1,8 @@
-// Applications mode (graph-theory/modes/applications.js, puzzles from lib/graph.js).
+// Applications mode (graph-theory/modes/applications.js).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { generateApplicationsPuzzle } from '../../graph-theory/lib/graph.js';
-import { matchesShownDistances } from '../../graph-theory/modes/applications.js';
+import { generateApplicationsPuzzle, matchesShownDistances } from '../../graph-theory/modes/applications.js';
 import { useBrowser, scoreText, checkScoreSavedAndReset } from '../helpers/browser.js';
 
 /** Fewest colors for `n` items with conflicts `clash(a, b)`, and one such coloring. */

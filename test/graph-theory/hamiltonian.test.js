@@ -1,10 +1,10 @@
-// Hamiltonian Graphs mode (graph-theory/modes/hamiltonian.js, puzzles from lib/graph.js).
+// Hamiltonian Graphs mode (graph-theory/modes/hamiltonian.js).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   generateHamiltonianPuzzle, validateHamiltonianCycleNN, validateHamiltonianCycleSE,
-} from '../../graph-theory/lib/graph.js';
+} from '../../graph-theory/modes/hamiltonian.js';
 import { useBrowser, scoreText, checkScoreSavedAndReset } from '../helpers/browser.js';
 import {
   graphOnScreen, hamiltonianCycle, nearestNeighborCycle, sortedEdgeCycle, nonHamiltonianReasons,
