@@ -17,12 +17,13 @@ const edgeKey = (a, b) => (a < b ? `${a}-${b}` : `${b}-${a}`);
 const toEdges = indexEdges => indexEdges.map(({ s, t }) => ({ source: vertexId(s), target: vertexId(t), label: null }));
 
 const COLORING_BASE = [
-    { token: 'a', name: 'Red', css: '#e74c3c', freeAlias: 'R', greedyAlias: 'A' },
-    { token: 'b', name: 'Green', css: '#27ae60', freeAlias: 'G', greedyAlias: 'B' },
-    { token: 'c', name: 'Blue', css: '#3498db', freeAlias: 'B', greedyAlias: 'C' },
-    { token: 'd', name: 'Yellow', css: '#f1c40f', freeAlias: 'Y', greedyAlias: 'D' },
-    { token: 'e', name: 'Purple', css: '#9b59b6', freeAlias: 'P', greedyAlias: 'E' },
-    { token: 'f', name: 'Orange', css: '#e67e22', freeAlias: 'O', greedyAlias: 'F' },
+    // cssVar: the fill, from shared/css/tokens.css.
+    { token: 'a', name: 'Red', cssVar: '--coloring-red', freeAlias: 'R', greedyAlias: 'A' },
+    { token: 'b', name: 'Green', cssVar: '--coloring-green', freeAlias: 'G', greedyAlias: 'B' },
+    { token: 'c', name: 'Blue', cssVar: '--coloring-blue', freeAlias: 'B', greedyAlias: 'C' },
+    { token: 'd', name: 'Yellow', cssVar: '--coloring-yellow', freeAlias: 'Y', greedyAlias: 'D' },
+    { token: 'e', name: 'Purple', cssVar: '--coloring-purple', freeAlias: 'P', greedyAlias: 'E' },
+    { token: 'f', name: 'Orange', cssVar: '--coloring-orange', freeAlias: 'O', greedyAlias: 'F' },
 ];
 
 const COLORING_BY_TOKEN = Object.fromEntries(
@@ -196,7 +197,8 @@ const $ = selector => root.querySelector(selector);
 /** Show the chosen colors on the graph: fill, plus an alias in the label ("3: R"). */
 function colorGraph() {
   const styleOf = getComputedStyle(document.documentElement);
-  const blank = styleOf.getPropertyValue('--graph-node-fill').trim() || '#fff';
+  const token = name => styleOf.getPropertyValue(name).trim();
+  const blank = token('--graph-node-fill') || '#fff';
   view.cy.batch(() => {
     for (let i = 0; i < puzzle.n; i++) {
       const node = view.cy.getElementById(vertexId(i));
@@ -204,7 +206,7 @@ function colorGraph() {
       const alias = c ? (caseType === 'greedy' ? c.greedyAlias : c.freeAlias) : '';
       const displayName = c ? `${puzzle.names[i]}: ${alias}` : puzzle.names[i];
       node.data({ displayName, labelLen: displayName.length });
-      node.style('background-color', c ? c.css : blank);
+      node.style('background-color', c ? token(c.cssVar) : blank);
     }
   });
 }

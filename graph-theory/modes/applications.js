@@ -565,7 +565,7 @@ function renderPrompt() {
     const rows = puzzle.stations.map((s, i) => `
       <tr><th scope="row">${escapeHtml(s)}</th>${puzzle.distanceMiles[i].map(d => `<td>${d.toFixed(2)}</td>`).join('')}</tr>`).join('');
     $('.app-data').innerHTML = `
-      <div class="distance-table-wrap">
+      <div class="distance-table-wrap" tabindex="0" role="region" aria-label="${copy.tableCaption}">
         <table class="distance-table">
           <caption class="sr-only">${copy.tableCaption}</caption>
           <thead><tr><th scope="col">Distance Table</th>${header}</tr></thead>

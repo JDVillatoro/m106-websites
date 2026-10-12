@@ -1,7 +1,11 @@
 // Math typesetting with MathJax, and reading and writing fractions.
 //
-// A page that shows math loads MathJax itself, with a pinned version:
+// A page that shows math loads MathJax itself, with a pinned version and its
+// menu off (the menu makes every piece of math focusable):
+//   <script>window.MathJax = { options: { enableMenu: false } };</script>
 //   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
+// MathJax's text isn't a reliable accessible name: give a button whose label
+// is math an aria-label with plainMath(label).
 // Math is written in TeX between \( and \), e.g. '\\(A_{1}\\)' in JavaScript.
 
 // MathJax shouldn't typeset two things at once, so calls wait in line.

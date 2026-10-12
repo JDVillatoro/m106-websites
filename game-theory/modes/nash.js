@@ -2,8 +2,9 @@
 // Ported from the Nash section of legacy/game-theory/script.js.
 
 import { generateRandomPayoffs, calculateNashEquilibria } from '../lib/game.js';
-import { renderPayoffMatrix } from '../lib/matrix-view.js';
-import { feedbackHtml, showFeedback, hideFeedback } from '../../shared/js/ui.js';
+import { renderPayoffMatrix, strategyLabel } from '../lib/matrix-view.js';
+import { plainMath } from '../../shared/js/math.js';
+import { escapeHtml, feedbackHtml, showFeedback, hideFeedback } from '../../shared/js/ui.js';
 
 const COPY = {
   matrixTitle: 'Payoff matrix',
@@ -11,12 +12,28 @@ const COPY = {
   submit: 'Submit answer',
   correct: 'You found every pure Nash equilibrium.',
   correctNone: 'There are no pure Nash equilibria in this game.',
-  incorrectNone: 'There are no pure Nash equilibria in this game. The crossed-out cells are not equilibria.',
-  incorrect: 'Cells outlined in red are equilibria you missed. Crossed-out cells are not equilibria.',
+  // After a wrong answer the message names the cells, so it doesn't depend
+  // on seeing the marks in the matrix. Cells are (row strategy, column strategy).
+  answer: cells => cells.length === 1
+    ? `The pure Nash equilibrium is ${cells[0]}.`
+    : `The pure Nash equilibria are ${listText(cells)}.`,
+  notOne: cells => cells.length === 1 ? `${cells[0]} is not one.` : `${listText(cells)} are not equilibria.`,
+  noneSoNotOne: cells => `There are no pure Nash equilibria in this game, so ${
+    cells.length === 1 ? `${cells[0]} is not one` : `${listText(cells)} are not equilibria`}.`,
 };
+
+/** "a", "a and b", "a, b and c". */
+const listText = items => (items.length < 2 ? items.join('')
+  : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`);
 
 let root, score, problem, cells, selected, answered;
 const $ = selector => root.querySelector(selector);
+
+/** A cell as text: "(B, X)", from the same labels the matrix shows. */
+function cellName(key) {
+  const [i, j] = key.split('-').map(Number);
+  return `(${plainMath(strategyLabel(i, 1, problem.rows))}, ${plainMath(strategyLabel(j, 2, problem.cols))})`;
+}
 
 function newQuestion() {
   const rows = Math.floor(Math.random() * 2) + 2;
@@ -54,11 +71,17 @@ function submit() {
   }
 
   let message;
-  if (correct) message = equilibria.size ? COPY.correct : COPY.correctNone;
-  else message = equilibria.size ? COPY.incorrect : COPY.incorrectNone;
+  if (correct) {
+    message = equilibria.size ? COPY.correct : COPY.correctNone;
+  } else {
+    const wrong = [...cells.keys()].filter(key => selected.has(key) && !equilibria.has(key)).map(cellName);
+    const right = [...cells.keys()].filter(key => equilibria.has(key)).map(cellName);
+    if (!equilibria.size) message = COPY.noneSoNotOne(wrong);
+    else message = [COPY.answer(right), wrong.length ? COPY.notOne(wrong) : ''].filter(Boolean).join(' ');
+  }
 
   $('.nash-submit').hidden = true;
-  showFeedback($('.feedback'), { correct, messageHtml: message });
+  showFeedback($('.feedback'), { correct, messageHtml: escapeHtml(message) });
   $('.feedback-next').focus();
 }
 

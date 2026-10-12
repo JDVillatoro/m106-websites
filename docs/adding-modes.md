@@ -1,7 +1,8 @@
 # Adding modes and topics
 
-How the site is put together, and how to add to it. For how it got this way,
-see [merge-history.md](merge-history.md).
+How the site is put together, and how to add to it. For the look and the
+rules that keep it consistent and accessible, see [design.md](design.md); for
+how it got this way, [merge-history.md](merge-history.md).
 
 The site is a **hub** page linking to **topics** (graph theory, game theory).
 Each topic page lists its **modes** as cards and opens one at a time. A mode
@@ -246,11 +247,17 @@ Strategy labels are TeX (`strategyLabel(index, player, count)` gives A, B, C
 
 ## Scoring
 
-Every exercise shows **Questions**, **Points** (fractions allowed) and
-**Score** (points ÷ questions). Scores are saved in the browser under
-`m106:<topic>:<mode>:score`, so a reload keeps them and Reset clears them.
+Every exercise shows its score as points out of questions ("2.5 / 4
+points", or "No score"), in the score box beside the mode and on its card
+(`describeScore()` in `shared/js/score.js`). Scores are saved in the browser
+under `m106:<topic>:<mode>:score`, so a reload keeps them and "Reset score"
+clears them.
 
 ## Styling
+
+Read [design.md](design.md) first: its rules for modes (tokens only, shared
+components, 44px targets, never color alone, focus, names) apply to every
+change.
 
 - Colors, fonts and sizes come only from the variables in
   `shared/css/tokens.css`. A redesign should mostly mean editing that file.
@@ -259,7 +266,7 @@ Every exercise shows **Questions**, **Points** (fractions allowed) and
 - Styles for one mode go in `modes/<name>.css`, loaded by the mode. Styles a
   topic needs before any mode draws (sizes of graph areas, matrices) go in
   `<topic>/lib/` and are linked from the topic's `index.html`.
-- Check pages at phone width (375 pixels): nothing should scroll sideways.
+- Check pages at 320 pixels wide: nothing should scroll sideways.
 
 ## Testing
 

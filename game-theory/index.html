@@ -8,7 +8,9 @@
   <link rel="stylesheet" href="../shared/css/base.css">
   <link rel="stylesheet" href="../shared/css/components.css">
   <link rel="stylesheet" href="lib/matrix-view.css">
-  <!-- Typesets the TeX in strategy labels (shared/js/math.js). -->
+  <!-- Typesets the TeX in strategy labels (shared/js/math.js). No menu: it
+       makes every label a stop for the Tab key, even inside buttons. -->
+  <script>window.MathJax = { options: { enableMenu: false } };</script>
   <script async src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js"></script>
 </head>
 <body>

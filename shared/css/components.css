@@ -93,7 +93,7 @@
 /* Hub: one card per topic --------------------------------------------- */
 .topic-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
   gap: var(--space-lg);
   list-style: none;
 }
@@ -155,7 +155,7 @@
 /* Topic page: the mode list (topic-shell.js) ---------------------------- */
 .mode-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
   gap: var(--space-md);
   list-style: none;
 }

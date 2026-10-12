@@ -2,7 +2,7 @@
 // Not scored. Ported from the play section of legacy/game-theory/script.js.
 
 import { renderPayoffMatrix, strategyLabel } from '../lib/matrix-view.js';
-import { typeset, clearMath } from '../../shared/js/math.js';
+import { typeset, clearMath, plainMath } from '../../shared/js/math.js';
 import { escapeHtml, loadStylesheet } from '../../shared/js/ui.js';
 
 const text = name => `\\(\\text{${name}}\\)`;
@@ -109,7 +109,8 @@ function render() {
 
   clearMath($('.strategy-buttons'));
   $('.strategy-buttons').innerHTML = Array.from({ length: rows }, (_, i) =>
-    `<button type="button" class="choice-btn strategy-btn" data-index="${i}"${editing ? ' disabled' : ''}>${escapeHtml(label(i, 1))}</button>`).join('');
+    `<button type="button" class="choice-btn strategy-btn" data-index="${i}"${editing ? ' disabled' : ''}
+      aria-label="${escapeHtml(plainMath(label(i, 1)))}">${escapeHtml(label(i, 1))}</button>`).join('');
   typeset($('.strategy-buttons'));
 }
 

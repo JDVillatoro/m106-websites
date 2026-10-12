@@ -7,7 +7,9 @@ topics (graph theory, game theory); each topic page lists its modes and opens
 one at a time (`graph-theory/#degree`).
 
 Read `docs/adding-modes.md` before changing or adding a mode: it describes
-the mode format, the shared helpers and the tests.
+the mode format, the shared helpers and the tests. `docs/design.md` has the
+look and the rules every mode follows (tokens only, shared components, 44px
+targets, never color alone, accessible names).
 `docs/merge-history.md` records how the two original sites were merged, what
 changed on purpose, and what's still to do.
 

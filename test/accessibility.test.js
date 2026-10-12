@@ -1,10 +1,9 @@
 // Automated accessibility checks (axe-core, WCAG 2.2 A and AA rules) on every
 // page of the site, at desktop and phone width, as each page first opens.
 //
-// EXPECTED lists the failures the site has now. The test fails on any other
+// EXPECTED lists known failures (none now). The test fails on any other
 // failure, and also when an expected one no longer happens, so that fixing
-// something means removing it from the list. The goal is an empty list
-// (docs/redesign-plan.md, pass 6).
+// something means removing it from the list.
 //
 // axe finds only some problems (contrast, names, labels, structure); it
 // doesn't replace trying a page with the keyboard and a screen reader.
@@ -27,23 +26,7 @@ const WIDTHS = [1280, 390];
  * happens for some of a mode's random questions, so it isn't required.
  */
 const EXPECTED = [
-  {
-    rule: 'button-name',
-    pages: ['game-theory-play', 'game-theory-best-response'],
-    mathJax: true,
-    why: 'Strategy buttons whose label is typeset by MathJax have an empty accessible name in Chromium (the label is a math child), and MathJax adds a focusable element inside the button.',
-  },
-  {
-    rule: 'label-content-name-mismatch',
-    pages: ['game-theory-nash'],
-    why: 'Clickable payoff cells show "0 1" but are named "A and X: Player 1 gets 0, Player 2 gets 1"; speech input users say what they see.',
-  },
-  {
-    rule: 'scrollable-region-focusable',
-    pages: ['graph-theory-applications'],
-    sometimes: true,
-    why: 'Only in frequency assignment questions: the distance table scrolls sideways on phones (.distance-table-wrap) but can\'t be reached with the keyboard to scroll it.',
-  },
+  // Empty: every page passes. Add an entry only with a reason, and fix it soon.
 ];
 
 const site = useBrowser();

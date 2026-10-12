@@ -22,7 +22,7 @@ Commits from before the import have the files at the top level:
 | Paths | Always relative, since the site lives under `/m106-websites/`. |
 | Modes | Anything in a topic page is a mode; an exercise is a mode that keeps score. Make a Graph and Play are modes without scores. |
 | Scores | Saved in the browser for every exercise (game theory didn't save before). |
-| Look | The old look, rebuilt on design tokens so it can be redesigned later. |
+| Look | The old look, rebuilt on design tokens so it could be redesigned later (it was, right after: [design.md](design.md)). |
 
 ## Steps
 
@@ -87,7 +87,7 @@ Commits from before the import have the files at the top level:
 
 ## Still to do
 
-- **Visual redesign.** In progress, in passes: `docs/redesign-plan.md`.
+- Accessibility gaps listed in [design.md](design.md) ("Known gaps").
 - **Isomorphism:** a "different number of squares" reason (TODO in
   `graph-theory/modes/iso.js`).
 - Possible: partial credit in Dominance (per pair) instead of all or nothing.

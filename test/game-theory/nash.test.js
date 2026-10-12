@@ -17,6 +17,10 @@ async function equilibriaOnScreen(page) {
   return { keys: cells.map(c => c.key), equilibria: calculateNashEquilibria(payoffs, rows, cols) };
 }
 
+/** "(B, X)" for key "1-0" (at most 3 strategies each, so plain letters). */
+const cellName = key => { const [i, j] = key.split('-').map(Number); return `(${'ABC'[i]}, ${'XYZ'[j]})`; };
+const listText = items => (items.length < 2 ? items.join('') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`);
+
 const cell = (page, key) => page.locator(`.mode-panel:not([hidden]) .matrix-cell[data-key="${key}"]`);
 
 test('select the equilibria, feedback, score', async () => {
@@ -31,7 +35,8 @@ test('select the equilibria, feedback, score', async () => {
   assert.equal(await scoreText(page), '1 / 1 points');
 
   // Wrong answer: select every cell that isn't an equilibrium, plus none of
-  // the equilibria. Missed ones get outlined, wrong ones crossed out.
+  // the equilibria. The message names them; missed ones get outlined, wrong
+  // ones crossed out.
   await page.click('.feedback-next');
   assert.ok(await page.locator('.feedback').isHidden());
   let keys;
@@ -40,6 +45,15 @@ test('select the equilibria, feedback, score', async () => {
   for (const key of wrong) await cell(page, key).click();
   await page.click('.nash-submit');
   assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
+  const right = keys.filter(k => equilibria.has(k)).map(cellName);
+  const notOne = wrong.length === 1 ? `${cellName(wrong[0])} is not one` : `${listText(wrong.map(cellName))} are not equilibria`;
+  let expected;
+  if (right.length === 0) expected = `There are no pure Nash equilibria in this game, so ${notOne}.`;
+  else {
+    expected = right.length === 1 ? `The pure Nash equilibrium is ${right[0]}.` : `The pure Nash equilibria are ${listText(right)}.`;
+    if (wrong.length) expected += ` ${notOne}.`;
+  }
+  assert.equal(await page.locator('.feedback-message').innerText(), expected);
   for (const key of equilibria) assert.match(await cell(page, key).getAttribute('class'), /is-missed/);
   for (const key of wrong) assert.match(await cell(page, key).getAttribute('class'), /is-crossed/);
 
@@ -64,7 +78,7 @@ test('cells can be chosen with the keyboard', async () => {
   assert.equal(await first.getAttribute('aria-pressed'), 'true');
   await page.keyboard.press('Enter');
   assert.equal(await first.getAttribute('aria-pressed'), 'false');
-  assert.match(await first.getAttribute('aria-label'), /^A and X: Player 1 gets -?\d+, Player 2 gets -?\d+$/);
+  assert.match(await first.getAttribute('aria-label'), /^(-?\d+), (-?\d+) \(A and X: Player 1 gets \1, Player 2 gets \2\)$/);
   assert.deepEqual(errors, []);
   await close();
 });

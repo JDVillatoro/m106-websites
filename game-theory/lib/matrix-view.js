@@ -66,7 +66,8 @@ export function renderPayoffMatrix(container, {
       const key = `${i}-${j}`;
       const { p1, p2 } = payoffs[key];
       const where = `${plainMath(rowLabels[i])} and ${plainMath(colLabels[j])}`;
-      const spoken = `${where}: Player 1 gets ${p1}, Player 2 gets ${p2}`;
+      // Starts with the payoffs as shown, so speech input ("click -4 -5") works.
+      const spoken = `${p1}, ${p2} (${where}: Player 1 gets ${p1}, Player 2 gets ${p2})`;
       const attrs = clickable
         ? ` tabindex="0" role="button" aria-pressed="false" aria-label="${escapeHtml(spoken)}"`
         : '';

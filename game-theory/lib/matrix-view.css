@@ -93,8 +93,8 @@
 
 /* States, each shown by more than color: selected (blue, check), right
    (green, check), chosen but wrong (red, crossed out, cross), an answer that
-   wasn't chosen (dashed red outline). Nash's feedback describes the last
-   two as "crossed-out" and "outlined in red". */
+   wasn't chosen (dashed red outline). Feedback names the cells in words
+   (Nash, Best Response), so these only add to it. */
 .matrix-cell.is-selected::after,
 .matrix-cell.is-correct::after,
 .matrix-cell.is-answer::after,

@@ -23,7 +23,10 @@ const COPY = {
   ],
   incomplete: 'Choose a relation for every pair.',
   submit: 'Submit answer',
-  result: (right, total) => `You got ${right}/${total} (${Math.round(right / total * 100)}%). The correct relations are shown above.`,
+  // Names each pair that was wrong and its answer, so the message doesn't
+  // depend on seeing which menus are marked.
+  result: (right, total) => `You got ${right}/${total} (${Math.round(right / total * 100)}%).`,
+  wrongPair: (a, b, answer) => `${a} vs ${b}: the answer is “${answer}”.`,
   allRight: total => `All ${total} relations are right.`,
 };
 
@@ -51,7 +54,7 @@ function pairsHtml(player) {
       html += `
         <div class="dominance-pair">
           <label for="${id}">${escapeHtml(COPY.versus(a, b))}</label>
-          <select id="${id}" data-answer="${answer}">
+          <select id="${id}" data-answer="${answer}" data-a="${escapeHtml(plainMath(a))}" data-b="${escapeHtml(plainMath(b))}">
             <option value="">${COPY.choose}</option>
             ${COPY.options(plainMath(a), plainMath(b)).map(([v, t]) => `<option value="${v}">${escapeHtml(t)}</option>`).join('')}
           </select>
@@ -81,9 +84,14 @@ function submit() {
   }
   $('.input-error').textContent = '';
   let right = 0;
+  const wrongPairs = [];
   for (const s of selects) {
     const ok = s.value === s.dataset.answer;
     if (ok) right++;
+    else {
+      const { a, b, answer } = s.dataset;
+      wrongPairs.push(COPY.wrongPair(a, b, COPY.options(a, b).find(([v]) => v === answer)[1]));
+    }
     // Show the right answer in each menu: green if it was theirs, red if not.
     s.value = s.dataset.answer;
     s.classList.add(ok ? 'is-right' : 'is-wrong');
@@ -94,7 +102,8 @@ function submit() {
   $('.dom-submit').disabled = true;
   showFeedback($('.feedback'), {
     correct,
-    messageHtml: escapeHtml(correct ? COPY.allRight(selects.length) : COPY.result(right, selects.length)),
+    messageHtml: escapeHtml(correct ? COPY.allRight(selects.length)
+      : [COPY.result(right, selects.length), ...wrongPairs].join(' ')),
   });
   $('.feedback-next').focus();
 }

@@ -200,6 +200,11 @@ export function createGraphView(parent, { label = 'Graph diagram', zoomButtons =
     .then(() => cy.style(graphStyle()))
     .catch(() => {});
 
+  // TODO(refactor): moving vertices (drag) and panning need a mouse or touch.
+  // Nothing needs them to answer, but the hints suggest dragging, and
+  // Isomorphism suggests rearranging to compare. A keyboard way (choose a
+  // vertex, move it with the arrow keys) would need its own controls.
+
   // Fit the graph again whenever the area changes size: window resized,
   // phone rotated, or panel shown after being hidden.
   const viewport = wrapper.querySelector('.graph-viewport');

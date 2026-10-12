@@ -23,9 +23,8 @@
 }
 
 /* After submitting: each menu shows the right answer, with a check if it
-   was theirs and a cross if not. (Disabled, but kept readable.)
-   TODO(refactor): the check and cross aren't read by screen readers; the
-   feedback only says how many were right. */
+   was theirs and a cross if not. (Disabled, but kept readable.) The
+   feedback names the wrong pairs, so the marks only add to it. */
 .dominance-pair select:disabled {
   opacity: 1;
   color: var(--color-text);

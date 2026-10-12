@@ -53,7 +53,8 @@ function newQuestion() {
   $('.answer-title').textContent = COPY.answerTitle(responsePlayer);
   const count = responsePlayer === 1 ? rows : cols;
   $('.response-buttons').innerHTML = Array.from({ length: count }, (_, i) => `
-    <button type="button" class="choice-btn" data-index="${i}" aria-pressed="false">${escapeHtml(labelOf(i, responsePlayer))}</button>`).join('');
+    <button type="button" class="choice-btn" data-index="${i}" aria-pressed="false"
+      aria-label="${escapeHtml(plainMath(labelOf(i, responsePlayer)))}">${escapeHtml(labelOf(i, responsePlayer))}</button>`).join('');
   typeset([$('.prompt'), $('.response-buttons')]);
 
   $('.br-submit').disabled = false;

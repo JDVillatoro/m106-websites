@@ -3,7 +3,7 @@
    changing the look of the site should mostly mean editing this file.
 
    Values borrowed from Indiana University's Rivet design system
-   (docs/redesign-plan.md). Colors are named by what they're for, not their
+   (docs/design.md). Colors are named by what they're for, not their
    hue. Text and backgrounds meant to go together meet WCAG AA contrast. */
 
 /* Fonts, self-hosted (vendor/fonts/, SIL Open Font License). Latin subset
@@ -77,6 +77,16 @@
   --graph-edge: var(--color-border-strong);
   --graph-edge-label: var(--color-surface);
   --graph-edge-label-bg: var(--color-text-secondary);
+
+  /* Graph Coloring's colors (graph-theory/modes/coloring.js). Light enough
+     that the dark vertex label reads on each (5.5:1 or more); vertices also
+     show their color's letter, so color is never the only sign. */
+  --coloring-red: #f28b82;
+  --coloring-green: #6fcf97;
+  --coloring-blue: #7ab8f0;
+  --coloring-yellow: #fde047;
+  --coloring-purple: #c4a1e8;
+  --coloring-orange: #f9a85b;
 
   /* Type */
   --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
