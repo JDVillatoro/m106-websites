@@ -2,7 +2,7 @@
 
 .dominance-group h3 {
   margin: 12px 0 6px;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .dominance-pair {
@@ -30,11 +30,11 @@
 }
 
 .dominance-pair select.is-right {
-  border-color: var(--color-success);
-  background: var(--color-success-bg);
+  border-color: var(--color-correct);
+  background: var(--color-correct-bg);
 }
 
 .dominance-pair select.is-wrong {
-  border-color: var(--color-danger);
-  background: var(--color-danger-bg);
+  border-color: var(--color-incorrect);
+  background: var(--color-incorrect-bg);
 }

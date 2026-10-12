@@ -14,7 +14,7 @@ build step.
 |---|---|
 | `graph-theory/`, `game-theory/` | Topic pages: `modes/` has one file per mode, `lib/` the topic's math. |
 | `shared/` | Styles and code used by every page. |
-| `vendor/` | Copies of outside libraries (Cytoscape). |
+| `vendor/` | Copies of outside libraries (Cytoscape) and fonts. |
 | `test/` | Tests (`npm test`). |
 | `docs/` | [How to add modes and topics](docs/adding-modes.md); [how the two old sites were merged](docs/merge-history.md). |
 

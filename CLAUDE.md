@@ -21,7 +21,8 @@ changed on purpose, and what's still to do.
   and spec `.md` if any) and `lib/` (the topic's math, plus drawing code).
   Graph theory's math is in `lib/graph/`, one file per subject (`core.js`
   describes the graph object); modes import from the file they need.
-- `vendor/`: pinned copies of Cytoscape and its SVG plugin.
+- `vendor/`: pinned copies of Cytoscape and its SVG plugin; `vendor/fonts/`:
+  the site's fonts (Source Sans 3, Gelasio) with their licenses.
 - `test/`: `npm test` runs Node unit tests and Playwright browser tests (the
   site served under `/m106-websites/`, as on GitHub Pages): `site.test.js`
   for shared behavior, `test/<topic>/<mode>.test.js` per mode, helpers in

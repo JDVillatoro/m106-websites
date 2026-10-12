@@ -87,8 +87,7 @@ Commits from before the import have the files at the top level:
 
 ## Still to do
 
-- **Visual redesign.** The look is still the old one. Colors, fonts and
-  sizes are all in `shared/css/tokens.css`, which is where to start.
+- **Visual redesign.** In progress, in passes: `docs/redesign-plan.md`.
 - **Isomorphism:** a "different number of squares" reason (TODO in
   `graph-theory/modes/iso.js`).
 - Possible: partial credit in Dominance (per pair) instead of all or nothing.

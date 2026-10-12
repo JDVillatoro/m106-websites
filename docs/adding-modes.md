@@ -45,7 +45,7 @@ shared/
   modes.js                    the topic's modes, in tab order
   lib/                        the topic's math, and its drawing code
   modes/<name>.js             one file per mode (+ .css, + .md spec if any)
-vendor/                       Cytoscape and its SVG plugin
+vendor/                       Cytoscape and its SVG plugin; fonts/
 test/                         npm test; see "Testing"
 docs/                         this file and the merge history
 ```
@@ -277,6 +277,10 @@ page names (`hub`, `graph-theory`, `graph-theory-degree`) to save only those.
   loaded with plain `<script>` tags by the graph theory page.
 - **MathJax** 3.2.2 from the jsDelivr CDN, loaded by the game theory page.
   Without it the site still works; labels show as TeX.
+- **Fonts:** Source Sans 3 (400, 600, 700) and Gelasio (600), SIL Open Font
+  License, Latin subset `woff2` files from Fontsource (`@fontsource/source-sans-3`
+  5.3.1, `@fontsource/gelasio` 5.3.0) in `vendor/fonts/` with their licenses.
+  `shared/css/tokens.css` declares them (`@font-face`).
 
 ## Checklists
 

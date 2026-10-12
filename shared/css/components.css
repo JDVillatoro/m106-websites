@@ -10,7 +10,7 @@
 }
 
 .topic-card {
-  background: var(--color-surface-tint);
+  background: var(--color-surface-muted);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
 }
@@ -20,7 +20,7 @@
 }
 
 .topic-card h2 a {
-  color: var(--color-accent);
+  color: var(--color-action);
   text-decoration: none;
 }
 
@@ -29,7 +29,7 @@
 }
 
 .topic-card p {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 /* Mode tabs ------------------------------------------------------------ */
@@ -43,9 +43,9 @@
 
 .mode-tab {
   padding: 10px var(--space-xl);
-  border-radius: var(--radius-sm);
-  background: var(--color-tab);
-  color: var(--color-text-muted);
+  border-radius: var(--radius-md);
+  background: var(--color-border);
+  color: var(--color-text-secondary);
   font-weight: bold;
   text-decoration: none;
   white-space: nowrap;
@@ -56,8 +56,8 @@
 }
 
 .mode-tab[aria-current="page"] {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-action);
+  color: var(--color-on-action);
 }
 
 /* Mode panel (one per mode, built by topic-shell.js) ------------------- */
@@ -69,14 +69,14 @@
 }
 
 .mode-status {
-  color: var(--color-text-subtle);
+  color: var(--color-text-secondary);
   font-style: italic;
 }
 
 .mode-error {
-  background: var(--color-danger-bg);
-  border-left: 4px solid var(--color-danger);
-  border-radius: var(--radius-sm);
+  background: var(--color-incorrect-bg);
+  border-left: 4px solid var(--color-incorrect);
+  border-radius: var(--radius-md);
   padding: var(--space-lg);
 }
 
@@ -84,12 +84,12 @@
 
 /* Short explanation of what to do; shown at the top of a mode. */
 .info {
-  background: var(--color-surface-tint);
+  background: var(--color-surface-muted);
   padding: var(--space-md);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   margin-bottom: var(--space-xl);
   text-align: center;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .section {
@@ -98,14 +98,14 @@
 
 /* Smaller line under a heading. */
 .subtitle {
-  color: var(--color-text-subtle);
+  color: var(--color-text-secondary);
   font-style: italic;
   margin-bottom: var(--space-sm);
 }
 
 /* Tip shown below a graph or matrix. */
 .hint {
-  color: var(--color-text-subtle);
+  color: var(--color-text-secondary);
   text-align: center;
   margin-bottom: var(--space-lg);
 }
@@ -133,7 +133,7 @@
 
 /* Message about badly formatted input, shown under the answer row. */
 .input-error {
-  color: var(--color-danger);
+  color: var(--color-incorrect);
   margin-top: var(--space-sm);
 }
 
@@ -143,52 +143,21 @@
 
 input.is-invalid,
 select.is-invalid {
-  border-color: var(--color-danger);
-  outline: 2px solid var(--color-danger);
+  border-color: var(--color-incorrect);
+  outline: 2px solid var(--color-incorrect);
 }
 
 /* Buttons --------------------------------------------------------------- */
 
-/* Submit, Next and other main actions. */
-.primary-btn {
-  background: var(--color-accent-strong);
-}
-
-.primary-btn:hover:not(:disabled) {
-  background: var(--color-accent-strong-hover);
-}
-
-.reset-btn {
-  background: var(--page-background);
-  padding: 12px 24px;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-}
-
-.reset-btn:hover:not(:disabled) {
-  background: var(--page-background);
-}
-
-/* Adding things (edges, rows): green. */
-.add-btn {
-  background: var(--color-success);
-}
-
-.add-btn:hover:not(:disabled) {
-  background: var(--color-success-hover);
-}
+/* Submit, Next and other main actions (.primary-btn), resetting the score
+   (.reset-btn), adding (.add-btn) and removing (.danger-btn) things: the
+   plain button look for now. Green and red are only for correct and
+   incorrect answers. */
 
 /* Small button inside a row, e.g. "Remove". */
 .small-btn {
   padding: 6px 12px;
-  font-size: 14px;
-}
-
-.danger-btn {
-  background: var(--color-danger);
-}
-
-.danger-btn:hover:not(:disabled) {
-  background: var(--color-danger-hover);
+  font-size: var(--font-size-sm);
 }
 
 /* Buttons side by side under a form. */
@@ -237,40 +206,40 @@ select.is-invalid {
 .choice-btn {
   padding: 12px 32px;
   font-weight: bold;
-  border-radius: 6px;
-  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.25);
+  border-radius: var(--radius-md);
 }
 
+/* A ring a gap away from the button, as the selected button keeps its color. */
 .choice-btn.is-selected {
-  box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.35);
+  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 5px var(--color-text);
 }
 
 .choice-btn.is-correct,
 .choice-btn.is-correct:hover:not(:disabled) {
-  background: var(--color-success);
+  background: var(--color-correct);
 }
 
 .choice-btn.is-wrong,
 .choice-btn.is-wrong:hover:not(:disabled) {
-  background: var(--color-danger);
+  background: var(--color-incorrect);
 }
 
 /* Feedback after an answer ---------------------------------------------- */
 .feedback {
   background: var(--color-surface-muted);
   padding: var(--space-lg);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   margin-bottom: var(--space-xl);
 }
 
 .feedback.is-correct {
-  background: var(--color-success-bg);
-  border-left: 4px solid var(--color-success);
+  background: var(--color-correct-bg);
+  border-left: 4px solid var(--color-correct);
 }
 
 .feedback.is-incorrect {
-  background: var(--color-danger-bg);
-  border-left: 4px solid var(--color-danger);
+  background: var(--color-incorrect-bg);
+  border-left: 4px solid var(--color-incorrect);
 }
 
 .feedback h2 {
@@ -283,9 +252,9 @@ select.is-invalid {
 
 /* Scoreboard (exercises only) ------------------------------------------- */
 .scoreboard {
-  background: var(--color-surface-tint);
+  background: var(--color-surface-muted);
   padding: var(--space-lg);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
 }
 
 .scoreboard-values {
@@ -296,13 +265,13 @@ select.is-invalid {
 }
 
 .scoreboard-values p {
-  font-size: 18px;
+  font-size: var(--font-size-lg);
   font-weight: bold;
-  color: var(--color-accent);
+  color: var(--color-text-secondary);
 }
 
 .scoreboard-values span {
-  color: var(--color-accent-strong);
+  color: var(--color-text);
 }
 
 /* Narrow screens: smaller tabs, so several fit on a line. */
@@ -313,6 +282,6 @@ select.is-invalid {
 
   .mode-tab {
     padding: 6px 10px;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
   }
 }

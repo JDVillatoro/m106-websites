@@ -8,19 +8,19 @@
   margin-bottom: 8px;
   padding: 6px 8px;
   background: var(--color-surface);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
 
 .edge-input-row .edge-number {
   font-weight: 600;
   min-width: 24px;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
 
 .edge-input-row label {
-  color: var(--color-text-muted);
-  font-size: 14px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
 }
 
 .edge-input-row input[type="text"] {

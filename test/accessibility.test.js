@@ -23,14 +23,10 @@ const WIDTHS = [1280, 390];
  * Known failures: axe rule id, the pages it fails on (names from sitePages(),
  * or 'any' for failures all over the site, which must happen on at least one
  * page), and why. `mathJax: true`: only happens once MathJax has loaded from
- * its CDN, so it isn't required when it didn't load.
+ * its CDN, so it isn't required when it didn't load. `sometimes: true`: only
+ * happens for some of a mode's random questions, so it isn't required.
  */
 const EXPECTED = [
-  {
-    rule: 'color-contrast',
-    pages: 'any',
-    why: 'The old look: accent #667eea and white on it (3.66:1), white on the Flat UI green and red buttons. Redesign pass 2.',
-  },
   {
     rule: 'button-name',
     pages: ['game-theory', 'game-theory-play', 'game-theory-best-response'],
@@ -45,7 +41,8 @@ const EXPECTED = [
   {
     rule: 'scrollable-region-focusable',
     pages: ['graph-theory-applications'],
-    why: 'The distance table scrolls sideways on phones (.distance-table-wrap) but can\'t be reached with the keyboard to scroll it.',
+    sometimes: true,
+    why: 'Only in frequency assignment questions: the distance table scrolls sideways on phones (.distance-table-wrap) but can\'t be reached with the keyboard to scroll it.',
   },
 ];
 
@@ -81,7 +78,7 @@ test('accessibility: every page, desktop and phone', { concurrency: 4 }, async t
 after(() => {
   // Runs once every page has been checked; a failure here fails the file.
   const fixed = [];
-  for (const e of EXPECTED) {
+  for (const e of EXPECTED.filter(e => !e.sometimes)) {
     const failedOn = seen.get(e.rule) ?? new Set();
     if (e.pages === 'any') {
       if (failedOn.size === 0) fixed.push(`${e.rule} (all pages)`);

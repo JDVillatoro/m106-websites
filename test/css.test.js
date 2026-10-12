@@ -15,12 +15,7 @@ const TOKENS = 'shared/css/tokens.css';
  * Raw values allowed for now: [file, the value as written]. Each must still
  * be in the file, so fixing one means removing it here.
  */
-const EXCEPTIONS = [
-  // Colored shadows from the old look; redesign pass 2 removes them.
-  ['shared/css/components.css', 'rgba(102, 126, 234, 0.3)'],
-  ['shared/css/components.css', 'rgba(102, 126, 234, 0.25)'],
-  ['shared/css/components.css', 'rgba(118, 75, 162, 0.35)'],
-];
+const EXCEPTIONS = [];
 
 // CSS color keywords. `transparent`, `currentColor` and `inherit` are fine.
 const COLOR_NAMES = new Set(`aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond

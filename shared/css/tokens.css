@@ -1,66 +1,107 @@
 /* Design tokens: every color, font, size and shadow the site uses.
-   Other stylesheets use only these variables, so changing the look of the
-   site should mostly mean editing this file.
+   Other stylesheets use only these variables (test/css.test.js checks), so
+   changing the look of the site should mostly mean editing this file.
 
-   These values reproduce the look of the two original sites.
-   TODO: visual redesign (see docs/merge-history.md, "Still to do"). */
+   Values borrowed from Indiana University's Rivet design system
+   (docs/redesign-plan.md). Colors are named by what they're for, not their
+   hue. Text and backgrounds meant to go together meet WCAG AA contrast. */
+
+/* Fonts, self-hosted (vendor/fonts/, SIL Open Font License). Latin subset
+   only: other characters (→, ≥, ≠) come from the fallback fonts. */
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../vendor/fonts/source-sans-3-latin-400-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../../vendor/fonts/source-sans-3-latin-600-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Source Sans 3';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../../vendor/fonts/source-sans-3-latin-700-normal.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Gelasio';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../../vendor/fonts/gelasio-latin-600-normal.woff2') format('woff2');
+}
 
 :root {
-  /* Colors */
-  --color-accent: #667eea;
-  --color-accent-hover: #5568d3;
-  --color-accent-strong: #764ba2;
-  --color-accent-strong-hover: #653a8a;
-  --color-success: #27ae60;
-  --color-success-hover: #229954;
-  --color-success-bg: #d4edda;
-  --color-danger: #e74c3c;
-  --color-danger-hover: #c0392b;
-  --color-danger-bg: #f8d7da;
-  --color-warning: #e67e22;
-  --color-highlight: #ffc107;
-  --color-highlight-bg: #fff3cd;
+  /* Text */
+  --color-text: #243142;
+  --color-text-secondary: #4c5a69;
 
-  --color-text: #333;
-  --color-text-muted: #555;
-  --color-text-subtle: #666;
-  --color-on-accent: #fff;
-
+  /* Backgrounds and lines */
   --color-surface: #fff;
-  --color-surface-tint: #f0f4ff;
-  --color-surface-muted: #f9f9f9;
-  --color-tab: #ddd;
-  --color-border: #d6dbe9;
+  --color-surface-muted: #f8f9fa;
+  --color-border: #e2e7e9;
+  /* Lines that must be seen (form control edges, graph edges): 3:1 on white. */
+  --color-border-strong: #75838f;
+
+  /* Crimson: brand touches only (header line, "M106" block). */
+  --color-brand: #990000;
+
+  /* Blue: buttons, links, selection, focus. */
+  --color-action: #006298;
+  --color-action-hover: #004a73;
+  --color-action-tint: #e8f1f7;
+  --color-on-action: #fff;
+  --color-focus: #006298;
+
+  /* Correct and incorrect answers only. Never the only sign: pair them with
+     a word or an icon. */
+  --color-correct: #056e41;
+  --color-correct-bg: #eaf5ef;
+  --color-incorrect: #b11c00;
+  --color-incorrect-bg: #fbeeeb;
 
   /* Graph drawings (graph-theory/lib/render.js reads these for Cytoscape) */
-  --graph-area-border: rgba(0, 0, 0, 0.12);
-  --graph-node-fill: #fff;
-  --graph-node-border: #333;
-  --graph-node-label: #333;
-  --graph-edge: #888;
-  --graph-edge-label: #fff;
-
-  --page-background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
+  --graph-area-border: var(--color-border);
+  --graph-node-fill: var(--color-surface);
+  --graph-node-border: var(--color-text);
+  --graph-node-label: var(--color-text);
+  --graph-edge: var(--color-border-strong);
+  --graph-edge-label: var(--color-surface);
+  --graph-edge-label-bg: var(--color-text-secondary);
 
   /* Type */
-  --font-body: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  --font-mono: 'Courier New', monospace;
-  --font-size-body: 16px;
-  --font-size-h1: 2.5em;
-  --font-size-h2: 1.5em;
+  --font-body: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-heading: 'Gelasio', Georgia, 'Times New Roman', serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-body: 1.0625rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-h2: 1.5rem;
+  --font-size-h1: 2.25rem;
+  --line-height-body: 1.5;
 
-  /* Spacing */
-  --space-xs: 5px;
-  --space-sm: 10px;
-  --space-md: 15px;
-  --space-lg: 20px;
-  --space-xl: 30px;
+  /* Spacing (Rivet's scale: 4, 8, 16, 24, 32, 40px) */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-xxl: 2.5rem;
 
   /* Shapes */
-  --radius-sm: 5px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --shadow-page: 0 10px 40px rgba(0, 0, 0, 0.2);
-  --shadow-button-hover: 0 5px 15px rgba(102, 126, 234, 0.3);
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --shadow-page: 0 2px 8px rgba(36, 49, 66, 0.12);
   --page-max-width: 900px;
 }

@@ -77,10 +77,11 @@ function graphStyle() {
   const css = getComputedStyle(document.documentElement);
   const token = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
   const nodeFill = token('--graph-node-fill', '#fff');
-  const nodeBorder = token('--graph-node-border', '#333');
-  const nodeLabel = token('--graph-node-label', '#333');
-  const edge = token('--graph-edge', '#888');
+  const nodeBorder = token('--graph-node-border', '#243142');
+  const nodeLabel = token('--graph-node-label', '#243142');
+  const edge = token('--graph-edge', '#75838f');
   const edgeLabel = token('--graph-edge-label', '#fff');
+  const edgeLabelBg = token('--graph-edge-label-bg', '#4c5a69');
 
   return [
     {
@@ -106,7 +107,7 @@ function graphStyle() {
         'curve-style': 'bezier',
         'font-size': 12,
         'color': edgeLabel,
-        'text-background-color': edge,
+        'text-background-color': edgeLabelBg,
         'text-background-opacity': 1,
         'text-background-padding': 6,
       },

@@ -93,28 +93,58 @@ Done. Notes:
 
 ## Pass 2: tokens and fonts
 
-- [ ] Rewrite `shared/css/tokens.css` with the colors above, named by role
+- [x] Rewrite `shared/css/tokens.css` with the colors above, named by role
       rather than hue, e.g. `--color-text`, `--color-text-secondary`,
       `--color-border`, `--color-surface`, `--color-surface-muted`,
       `--color-brand` (crimson), `--color-action` / `-hover` (blue),
       `--color-action-tint` (selected background), `--color-correct` /
       `-bg`, `--color-incorrect` / `-bg`, `--color-focus`. Fewer than now:
       there are three gray text colors and two accents.
-- [ ] Spacing and radius from Rivet's scale (4, 8, 16, 24, 32, 40px; radius
+- [x] Spacing and radius from Rivet's scale (4, 8, 16, 24, 32, 40px; radius
       2px and 4px), type sizes in `rem`, `--font-body`, `--font-heading`.
-- [ ] Fonts: copy the `woff2` files and licenses into `vendor/fonts/`, with
+- [x] Fonts: copy the `woff2` files and licenses into `vendor/fonts/`, with
       `@font-face` rules (`font-display: swap`) and fallback stacks in
       `tokens.css`.
-- [ ] Update every stylesheet to the new names (`shared/css/`,
+- [x] Update every stylesheet to the new names (`shared/css/`,
       `graph-theory/lib/graph-view.css`, `game-theory/lib/matrix-view.css`,
       `modes/*.css`). Remove the exceptions from pass 1's raw-color test.
-- [ ] Graph drawing colors (`--graph-*`, read by `graph-theory/lib/render.js`):
+- [x] Graph drawing colors (`--graph-*`, read by `graph-theory/lib/render.js`):
       node border and label `#243142`, edges `#75838f` (3:1 against white
       for non-text graphics).
-- [ ] Remove `--page-background` (the gradient) and the colored shadows.
+- [x] Remove `--page-background` (the gradient) and the colored shadows.
 
 After this pass the site has the new colors on the old layout. That's
 expected.
+
+Done. Notes:
+
+- Two tokens beyond the list above: `--color-border-strong` (`#75838f`, for
+  lines that must be seen: form control edges, graph edges; 3:1 on white)
+  and `--graph-edge-label-bg` (`--color-text-secondary`): edge weights were
+  white on the edge color, 3.5:1 before and still under 4.5:1 with the new
+  gray, so `render.js` now reads a separate label background.
+- Old roles mapped: purple accent and "primary" purple → blue action;
+  `.primary-btn`, `.reset-btn`, `.add-btn`, `.danger-btn` all look like the
+  plain blue button until pass 3 adds the secondary style. Play's "Done
+  editing" button (was orange) is the darker blue. Play's highlighted
+  outcome (was yellow) uses the selection tint and a blue border. Matrix
+  column and row headers, player labels and score numbers are text color,
+  not blue: they aren't clickable. The selected choice button's ring is
+  text color, a 2px white gap away.
+- Spacing tokens kept their names (`--space-xs` … `--space-xl`, plus
+  `--space-xxl`) with Rivet's values in `rem`, so gaps changed slightly
+  (10→8, 15→16, 20→24, 30→32px). Raw `px` gaps in mode CSS are left for
+  pass 3. Radii are 4px (2px for the history items); font sizes are
+  tokens in `rem` (body 17px, line height 1.5, inputs at body size).
+- Only the fonts' Latin subsets (16–20 KB each): →, ≥, ≠ and ⅓ come from
+  the fallback font. Only Gelasio is defined; headings use it from pass 3.
+  No italic faces: the few italic lines (`.subtitle`, `.mode-status`) are
+  slanted by the browser; pass 3 decides whether they stay italic.
+- Graph labels are drawn by Cytoscape in its own font, not Source Sans.
+- axe: contrast passes everywhere, so that entry is gone. The Applications
+  table entry turned out to depend on the random question (only frequency
+  assignment questions have the table), so it's now `sometimes: true`:
+  allowed, not required. Still a real problem for pass 6.
 
 ## Pass 3: base styles and shared components
 

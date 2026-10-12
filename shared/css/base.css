@@ -10,7 +10,7 @@ body {
   font-family: var(--font-body);
   font-size: var(--font-size-body);
   color: var(--color-text);
-  background: var(--page-background);
+  background: var(--color-surface-muted);
   min-height: 100vh;
   padding: var(--space-lg);
 }
@@ -20,7 +20,7 @@ body {
   max-width: var(--page-max-width);
   margin: 0 auto;
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   padding: var(--space-xl);
   box-shadow: var(--shadow-page);
 }
@@ -33,17 +33,17 @@ h1 {
 }
 
 h2 {
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   margin-bottom: var(--space-md);
   font-size: var(--font-size-h2);
 }
 
 p {
-  line-height: 1.6;
+  line-height: var(--line-height-body);
 }
 
 a {
-  color: var(--color-accent);
+  color: var(--color-action);
 }
 
 /* Page header: link back to the hub, then the page title. */
@@ -85,33 +85,31 @@ select,
 textarea {
   padding: 8px;
   border: 1px solid var(--color-border);
-  border-radius: 6px;
+  border-radius: var(--radius-md);
   font: inherit;
-  font-size: 15px;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--color-accent);
+  border-color: var(--color-focus);
 }
 
 button {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-action);
+  color: var(--color-on-action);
   border: none;
   padding: 10px 20px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   cursor: pointer;
   font: inherit;
   transition: all 0.18s ease;
 }
 
 button:hover:not(:disabled) {
-  background: var(--color-accent-hover);
+  background: var(--color-action-hover);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-button-hover);
 }
 
 button:active:not(:disabled) {

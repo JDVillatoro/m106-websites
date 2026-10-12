@@ -3,8 +3,8 @@
 .graph-label {
   text-align: center;
   margin: 16px 0 6px;
-  font-size: 16px;
-  color: var(--color-text-muted);
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
 }
 
 .mapping-row {
