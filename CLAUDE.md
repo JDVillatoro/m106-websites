@@ -37,6 +37,10 @@ changed on purpose, and what's still to do.
   GitHub Pages the site lives under `/m106-websites/`.
 - `lib/graph/` and `lib/game.js` are math only (no page code); puzzle
   design, wording and scoring belong in the mode's file.
+- Any change to text the site displays (instructions, labels, buttons,
+  feedback, headings, alt text, screen-reader-only text) is pointed out for
+  review: list where it is, the old text and the new text, including text
+  that only moved. Don't reword text a change doesn't need to touch.
 - Code that doesn't fit, where the fix isn't obvious, gets a
   `TODO(refactor):` comment instead of a guess. Find them with
   `git grep 'TODO(refactor)'`.
