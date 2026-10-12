@@ -100,15 +100,6 @@ export function makeLabels(n) {
     return Array.from({ length: n }, (_, i) => String(i + 1));
 }
 
-/**
- * Build an array of all vertex ids for a graph of size n.
- * @param {number} n
- * @returns {string[]}
- */
-export function vertexIds(n) {
-    return Array.from({ length: n }, (_, i) => vertexId(i));
-}
-
 
 // ---------------------------------------------------------------------------
 // Fisher-Yates shuffle (in-place, returns the array)
@@ -201,7 +192,7 @@ export function getDirectedDegrees(graph) {
  * @param {object} graph
  * @returns {Set<number>[]}
  */
-export function buildAdjList(graph) {
+function _buildAdjList(graph) {
     const edges = Array.isArray(graph?.edges) ? graph.edges : [];
     const n = Number(graph?.n) || 0;
     const adj = Array.from({ length: n }, () => new Set());
@@ -216,30 +207,31 @@ export function buildAdjList(graph) {
 /**
  * Count vertices reachable from a start vertex using BFS.
  *
- * Preferred signature: reachableCount(graph, startVertex)
- *   - graph: { n, edges }
+ * _reachableCount(graph, startVertex)
+ *   - graph: { n, edges }, treated as undirected
  *   - startVertex: vertex index (number) or vertex id ("vN")
  *
- * Backward-compatible signature (legacy): reachableCount(adj, startIndex)
- *   - adj: adjacency list as Set<number>[]
+ * _reachableCount(adj, startIndex)
+ *   - adj: adjacency list as Set<number>[]; may be directed (isStronglyConnected
+ *     passes forward and reversed lists)
  *
  * Invalid/absent start vertices return 0.
  * @param {object|Set<number>[]} graphOrAdj
  * @param {number|string} [startVertex=0]
  * @returns {number}
  */
-export function reachableCount(graphOrAdj, startVertex = 0) {
+function _reachableCount(graphOrAdj, startVertex = 0) {
     let n = 0;
     let adj = [];
 
-    // Legacy form: reachableCount(adjList, startIndex)
+    // Adjacency-list form: _reachableCount(adj, startIndex)
     if (Array.isArray(graphOrAdj) && graphOrAdj.every(s => s instanceof Set)) {
         adj = graphOrAdj;
         n = adj.length;
     } else {
         const graph = graphOrAdj || {};
         n = Number(graph.n) || 0;
-        adj = buildAdjList(graph);
+        adj = _buildAdjList(graph);
     }
 
     if (n === 0) return 0;
@@ -268,12 +260,13 @@ export function reachableCount(graphOrAdj, startVertex = 0) {
 export function isConnected(graph, startVertex = 0) {
     const n = Number(graph?.n) || 0;
     if (n <= 1) return true;
-    return reachableCount(graph, startVertex) === n;
+    return _reachableCount(graph, startVertex) === n;
 }
 
 /**
- * Test strong connectivity for a directed graph of n vertices.
- * Uses two BFS passes (forward and reversed adjacency).
+ * Test strong connectivity for a directed graph of n vertices: every vertex
+ * is reachable from v0, and v0 is reachable from every vertex (checked by a
+ * BFS from v0 with every edge reversed).
  * @param {object} graph
  * @returns {boolean}
  */
@@ -283,35 +276,16 @@ export function isStronglyConnected(graph) {
     if (n <= 1) return true;
 
     // Build directed and reversed adjacency lists
-    const fwd = Array.from({ length: n }, () => []);
-    const rev = Array.from({ length: n }, () => []);
+    const fwd = Array.from({ length: n }, () => new Set());
+    const rev = Array.from({ length: n }, () => new Set());
     for (const { source, target } of edges) {
         const s = vertexIndex(source);
         const t = vertexIndex(target);
-        fwd[s].push(t);
-        rev[t].push(s);
+        fwd[s].add(t);
+        rev[t].add(s);
     }
 
-    /**
-     * BFS reachability count from vertex 0 over a directed adjacency list.
-     * Used by isStronglyConnected on both forward and reverse graphs.
-     * @param {number[][]} adj
-     * @returns {number}
-     */
-    function bfsCount(adj) {
-        const visited = new Uint8Array(n);
-        const queue = [0];
-        visited[0] = 1;
-        let count = 1;
-        while (queue.length) {
-            for (const nb of adj[queue.pop()]) {
-                if (!visited[nb]) { visited[nb] = 1; count++; queue.push(nb); }
-            }
-        }
-        return count;
-    }
-
-    return bfsCount(fwd) === n && bfsCount(rev) === n;
+    return _reachableCount(fwd) === n && _reachableCount(rev) === n;
 }
 
 
@@ -400,49 +374,16 @@ export function graphToDescription(graph) {
 
 
 // ---------------------------------------------------------------------------
-// CSV export
-// ---------------------------------------------------------------------------
-
-/**
- * Serialize a graph's edge list to CSV.
- * @param {object} graph
- * @returns {string}
- */
-export function graphToCSV(graph) {
-    const header = graph.edgeLabel ? 'source,target,label\n' : 'source,target\n';
-    return header + (graph.edges || []).map(e =>
-        graph.edgeLabel ? `${e.source},${e.target},${e.label ?? ''}` : `${e.source},${e.target}`
-    ).join('\n');
-}
-
-
-// ---------------------------------------------------------------------------
 // Simple graph generators (undirected, numeric-index helpers)
 // ---------------------------------------------------------------------------
 // Internal helpers use vertex *indices* (numbers) for compactness;
 // public generators return complete graph objects with "vN" string ids.
 
 /**
- * Generate a random spanning tree on n vertices (as index pairs).
- * Implementation: shuffle vertices and connect consecutive vertices in that
- * random order (a random Hamiltonian path).
- * Note: this does not sample uniformly from all labeled spanning trees.
- * @param {number} n
- * @returns {Array<{s: number, t: number}>}
- */
-function _randomSpanningTree(n) {
-    const order = shuffle(Array.from({ length: n }, (_, i) => i));
-    const tree  = [];
-    for (let i = 1; i < order.length; i++) {
-        tree.push({ s: order[i - 1], t: order[i] });
-    }
-    return tree;
-}
-
-/**
- * Generate a minimal connected simple graph on n vertices.
- * Starts from K_n and greedily removes edges while maintaining connectivity.
- * The result is always a spanning tree.
+ * Generate a random spanning tree on n vertices.
+ * Starts from K_n, shuffles its edges, and removes them one at a time
+ * (skipping any whose removal would disconnect the graph). What's left is a
+ * spanning tree; not every tree is equally likely.
  * @param {number} n
  * @returns {Array<{s: number, t: number}>}  index-pair edges
  */
@@ -477,11 +418,15 @@ function _indexEdgesConnected(indexEdges, n) {
 }
 
 /**
- * Generate a random connected simple graph with approximately targetEdges edges.
+ * Generate a random connected simple graph with targetEdges edges, as index
+ * pairs. generateSimpleGraph wraps this in a graph object; other generators
+ * use the index pairs directly.
  * Strategy:
- *   1) Build a minimal connected simple graph (spanning tree backbone).
- *   2) Clamp/choose targetEdges in [n-1, n(n-1)/2].
- *   3) Add random non-duplicate edges until targetEdges is reached.
+ *   1) Clamp targetEdges to [n-1, n(n-1)/2]; if it's missing, pick a random
+ *      count between roughly 40% and 80% of n(n-1)/2.
+ *   2) Start from a random spanning tree (_minimalConnectedGraph), so the
+ *      graph is connected.
+ *   3) Add random edges not already in the graph until targetEdges is reached.
  * @param {number} n
  * @param {number} [targetEdges]
  * @returns {Array<{s: number, t: number}>}  index-pair edges
@@ -512,7 +457,14 @@ function _simpleGraph(n, targetEdges) {
     return edges;
 }
 
-/** Convert index-pair edges to "vN" edge objects. */
+/**
+ * Turn index pairs ({ s: 0, t: 2 }) into Edge objects
+ * ({ source: 'v0', target: 'v2', label: null }), the form a graph object's
+ * edges take. extraProps is copied into every edge (e.g. to set a label).
+ * @param {Array<{s: number, t: number}>} indexEdges
+ * @param {object} [extraProps]
+ * @returns {Edge[]}
+ */
 function _toEdges(indexEdges, extraProps = {}) {
     return indexEdges.map(({ s, t }) => ({
         source: vertexId(s),
@@ -528,7 +480,8 @@ function _toEdges(indexEdges, extraProps = {}) {
 // ---------------------------------------------------------------------------
 
 /**
- * Generate a random simple undirected graph.
+ * Generate a random connected simple undirected graph: _simpleGraph's edges
+ * in a graph object.
  * @param {number} n
  * @param {number} [targetEdges]
  * @returns {object}  graph object
@@ -550,7 +503,7 @@ export function generateSimpleGraph(n, targetEdges) {
  * @param {{ allowLoops?: boolean, allowMultiple?: boolean }} [options]
  * @returns {object}  graph object
  */
-export function generateConnectedMultigraph(n, targetEdges, options = {}) {
+function _generateConnectedMultigraph(n, targetEdges, options = {}) {
     const { allowLoops = false, allowMultiple = false } = options;
     const maxSimple = (n * (n - 1)) / 2;
 
@@ -632,7 +585,7 @@ export function generateEulerianSimpleGraph(n, targetEdges, maxRerolls = 30) {
  * @returns {object}  graph object
  */
 export function generateEulerianMultigraph(n, targetEdges) {
-    const base = generateConnectedMultigraph(n, targetEdges, { allowLoops: false, allowMultiple: true });
+    const base = _generateConnectedMultigraph(n, targetEdges, { allowLoops: false, allowMultiple: true });
     const indexEdges = base.edges.map(e => ({ s: vertexIndex(e.source), t: vertexIndex(e.target) }));
     const edgeSet    = new Set(indexEdges.map(({ s, t }) => `${Math.min(s,t)}-${Math.max(s,t)}`));
     const odds       = shuffle(getOddVertices(base));
@@ -1385,7 +1338,7 @@ export function validateGraphColoring(graph, colorByVertexId, minColors) {
  * @param {string[]} colorOrder tokens in priority order, e.g. ['a','b','c','d','e','f']
  * @returns {{ assignment: Object.<string,string>, ok: boolean }}
  */
-export function computeGreedyColoring(graph, vertexOrderIds, colorOrder) {
+function _computeGreedyColoring(graph, vertexOrderIds, colorOrder) {
     if (!graph || !Array.isArray(graph.edges)) return { assignment: {}, ok: false };
 
     const n = Number(graph.n) || 0;
@@ -1452,7 +1405,7 @@ export function validateGreedyColoring(graph, vertexOrderIds, userColorByVertexI
         normalized[vid] = String(userColorByVertexId?.[vid] || '').trim().toLowerCase();
     }
 
-    const { assignment, ok } = computeGreedyColoring(graph, order, colorOrder);
+    const { assignment, ok } = _computeGreedyColoring(graph, order, colorOrder);
     if (!ok) {
         return { ok: false, reason: 'incorrect' };
     }
@@ -2419,7 +2372,7 @@ function _hamLeafVertices(edges, n) {
  * @returns {[number[], number[]]|null}
  */
 function _hamBipartiteParts(edges, n) {
-    const adj = buildAdjList({ edges, n });
+    const adj = _buildAdjList({ edges, n });
     const color = new Array(n).fill(-1);
     const parts = [[], []];
     for (let start = 0; start < n; start++) {

@@ -25,25 +25,37 @@ Delete this file when the last pass is done.
 - When code moves to a mode, its unit tests move to that mode's test file
   and import from the mode (as `parseDegreeSequence` in `modes/degree.js`).
 - Tick items off here as they're done, and note anything decided on the way.
+- The report at the end of a pass says whether any mode's logic or design
+  could have changed (what puzzles it makes, how it checks or scores
+  answers, what students see), naming each mode and how. If nothing
+  could have changed, say so and why (e.g. only comments, or unused code).
+  Point out changes that tests don't cover.
 
 ## Pass 1: dead code and small fixes
 
-- [ ] Remove `graphToCSV`: nothing uses it.
-- [ ] Check every export for users outside `graph.js`
-      (`git grep -w <name> -- graph-theory test`). Remove unused ones, or
-      make them private if only `graph.js` uses them. Candidates:
-      `vertexIds`, `generateConnectedMultigraph`, `isMultiGraph`,
-      `componentCount`, `graphInvariants` (the last three are only used in
-      `graph.js` and tests).
-- [ ] `bfsCount` (inside `isStronglyConnected`): explain it in its comment,
-      or replace it with `reachableCount`, which already accepts an
-      adjacency list.
-- [ ] `_simpleGraph` vs `generateSimpleGraph`: the second only wraps the
-      first in a graph object. Say so in the comments, and describe how
-      `_simpleGraph` builds a graph (random spanning tree, then random extra
-      edges?).
-- [ ] `_randomSpanningTree`: say in its comment how the tree is chosen.
-- [ ] `_toEdges`: explain it turns index pairs into `Edge` objects.
+- [x] Remove `graphToCSV`: nothing uses it.
+- [x] Check every export for users outside `graph.js`
+      (`git grep -w <name> -- graph-theory test`). Removed `vertexIds`
+      (unused). Made private, since only `graph.js` uses them:
+      `_buildAdjList`, `_reachableCount`, `_generateConnectedMultigraph`,
+      `_computeGreedyColoring`.
+      Decided: exports used only by `graph.js` and its unit tests stay
+      exported (`getDegrees`, `isMultiGraph`, `countTriangles`,
+      `componentCount`, `graphInvariants`, `applyPermutation`): they're
+      general graph math and the tests check them directly. The
+      `APPLICATIONS_*` constants and `ISO_PUZZLE_N_RANGE` are also used only
+      in `graph.js`; left as they are, since pass 2 moves them to their modes.
+- [x] `bfsCount` (inside `isStronglyConnected`): replaced with
+      `_reachableCount` on the forward and reversed adjacency lists (now
+      Sets). The adjacency-list form of `_reachableCount` was called
+      "legacy" but had no other user; its comment now says what it's for.
+- [x] `_simpleGraph` vs `generateSimpleGraph`: comments say the second wraps
+      the first. `_simpleGraph` starts from a random spanning tree
+      (`_minimalConnectedGraph`: shuffle K_n's edges, remove each one unless
+      that disconnects the graph), then adds random edges.
+- [x] `_randomSpanningTree`: nothing called it (the spanning tree comes from
+      `_minimalConnectedGraph`), so it was removed.
+- [x] `_toEdges`: explained.
 
 ## Pass 2: move mode code into the modes
 
@@ -80,7 +92,7 @@ edges }`), not `edges, n`.
       `leafVertices(graph)`, `bipartiteParts(graph)`.
 - [ ] Coloring helpers `_dedupeIndexEdges`, `_buildAdjFromIndexEdges`,
       `_isColorableWithK` work on index pairs; `_buildAdjFromIndexEdges`
-      looks like a copy of `buildAdjList`. Reuse what exists.
+      looks like a copy of `_buildAdjList`. Reuse what exists.
 - [ ] Private helpers inside one generator may keep index pairs if that's
       simpler; the rule is about what's exported.
 
@@ -102,6 +114,6 @@ edges }`), not `edges, n`.
 ## Already done
 
 - `makeLabels` goes on past H: A–Z, then AA–ZZ, then numbers above 702.
-- `reachableCount` takes a start vertex (`reachableCount(graph, start = 0)`).
+- `_reachableCount` takes a start vertex (`_reachableCount(graph, start = 0)`).
 - Most of the switch to whole graph objects happened during the merge; the
   Hamiltonian section and coloring helpers are what's left (pass 3).
