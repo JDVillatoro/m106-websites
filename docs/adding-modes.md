@@ -35,7 +35,8 @@ index.html, topics.js         hub page and its list of topics
 shared/
   css/tokens.css              every color, font and size, as CSS variables
   css/base.css                page layout, headings, form controls
-  css/components.css          tabs, buttons, feedback, scoreboard, forms
+  css/components.css          header, tabs, buttons, feedback, scoreboard, forms
+  js/site-header.js           the header on every page (topics from topics.js)
   js/topic-shell.js           builds a topic page from its modes.js
   js/ui.js                    feedback block, choice buttons, small helpers
   js/score.js, storage.js     scoring; saving in the browser
@@ -301,5 +302,6 @@ page names (`hub`, `graph-theory`, `graph-theory-degree`) to save only those.
 **A new topic:**
 
 1. Make `<topic>/index.html` (copy one), `modes.js`, `lib/`, `modes/`.
-2. Add it to `topics.js`.
+2. Add it to `topics.js` (the hub's cards and the header's topic links come
+   from there).
 3. Add its tests, and its pages to `test/site.test.js`.

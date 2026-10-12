@@ -9,11 +9,11 @@
   <link rel="stylesheet" href="shared/css/components.css">
 </head>
 <body>
-  <div class="page">
-    <header class="site-header">
+  <div class="page" id="app">
+    <div class="site-header">
       <h1>M106 Practice</h1>
       <p class="info">Choose a topic to practice.</p>
-    </header>
+    </div>
     <main>
       <ul class="topic-list" id="topic-list"></ul>
     </main>
@@ -22,11 +22,17 @@
   <script type="module">
     import topics from './topics.js';
     import { escapeHtml } from './shared/js/ui.js';
+    import { addSiteHeader } from './shared/js/site-header.js';
 
-    document.getElementById('topic-list').innerHTML = topics.map(t => `
+    addSiteHeader({ home: './' });
+
+    // Each card shows how many modes the topic has, from its modes.js.
+    const modeCounts = await Promise.all(topics.map(async t => (await import(`./${t.id}/modes.js`)).default.length));
+    document.getElementById('topic-list').innerHTML = topics.map((t, i) => `
       <li class="topic-card">
         <h2><a href="${escapeHtml(t.id)}/">${escapeHtml(t.title)}</a></h2>
         <p>${escapeHtml(t.description)}</p>
+        <p class="topic-card-count">${modeCounts[i]} modes</p>
       </li>`).join('');
   </script>
 </body>

@@ -208,11 +208,30 @@ Done. Notes:
 
 ## Pass 4: page shell and hub
 
-- [ ] Shared header, built in one place (`shared/js/`) for the hub and topic
+- [x] Shared header, built in one place (`shared/js/`) for the hub and topic
       pages: crimson top line, "M106 Practice" with the crimson block
       (links to the hub), topic links on the right with `aria-current`.
-- [ ] Hub (`index.html`): title, one-line intro, topic cards (title as a
+- [x] Hub (`index.html`): title, one-line intro, topic cards (title as a
       link, description, number of modes). Cards are links big enough to tap.
+
+Done. Notes:
+
+- `shared/js/site-header.js` (`addSiteHeader`), called by the hub's
+  script and by `startTopic`; the topic links come from `topics.js`. The
+  brand link has `aria-current="page"` on the hub. It's the page's only
+  `<header>`: the old page headers (title, intro, back link) are `div`s
+  now, so there's one banner landmark.
+- Added a "Skip to content" link, first on every page and shown only when
+  focused (WCAG 2.4.1, now that a header with links comes before the
+  content). It goes to `#app`.
+- "← All topics" stays on topic pages until pass 5's breadcrumb replaces
+  it.
+- Hub cards: the title link covers the whole card (`::after`), so its name
+  is still just the title; focus ring and hover on the card. The mode
+  count ("8 modes") comes from each topic's `modes.js`.
+- Phones: the topic links fit beside "M106 Practice" at 390px and wrap
+  below it on narrower screens.
+
 
 ## Pass 5: topic page navigation and score
 
@@ -255,11 +274,30 @@ This pass changes behavior: update `test/site.test.js` and the helpers in
       obvious.
 - [ ] Check every page at 400% zoom (or 320px wide): no sideways scrolling
       except inside graph areas and matrices.
-- [ ] Screen readers don't hear the marks shown after answering: matrix
-      cells (selected, right, missed, crossed out) and Dominance's menus
-      (right or wrong) only change look. Nash's feedback refers to colors
-      and looks ("outlined in red", "crossed-out"): suggest wording for Joel
-      that doesn't.
+- [ ] Feedback that points at the look instead of saying the answer
+      (WCAG 1.4.1 use of color, 1.3.3 sensory characteristics). Screen
+      readers don't hear the marks shown after answering (matrix cells:
+      selected, right, missed, crossed out; Dominance's menus: right or
+      wrong), and the text leans on them. Name the cells in the message, so
+      the marks only add to the words. Wording agreed with Joel (show him
+      the final text in the report):
+      - Nash, wrong, game has equilibria: "The pure Nash equilibria are
+        (B, X) and (C, Y). (A, X) is not one." (was "Cells outlined in red
+        are equilibria you missed. Crossed-out cells are not equilibria.")
+      - Nash, wrong, no equilibria: "There are no pure Nash equilibria in
+        this game, so (A, X) is not one." (was "… The crossed-out cells are
+        not equilibria.")
+      - The second sentence only when a non-equilibrium was picked; several
+        are listed: "(A, X) and (B, Y) are not equilibria." Pairs are
+        (row strategy, column strategy), from the labels `nash.js` has.
+      - Dominance, wrong: "You got 1/2 (50%). A vs B: the answer is "A
+        strictly dominates B"." (one sentence per wrong pair; was "… The
+        correct relations are shown above.")
+      - Best Response: fine (the answer is in words); "They're highlighted
+        in the matrix." can stay.
+      - Update the Nash and Dominance tests that check this text. Once the
+        text doesn't describe the look, the matrix marks can change freely
+        (`matrix-view.css` comment).
 - [ ] Empty pass 1's list of expected axe failures (`EXPECTED` in
       `test/accessibility.test.js`), including the three non-contrast ones
       in pass 1's notes; anything left gets a comment saying why.

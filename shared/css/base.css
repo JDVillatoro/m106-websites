@@ -54,7 +54,7 @@ a:hover {
   color: var(--color-action-hover);
 }
 
-/* Page header: link back to the hub, then the page title. */
+/* Page title, with the link back to the hub on topic pages. */
 .site-header {
   margin-bottom: var(--space-lg);
 }

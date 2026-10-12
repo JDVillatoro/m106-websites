@@ -1,18 +1,120 @@
-/* Components shared by every page: hub cards, mode tabs, mode panels,
-   buttons, feedback and the scoreboard. */
+/* Components shared by every page: site header, hub cards, mode tabs, mode
+   panels, buttons, feedback and the scoreboard. */
+
+/* Site header (site-header.js) ----------------------------------------- */
+.site-banner {
+  border-top: 4px solid var(--color-brand);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.site-banner-inner {
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+  padding: var(--space-sm) var(--space-lg);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-md);
+}
+
+.site-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: var(--control-height);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-brand:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.site-brand-mark {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-brand);
+  color: var(--color-on-action);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.site-topics {
+  margin-left: auto;
+}
+
+.site-topics ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  list-style: none;
+}
+
+.site-topics a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0 12px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.site-topics a:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+}
+
+.site-topics a[aria-current="page"] {
+  color: var(--color-text);
+  box-shadow: inset 0 -3px 0 var(--color-brand);
+}
+
+/* First thing on the page for keyboard users; shown only when focused. */
+.skip-link {
+  position: absolute;
+  left: var(--space-md);
+  top: var(--space-sm);
+  z-index: 10;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  font-weight: 600;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
 
 /* Hub: one card per topic --------------------------------------------- */
 .topic-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: var(--space-lg);
   list-style: none;
 }
 
+/* The whole card is the link: the title's link covers it (::after), so the
+   link's name is still just the title. */
 .topic-card {
+  position: relative;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
+}
+
+.topic-card:hover {
+  border-color: var(--color-action);
+  box-shadow: inset 0 0 0 1px var(--color-action);
+}
+
+.topic-card:has(a:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 .topic-card h2 {
@@ -24,12 +126,30 @@
   text-decoration: none;
 }
 
-.topic-card h2 a:hover {
+.topic-card h2 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.topic-card h2 a:focus-visible {
+  outline: none;
+}
+
+.topic-card:hover h2 a {
+  color: var(--color-action-hover);
   text-decoration: underline;
 }
 
 .topic-card p {
   color: var(--color-text-secondary);
+}
+
+.topic-card .topic-card-count {
+  margin-top: var(--space-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
 }
 
 /* Mode tabs ------------------------------------------------------------ */
@@ -366,8 +486,19 @@ select.is-invalid {
   font-weight: 700;
 }
 
-/* Narrow screens: smaller tabs, so several fit on a line. */
+/* Narrow screens: the header lines up with the page; smaller tabs, so
+   several fit on a line. */
 @media (max-width: 720px) {
+  .site-banner-inner {
+    padding: var(--space-xs) var(--space-md);
+    gap: var(--space-xs) var(--space-sm);
+  }
+
+  .site-topics a {
+    padding: 0 var(--space-sm);
+    font-size: var(--font-size-sm);
+  }
+
   .mode-tab {
     padding: 0 var(--space-sm);
     font-size: var(--font-size-sm);

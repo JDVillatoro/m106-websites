@@ -1,4 +1,4 @@
-// Builds a topic page: header, mode tabs, and one panel per mode.
+// Builds a topic page: site header, title, mode tabs, and one panel per mode.
 //
 // A topic page calls startTopic() with its list of modes (its modes.js).
 // Each mode is loaded the first time its tab is opened, and then kept, so a
@@ -10,6 +10,7 @@
 import { createStorage } from './storage.js';
 import { createScore } from './score.js';
 import { escapeHtml } from './ui.js';
+import { addSiteHeader } from './site-header.js';
 
 /**
  * @param {object} topic
@@ -19,11 +20,12 @@ import { escapeHtml } from './ui.js';
  * @param {HTMLElement} [topic.root]  defaults to #app
  */
 export function startTopic({ id: topicId, title, modes, root = document.getElementById('app') }) {
+  addSiteHeader({ home: '../', current: topicId, contentId: root.id || undefined });
   root.innerHTML = `
-    <header class="site-header">
+    <div class="site-header">
       <a class="back-link" href="../">&larr; All topics</a>
       <h1>${escapeHtml(title)}</h1>
-    </header>
+    </div>
     <nav class="mode-tabs" aria-label="Modes">
       ${modes.map(m => `<a class="mode-tab" href="#${escapeHtml(m.id)}">${escapeHtml(m.title)}</a>`).join('')}
     </nav>

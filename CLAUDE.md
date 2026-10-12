@@ -15,7 +15,7 @@ changed on purpose, and what's still to do.
 - `index.html` + `topics.js`: hub page.
 - `shared/`: CSS (`tokens.css` holds every color and size) and JS used by
   every page; `shared/js/topic-shell.js` builds a topic page from its
-  `modes.js`.
+  `modes.js`, and `shared/js/site-header.js` the header on every page.
 - `graph-theory/`, `game-theory/`: topic pages. Each has `index.html`,
   `modes.js` (one line per mode), `modes/` (one file per mode, plus its CSS
   and spec `.md` if any) and `lib/` (the topic's math, plus drawing code).
