@@ -22,7 +22,8 @@ export function escapeHtml(text) {
 export function showFeedback(el, { correct, title, messageHtml, canRetry = false }) {
   el.classList.toggle('is-correct', correct);
   el.classList.toggle('is-incorrect', !correct);
-  el.querySelector('.feedback-title').textContent = title ?? (correct ? 'Correct' : 'Incorrect');
+  el.querySelector('.feedback-icon').innerHTML = correct ? ICON_CORRECT : ICON_INCORRECT;
+  el.querySelector('.feedback-title').textContent = title ?? (correct ? 'Correct' : 'Not quite');
   el.querySelector('.feedback-message').innerHTML = messageHtml;
   const retry = el.querySelector('.feedback-retry');
   if (retry) retry.hidden = !canRetry;
@@ -34,6 +35,11 @@ export function hideFeedback(el) {
   el.classList.remove('is-correct', 'is-incorrect');
 }
 
+// Feedback icons: a filled circle with a check or a cross, colored by CSS
+// (components.css). Decoration only: the title says the same in words.
+const ICON_CORRECT = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11"/><path class="feedback-icon-mark" d="M7 12.5l3.2 3.2L17 9"/></svg>';
+const ICON_INCORRECT = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="11"/><path class="feedback-icon-mark" d="M8 8l8 8M16 8l-8 8"/></svg>';
+
 /**
  * HTML for an empty feedback block, to include in a mode's template.
  * With `retryLabel`, it also has a "try again" button (class feedback-retry),
@@ -41,15 +47,18 @@ export function hideFeedback(el) {
  */
 export function feedbackHtml({ nextLabel = 'Next question', retryLabel = null } = {}) {
   const retry = retryLabel
-    ? `<button type="button" class="primary-btn feedback-retry" hidden>${escapeHtml(retryLabel)}</button>`
+    ? `<button type="button" class="feedback-retry" hidden>${escapeHtml(retryLabel)}</button>`
     : '';
   return `
     <div class="feedback" hidden aria-live="polite">
-      <h2 class="feedback-title"></h2>
-      <p class="feedback-message"></p>
-      <div class="button-row">
-        ${retry}
-        <button type="button" class="primary-btn feedback-next">${escapeHtml(nextLabel)}</button>
+      <span class="feedback-icon" aria-hidden="true"></span>
+      <div class="feedback-body">
+        <h2 class="feedback-title"></h2>
+        <p class="feedback-message"></p>
+        <div class="button-row">
+          ${retry}
+          <button type="button" class="feedback-next">${escapeHtml(nextLabel)}</button>
+        </div>
       </div>
     </div>`;
 }
@@ -73,14 +82,15 @@ export function loadStylesheet(url) {
 
 /**
  * After an answer: disable every button in a row of choices (class
- * "choice-btn") and color the chosen one green or red.
+ * "choice-btn") and mark the chosen one right or wrong (green with a check,
+ * or red with a cross).
  */
 export function lockChoices(row, chosen, correct) {
   row.querySelectorAll('.choice-btn').forEach(btn => { btn.disabled = true; });
   chosen.classList.add(correct ? 'is-correct' : 'is-wrong');
 }
 
-/** Before a new question: enable a row of choices and clear their colors. */
+/** Before a new question: enable a row of choices and clear their marks. */
 export function resetChoices(row) {
   row.querySelectorAll('.choice-btn').forEach(btn => {
     btn.disabled = false;

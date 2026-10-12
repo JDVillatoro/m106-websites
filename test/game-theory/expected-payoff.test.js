@@ -51,7 +51,7 @@ test('right, wrong, empty; scoring and reset', async () => {
   const right = await answer(page);
   await page.fill('#ep-answer', String(right + 1));
   await page.press('#ep-answer', 'Enter');
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.equal(await page.locator('.feedback-message').innerText(), `The correct expected payoff is ${right.toFixed(2)}.`);
 
   await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');

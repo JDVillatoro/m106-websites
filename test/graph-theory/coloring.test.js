@@ -105,7 +105,7 @@ test('missing colors, then a conflict', async () => {
     const count = await page.locator('.color-rows select').count();
     for (let k = 0; k < count; k++) await page.selectOption(`#coloring-${k}`, { label: 'Red' });
     await page.click('.coloring-form [type="submit"]');
-    assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+    assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
     assert.match(await page.locator('.feedback-message').innerText(), /are both colored Red and are connected by an edge/);
     assert.ok(await page.locator('#coloring-0').isDisabled());
     assert.deepEqual(errors, []);

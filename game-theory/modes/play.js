@@ -226,7 +226,7 @@ export default {
         <p class="input-error" role="alert"></p>
         <div class="matrix-slot"></div>
         <div class="preset-buttons">
-          ${Object.entries(PRESETS).map(([key, p]) => `<button type="button" class="primary-btn" data-preset="${key}">${escapeHtml(p.title)}</button>`).join('')}
+          ${Object.entries(PRESETS).map(([key, p]) => `<button type="button" data-preset="${key}">${escapeHtml(p.title)}</button>`).join('')}
         </div>
       </div>
 

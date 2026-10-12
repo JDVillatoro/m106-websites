@@ -47,7 +47,7 @@ test('right, wrong, nothing selected; scoring and reset', async () => {
   if (pick.length === 0) pick.push(...q.best.slice(1));
   for (const i of pick) await page.click(`.response-buttons .choice-btn[data-index="${i}"]`);
   await page.click('.br-submit');
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.match(await page.locator('.feedback-message').innerText(), /best responses? (is|are)/);
   assert.equal(await page.locator('.matrix-cell.is-answer').count(), q.best.length);
 

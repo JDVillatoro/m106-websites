@@ -148,29 +148,63 @@ Done. Notes:
 
 ## Pass 3: base styles and shared components
 
-- [ ] `base.css`: white page, no card or gradient; content column up to about
+- [x] `base.css`: white page, no card or gradient; content column up to about
       1120px with 24px side margins (16px on phones); headings in the heading
       font; body 17px, line height 1.5.
-- [ ] Form controls: 44px tall, 2px border, `:focus-visible` ring
+- [x] Form controls: 44px tall, 2px border, `:focus-visible` ring
       (2px solid `--color-focus`, 2px offset) on every control, link and
       clickable matrix cell. Remove `outline: none`.
-- [ ] Buttons: `.primary-btn` filled blue; a secondary style (white, blue
+- [x] Buttons: `.primary-btn` filled blue; a secondary style (white, blue
       2px border) for "Next question" and similar; no hover lift; at least
       44px tall. `.add-btn` and `.danger-btn` become secondary / outlined, so
       green and red mean only correct and incorrect.
-- [ ] `@media (prefers-reduced-motion: reduce)`: no transitions.
-- [ ] `.feedback` as in Decisions. Correct/incorrect icons are inline SVG in
+- [x] `@media (prefers-reduced-motion: reduce)`: no transitions.
+- [x] `.feedback` as in Decisions. Correct/incorrect icons are inline SVG in
       `shared/js/ui.js` (`feedbackHtml`), hidden from screen readers; the
       word is real text.
-- [ ] `.info` becomes a plain intro paragraph under the title (secondary
+- [x] `.info` becomes a plain intro paragraph under the title (secondary
       text color, no tinted box, not centered).
-- [ ] `.choice-btn`, `.option-list` (checkboxes and radios at least 24px),
+- [x] `.choice-btn`, `.option-list` (checkboxes and radios at least 24px),
       `.input-error`.
-- [ ] Payoff matrix (`matrix-view.css`): cells as in mockup A (white,
+- [x] Payoff matrix (`matrix-view.css`): cells as in mockup A (white,
       1px border; selected: blue tint, 3px blue border, check icon;
       correct/incorrect after submitting: border plus icon, not color only).
       Clickable cells at least 44px tall on phones.
-- [ ] Look at every mode's own CSS for leftovers of the old look.
+- [x] Look at every mode's own CSS for leftovers of the old look.
+- [x] Graph labels (vertex names, edge weights) in the body font:
+      `render.js` reads `--font-body` for Cytoscape, and redraws once the
+      font has loaded (Cytoscape draws on a canvas, which doesn't update
+      when a web font arrives).
+
+Done. Notes:
+
+- No `.secondary-btn` class: the plain button is outlined, and
+  `.primary-btn` fills it. `.add-btn` and `.danger-btn` have no styles of
+  their own now. The feedback block's "Next question" and "try again" lost
+  `.primary-btn`; so did Play's preset games (they're choices, not the
+  main action). Play's "Done editing" is filled while editing.
+- `[hidden] { display: none !important }` in `base.css`: buttons are
+  `inline-flex` now, which otherwise beat the `hidden` attribute (tests
+  caught Make's and Hamiltonian's hidden buttons showing).
+- Feedback: `showFeedback` puts the icon in `.feedback-icon`; text,
+  message and buttons are in `.feedback-body`. Default title "Incorrect"
+  became "Not quite" (tests updated).
+- State icons (check, cross) are CSS masks from `--icon-check` and
+  `--icon-cross` in `tokens.css`, colored by tokens: choice buttons,
+  matrix cells, `.input-error`, Dominance's menus after submitting.
+- Matrix: Nash now also marks right picks (`is-correct`, one line in
+  `nash.js`). Nash's feedback says "Cells outlined in red are equilibria
+  you missed. Crossed-out cells are not equilibria.", so missed cells keep
+  a (dashed) red outline and wrong picks stay crossed out. Play's history
+  no longer colors rounds won or lost (the payoffs are written out).
+- `.info` is a plain paragraph; `.subtitle` and `.mode-status` aren't
+  italic any more (no italic font is loaded); `.hint` is small text, left
+  aligned. Reset score looks like a link. The tabs got an interim look
+  (links, crimson bar under the current one) until pass 5 replaces them.
+- Graph labels: Cytoscape's `font-family` accepts only double quotes, so
+  `render.js` swaps the token's single quotes; with single quotes it
+  silently kept its default font.
+
 
 ## Pass 4: page shell and hub
 
@@ -221,6 +255,11 @@ This pass changes behavior: update `test/site.test.js` and the helpers in
       obvious.
 - [ ] Check every page at 400% zoom (or 320px wide): no sideways scrolling
       except inside graph areas and matrices.
+- [ ] Screen readers don't hear the marks shown after answering: matrix
+      cells (selected, right, missed, crossed out) and Dominance's menus
+      (right or wrong) only change look. Nash's feedback refers to colors
+      and looks ("outlined in red", "crossed-out"): suggest wording for Joel
+      that doesn't.
 - [ ] Empty pass 1's list of expected axe failures (`EXPECTED` in
       `test/accessibility.test.js`), including the three non-contrast ones
       in pass 1's notes; anything left gets a comment saying why.

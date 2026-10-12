@@ -48,6 +48,7 @@ function submit() {
 
   for (const [key, cell] of cells) {
     cell.setAttribute('aria-disabled', 'true');
+    if (equilibria.has(key) && selected.has(key)) cell.classList.add('is-correct');
     if (correct) continue;
     if (equilibria.has(key) && !selected.has(key)) cell.classList.add('is-missed');
     if (!equilibria.has(key) && selected.has(key)) cell.classList.add('is-crossed');

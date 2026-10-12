@@ -72,10 +72,17 @@ export function graphToDescription(graph) {
     return { text: parts.join(' '), isLong };
 }
 
+// Labels (vertex names, edge weights) in the site's font, semibold.
+// Cytoscape accepts only double quotes in font names.
+const LABEL_FONT_WEIGHT = 600;
+const labelFont = () => (getComputedStyle(document.documentElement)
+  .getPropertyValue('--font-body').trim() || 'sans-serif').replaceAll("'", '"');
+
 /** Cytoscape style, with colors read from the --graph-* tokens in tokens.css. */
 function graphStyle() {
   const css = getComputedStyle(document.documentElement);
   const token = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+  const font = { 'font-family': labelFont(), 'font-weight': LABEL_FONT_WEIGHT };
   const nodeFill = token('--graph-node-fill', '#fff');
   const nodeBorder = token('--graph-node-border', '#243142');
   const nodeLabel = token('--graph-node-label', '#243142');
@@ -92,6 +99,7 @@ function graphStyle() {
         'border-color': nodeBorder,
         'label': 'data(displayName)',
         'color': nodeLabel,
+        ...font,
         'text-valign': 'center',
         'text-halign': 'center',
         'width': 'mapData(labelLen, 1, 12, 36, 120)',
@@ -107,6 +115,7 @@ function graphStyle() {
         'curve-style': 'bezier',
         'font-size': 12,
         'color': edgeLabel,
+        ...font,
         'text-background-color': edgeLabelBg,
         'text-background-opacity': 1,
         'text-background-padding': 6,
@@ -184,6 +193,12 @@ export function createGraphView(parent, { label = 'Graph diagram', zoomButtons =
     userZoomingEnabled: true,
     layout: { name: 'preset' },
   });
+
+  // Cytoscape draws on a canvas, which isn't redrawn when a web font
+  // arrives: draw again once the label font has loaded.
+  document.fonts?.load(`${LABEL_FONT_WEIGHT} 16px ${labelFont()}`)
+    .then(() => cy.style(graphStyle()))
+    .catch(() => {});
 
   // Fit the graph again whenever the area changes size: window resized,
   // phone rotated, or panel shown after being hidden.

@@ -88,7 +88,8 @@
   --font-size-lg: 1.125rem;
   --font-size-xl: 1.25rem;
   --font-size-h2: 1.5rem;
-  --font-size-h1: 2.25rem;
+  --font-size-h1: 2.5rem;
+  --font-size-h1-phone: 1.875rem;
   --line-height-body: 1.5;
 
   /* Spacing (Rivet's scale: 4, 8, 16, 24, 32, 40px) */
@@ -102,6 +103,12 @@
   /* Shapes */
   --radius-sm: 2px;
   --radius-md: 4px;
-  --shadow-page: 0 2px 8px rgba(36, 49, 66, 0.12);
-  --page-max-width: 900px;
+  --page-max-width: 1120px;
+  --control-height: 44px;   /* buttons and text boxes; also the smallest tap target */
+
+  /* Icons for states (selected, correct, incorrect), used as CSS masks so
+     they take the color of the element's `background-color`. Never the
+     only sign: the feedback text says the same. */
+  --icon-check: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3L13 4.5' stroke='black' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --icon-cross: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' stroke='black' stroke-width='2.4' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
 }

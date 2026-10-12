@@ -54,7 +54,7 @@
 
 .editor-heading {
   margin: 12px 0 8px;
-  font-size: 1.05rem;
+  font-size: var(--font-size-lg);
 }
 
 .editor hr {

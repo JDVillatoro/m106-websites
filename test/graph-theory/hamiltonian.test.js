@@ -104,7 +104,7 @@ test('wrong cycle: try again on the same graph, then right', async () => {
     assert.equal(await page.locator('.part2-cycle .input-error').innerText(), 'Type the cycle first.');
     await page.fill('.cycle-input', cycle.slice(0, -1).join(''));   // misses a vertex
     await page.press('.cycle-input', 'Enter');
-    assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+    assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
     assert.match(await page.locator('.feedback-message').innerText(), /doesn't visit vertex/);
     assert.equal(await scoreText(page), 'Questions: 1 Points: 0.5 Score: 50%');
 
@@ -132,7 +132,7 @@ test('wrong reason is final', async () => {
     if (!wrong) { await page.click('.reset-btn'); continue; }
     await page.click('.part1 .choice-btn[data-answer="no"]');
     await page.click(`.part2-why .choice-btn[data-answer="${wrong}"]`);
-    assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+    assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
     assert.match(await page.locator('.feedback-message').innerText(), /not Hamiltonian because/);
     assert.ok(await page.locator('.feedback-retry').isHidden());
     assert.equal(await page.locator('.part2-why .choice-btn:not([disabled])').count(), 0);

@@ -41,7 +41,7 @@ test('all right, one wrong, incomplete; scoring and reset', async () => {
     await page.selectOption(p.id, k === 0 ? (p.answer === 'none' ? 'A-weak' : 'none') : p.answer);
   }
   await page.click('.dom-submit');
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.match(await page.locator('.feedback-message').innerText(), new RegExp(`You got ${pairs.length - 1}/${pairs.length}`));
   assert.equal(await page.inputValue(pairs[0].id), pairs[0].answer);
   assert.match(await page.locator(pairs[0].id).getAttribute('class'), /is-wrong/);

@@ -62,7 +62,7 @@ test('right, wrong, bad input; scoring and reset', async () => {
   await page.fill('#indiff-1', '0/1');
   await page.fill('#indiff-2', '1/1');
   await page.press('#indiff-2', 'Enter');
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   // The feedback shows the exact fraction (in lowest terms).
   const shown = (await page.locator('.feedback-message').innerText()).match(/is (\d+)\/(\d+)/);
   assert.ok(Math.abs(shown[1] / shown[2] - p) < 1e-9);

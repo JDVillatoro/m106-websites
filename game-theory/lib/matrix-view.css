@@ -11,18 +11,18 @@
 .matrix-table-row {
   display: flex;
   align-items: center;
-  gap: var(--space-md);
+  gap: var(--space-sm);
   width: 100%;
 }
 
 .player-label {
-  font-weight: bold;
-  color: var(--color-text);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
 }
 
 .player2-label {
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
   text-align: center;
 }
 
@@ -35,164 +35,161 @@
 .payoff-matrix table {
   flex: 1;
   border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
 }
 
 .payoff-matrix th,
 .payoff-matrix td {
-  border: 2px solid var(--color-border);
-  padding: var(--space-md);
+  padding: 12px var(--space-sm);
   text-align: center;
 }
 
-/* Column labels and the empty top-left corner. */
-.payoff-matrix thead th,
-.payoff-matrix thead td {
-  background: var(--color-surface-muted);
-  color: var(--color-text);
-  font-weight: bold;
+/* Strategy names: a line under the column names, beside the row names. */
+.payoff-matrix th {
+  font-size: var(--font-size-lg);
+}
+
+.payoff-matrix thead th {
+  border-bottom: 2px solid var(--color-text);
 }
 
 .payoff-matrix th.row-label {
-  background: var(--color-surface-muted);
-  color: var(--color-text);
-  font-weight: bold;
+  width: 1%;   /* as narrow as the names allow; the payoff columns share the rest */
+  padding: 12px var(--space-md);
+  border-right: 2px solid var(--color-text);
+}
+
+.matrix-cell {
+  position: relative;
+  height: var(--control-height);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  font-size: var(--font-size-lg);
 }
 
 .payoff {
   display: inline-block;
-  padding: var(--space-xs);
-  margin: 3px;
-  min-width: 40px;
+  margin: 0 var(--space-xs);
+  min-width: 1.5em;
 }
 
 /* Cells that can be chosen (onCellClick) -------------------------------- */
 .matrix-cell.is-clickable {
   cursor: pointer;
-  transition: background 0.2s ease, box-shadow 0.2s ease;
+  transition: background-color 0.15s ease;
+}
+
+.matrix-cell.is-clickable:hover:not([aria-disabled="true"]) {
+  background: var(--color-surface-muted);
 }
 
 .matrix-cell.is-clickable:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: -3px;
+  outline-offset: -4px;
 }
 
 .matrix-cell[aria-disabled="true"] {
   cursor: default;
 }
 
+/* States, each shown by more than color: selected (blue, check), right
+   (green, check), chosen but wrong (red, crossed out, cross), an answer that
+   wasn't chosen (dashed red outline). Nash's feedback describes the last
+   two as "crossed-out" and "outlined in red". */
+.matrix-cell.is-selected::after,
+.matrix-cell.is-correct::after,
+.matrix-cell.is-answer::after,
+.matrix-cell.is-crossed::after {
+  content: '';
+  position: absolute;
+  top: var(--space-xs);
+  right: var(--space-xs);
+  width: 14px;
+  height: 14px;
+  background: var(--color-action);
+  mask: var(--icon-check) center / contain no-repeat;
+}
+
 /* Chosen by the student. */
-.matrix-cell.is-selected {
+.matrix-cell.is-selected,
+.matrix-cell.is-selected:hover:not([aria-disabled="true"]) {
+  background: var(--color-action-tint);
+  box-shadow: inset 0 0 0 3px var(--color-action);
+  font-weight: 700;
+}
+
+/* Chosen, and right; or part of the answer (Best Response, after a wrong
+   answer). */
+.matrix-cell.is-correct,
+.matrix-cell.is-answer {
   background: var(--color-correct-bg);
   box-shadow: inset 0 0 0 3px var(--color-correct);
+}
+
+.matrix-cell.is-correct::after,
+.matrix-cell.is-answer::after {
+  background: var(--color-correct);
 }
 
 /* Should have been chosen, but wasn't. */
 .matrix-cell.is-missed {
   background: var(--color-incorrect-bg);
-  box-shadow: inset 0 0 0 3px var(--color-incorrect);
+  outline: 3px dashed var(--color-incorrect);
+  outline-offset: -3px;
 }
 
 /* Chosen, but shouldn't have been: crossed out. */
 .matrix-cell.is-crossed {
-  position: relative;
+  background:
+    linear-gradient(to top right, transparent calc(50% - 1px), var(--color-incorrect) calc(50% - 1px), var(--color-incorrect) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(to bottom right, transparent calc(50% - 1px), var(--color-incorrect) calc(50% - 1px), var(--color-incorrect) calc(50% + 1px), transparent calc(50% + 1px)),
+    var(--color-incorrect-bg);
+  box-shadow: inset 0 0 0 3px var(--color-incorrect);
 }
 
-.matrix-cell.is-crossed::before,
 .matrix-cell.is-crossed::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 2px;
   background: var(--color-incorrect);
-}
-
-.matrix-cell.is-crossed::before {
-  transform: translateY(-50%) rotate(45deg);
-}
-
-.matrix-cell.is-crossed::after {
-  transform: translateY(-50%) rotate(-45deg);
+  mask-image: var(--icon-cross);
 }
 
 /* Narrow screens -------------------------------------------------------- */
-@media (max-width: 768px) {
-  .player-label {
-    font-size: var(--font-size-sm);
-  }
-
-  .player1-label {
-    font-size: var(--font-size-xs);
-  }
-
-  .matrix-table-row {
-    gap: 8px;
-  }
-
-  .payoff-matrix th,
-  .payoff-matrix td {
-    padding: 8px 5px;
-    font-size: 0.95em;
-    border-width: 1px;
-  }
-
-  .payoff {
-    padding: 3px;
-    margin: 2px;
-    min-width: 0;
-  }
-}
-
 @media (max-width: 480px) {
   .payoff-matrix th,
   .payoff-matrix td {
-    padding: 6px 3px;
-    font-size: 0.85em;
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .matrix-cell,
+  .payoff-matrix th {
+    font-size: var(--font-size-body);
   }
 
   .payoff {
-    padding: 2px;
-    margin: 1px;
-  }
-
-  .player-label {
-    font-size: var(--font-size-xs);
+    margin: 0 2px;
   }
 }
 
 /* Editable matrices (Play mode) ----------------------------------------- */
 .payoff-input {
   width: 60px;
-  padding: 5px;
-  margin: 3px;
+  padding: var(--space-xs);
+  margin: 2px;
   text-align: center;
-  font-size: var(--font-size-sm);
 }
 
 .strategy-name-input {
   min-width: 100px;
   width: 100%;
-  padding: 5px;
+  padding: var(--space-xs);
   text-align: center;
   font-size: var(--font-size-sm);
   font-family: var(--font-mono);
-  color: var(--color-text);
 }
 
-/* Cells and rows a mode points out ------------------------------------- */
-
-/* The outcome just played. */
+/* The outcome just played (Play mode). */
 .matrix-cell.is-highlighted {
   animation: cell-pulse 1s ease;
   background: var(--color-action-tint);
   box-shadow: inset 0 0 0 3px var(--color-action);
-}
-
-/* Part of a best response, shown after a wrong answer. */
-.matrix-cell.is-answer,
-.payoff-matrix th.is-answer {
-  background: var(--color-correct-bg);
 }
 
 @keyframes cell-pulse {
@@ -203,8 +200,7 @@
 @media (max-width: 480px) {
   .payoff-input {
     width: 44px;
-    padding: 4px 2px;
-    margin: 2px;
+    padding: var(--space-xs) 2px;
   }
 
   .strategy-name-input {

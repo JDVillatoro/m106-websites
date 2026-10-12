@@ -10,7 +10,7 @@
 }
 
 .topic-card {
-  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-lg);
 }
@@ -35,29 +35,29 @@
 /* Mode tabs ------------------------------------------------------------ */
 .mode-tabs {
   display: flex;
-  justify-content: center;
   flex-wrap: wrap;
-  gap: var(--space-sm);
+  gap: 0 var(--space-xs);
   margin-bottom: var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
 }
 
 .mode-tab {
-  padding: 10px var(--space-xl);
-  border-radius: var(--radius-md);
-  background: var(--color-border);
-  color: var(--color-text-secondary);
-  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-height);
+  padding: 0 12px;
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .mode-tab:hover {
-  opacity: 0.9;
+  text-decoration: underline;
 }
 
 .mode-tab[aria-current="page"] {
-  background: var(--color-action);
-  color: var(--color-on-action);
+  color: var(--color-text);
+  box-shadow: inset 0 -3px 0 var(--color-brand);
 }
 
 /* Mode panel (one per mode, built by topic-shell.js) ------------------- */
@@ -65,30 +65,26 @@
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  margin-bottom: var(--space-lg);
+  margin-bottom: var(--space-md);
 }
 
 .mode-status {
   color: var(--color-text-secondary);
-  font-style: italic;
 }
 
 .mode-error {
   background: var(--color-incorrect-bg);
-  border-left: 4px solid var(--color-incorrect);
+  border: 1px solid var(--color-incorrect);
   border-radius: var(--radius-md);
-  padding: var(--space-lg);
+  padding: var(--space-md);
 }
 
 /* Blocks inside a mode -------------------------------------------------- */
 
 /* Short explanation of what to do; shown at the top of a mode. */
 .info {
-  background: var(--color-surface-muted);
-  padding: var(--space-md);
-  border-radius: var(--radius-md);
-  margin-bottom: var(--space-xl);
-  text-align: center;
+  max-width: 60rem;
+  margin-bottom: var(--space-lg);
   color: var(--color-text-secondary);
 }
 
@@ -99,14 +95,13 @@
 /* Smaller line under a heading. */
 .subtitle {
   color: var(--color-text-secondary);
-  font-style: italic;
   margin-bottom: var(--space-sm);
 }
 
 /* Tip shown below a graph or matrix. */
 .hint {
   color: var(--color-text-secondary);
-  text-align: center;
+  font-size: var(--font-size-sm);
   margin-bottom: var(--space-lg);
 }
 
@@ -115,7 +110,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-sm);
+  gap: var(--space-sm) 12px;
 }
 
 .answer-row input[type="text"] {
@@ -133,8 +128,21 @@
 
 /* Message about badly formatted input, shown under the answer row. */
 .input-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
   color: var(--color-incorrect);
+  font-weight: 600;
   margin-top: var(--space-sm);
+}
+
+.input-error::before {
+  content: '';
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  mask: var(--icon-cross) center / contain no-repeat;
 }
 
 .input-error:empty {
@@ -144,19 +152,41 @@
 input.is-invalid,
 select.is-invalid {
   border-color: var(--color-incorrect);
-  outline: 2px solid var(--color-incorrect);
+  background: var(--color-incorrect-bg);
 }
 
 /* Buttons --------------------------------------------------------------- */
+/* The plain button (base.css) is outlined: Next question, adding (.add-btn)
+   and removing (.danger-btn) things, and most others. Green and red are
+   only for correct and incorrect answers. */
 
-/* Submit, Next and other main actions (.primary-btn), resetting the score
-   (.reset-btn), adding (.add-btn) and removing (.danger-btn) things: the
-   plain button look for now. Green and red are only for correct and
-   incorrect answers. */
+/* Submit and other main actions: filled. */
+.primary-btn {
+  background: var(--color-action);
+  color: var(--color-on-action);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: var(--color-action-hover);
+  color: var(--color-on-action);
+}
+
+/* Reset score: looks like a link. */
+.reset-btn {
+  padding: 0;
+  border: none;
+  background: none;
+  font-weight: 400;
+  text-decoration: underline;
+}
+
+.reset-btn:hover:not(:disabled) {
+  background: none;
+}
 
 /* Small button inside a row, e.g. "Remove". */
 .small-btn {
-  padding: 6px 12px;
+  padding: 0 12px;
   font-size: var(--font-size-sm);
 }
 
@@ -164,124 +194,182 @@ select.is-invalid {
 .button-row {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-sm);
-  margin-top: var(--space-sm);
+  gap: var(--space-sm) 12px;
+  margin-top: var(--space-md);
 }
 
 /* Checkboxes or radio buttons to pick from. */
 .option-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--space-sm) var(--space-lg);
   margin: 12px 0;
   border: none;
 }
 
 .option-list.is-vertical {
   flex-direction: column;
-  gap: var(--space-sm);
 }
 
 .option-list label {
   display: flex;
   align-items: center;
-  gap: 6px;
-  cursor: pointer;
-}
-
-.option-list input {
-  width: 16px;
-  height: 16px;
+  gap: var(--space-sm);
+  min-height: var(--control-height);
   cursor: pointer;
 }
 
 /* A row of answer choices. */
 .choice-row {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
-  margin-top: 14px;
+  margin-top: var(--space-md);
 }
 
 .choice-btn {
-  padding: 12px 32px;
-  font-weight: bold;
-  border-radius: var(--radius-md);
+  min-width: 6rem;
+  padding: 0 var(--space-lg);
 }
 
-/* A ring a gap away from the button, as the selected button keeps its color. */
-.choice-btn.is-selected {
-  box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 5px var(--color-text);
+/* State icon (check or cross) before the label of a choice button or a
+   payoff matrix cell, in the state's color. */
+.choice-btn.is-selected::before,
+.choice-btn.is-correct::before,
+.choice-btn.is-wrong::before {
+  content: '';
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  mask: var(--icon-check) center / contain no-repeat;
 }
 
+.choice-btn.is-wrong::before {
+  mask-image: var(--icon-cross);
+}
+
+/* Chosen, before submitting. */
+.choice-btn.is-selected,
+.choice-btn.is-selected:hover:not(:disabled) {
+  background: var(--color-action-tint);
+  box-shadow: inset 0 0 0 1px var(--color-action);
+}
+
+/* After answering: kept readable although disabled. */
 .choice-btn.is-correct,
 .choice-btn.is-correct:hover:not(:disabled) {
-  background: var(--color-correct);
+  background: var(--color-correct-bg);
+  border-color: var(--color-correct);
+  box-shadow: inset 0 0 0 1px var(--color-correct);
+  color: var(--color-correct);
 }
 
 .choice-btn.is-wrong,
 .choice-btn.is-wrong:hover:not(:disabled) {
-  background: var(--color-incorrect);
+  background: var(--color-incorrect-bg);
+  border-color: var(--color-incorrect);
+  box-shadow: inset 0 0 0 1px var(--color-incorrect);
+  color: var(--color-incorrect);
 }
 
 /* Feedback after an answer ---------------------------------------------- */
+/* An icon, then the title ("Correct", "Not quite") as a word, the message
+   and the buttons. Built by feedbackHtml() in shared/js/ui.js. */
 .feedback {
-  background: var(--color-surface-muted);
-  padding: var(--space-lg);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
   margin-bottom: var(--space-xl);
+}
+
+.feedback-icon {
+  flex-shrink: 0;
+  display: flex;
+}
+
+.feedback-icon svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.feedback-icon .feedback-icon-mark {
+  fill: none;
+  stroke: var(--color-surface);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.feedback-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.feedback .feedback-title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-body);
+  font-weight: 700;
+  line-height: var(--line-height-body);
 }
 
 .feedback.is-correct {
   background: var(--color-correct-bg);
-  border-left: 4px solid var(--color-correct);
+  border-color: var(--color-correct);
 }
 
 .feedback.is-incorrect {
   background: var(--color-incorrect-bg);
-  border-left: 4px solid var(--color-incorrect);
+  border-color: var(--color-incorrect);
 }
 
-.feedback h2 {
-  margin-bottom: var(--space-sm);
+.feedback.is-correct .feedback-icon,
+.feedback.is-correct .feedback-title {
+  color: var(--color-correct);
 }
 
-.feedback .button-row {
-  margin-top: var(--space-md);
+.feedback.is-incorrect .feedback-icon,
+.feedback.is-incorrect .feedback-title {
+  color: var(--color-incorrect);
 }
 
 /* Scoreboard (exercises only) ------------------------------------------- */
 .scoreboard {
-  background: var(--color-surface-muted);
-  padding: var(--space-lg);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.scoreboard h2 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-sm);
 }
 
 .scoreboard-values {
   display: flex;
-  justify-content: space-around;
   flex-wrap: wrap;
-  gap: var(--space-sm);
+  gap: var(--space-sm) var(--space-xl);
 }
 
 .scoreboard-values p {
-  font-size: var(--font-size-lg);
-  font-weight: bold;
   color: var(--color-text-secondary);
 }
 
 .scoreboard-values span {
   color: var(--color-text);
+  font-weight: 700;
 }
 
 /* Narrow screens: smaller tabs, so several fit on a line. */
 @media (max-width: 720px) {
-  .mode-tabs {
-    gap: 6px;
-  }
-
   .mode-tab {
-    padding: 6px 10px;
+    padding: 0 var(--space-sm);
     font-size: var(--font-size-sm);
   }
 }

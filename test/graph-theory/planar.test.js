@@ -95,7 +95,7 @@ test('wrong answers and missing numbers', async () => {
       assert.equal(await page.locator('.feedback-message').innerText(), `This graph contains a ${a.obstruction} subgraph.`);
       seen.add('why');
     }
-    assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+    assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
     await page.click('.feedback-next');
   }
   assert.equal(seen.size, 3);

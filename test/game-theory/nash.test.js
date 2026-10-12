@@ -39,7 +39,7 @@ test('select the equilibria, feedback, score', async () => {
   const wrong = keys.filter(k => !equilibria.has(k));
   for (const key of wrong) await cell(page, key).click();
   await page.click('.nash-submit');
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   for (const key of equilibria) assert.match(await cell(page, key).getAttribute('class'), /is-missed/);
   for (const key of wrong) assert.match(await cell(page, key).getAttribute('class'), /is-crossed/);
 

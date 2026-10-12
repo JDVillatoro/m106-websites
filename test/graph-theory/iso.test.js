@@ -137,7 +137,7 @@ test('missing answers and wrong answers', async () => {
       // Everything to the same vertex: not an isomorphism.
       for (let k = 0; k < g1.names.length; k++) await page.selectOption(`#iso-map-${k}`, g2.names[0]);
       await page.click('.part2-mapping [type="submit"]');
-      assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+      assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
       assert.match(await page.locator('.feedback-message').innerText(), /A correct answer could be: .+→/);
       seen.add('map');
     } else if (r.kind === 'neither' && !seen.has('reason')) {

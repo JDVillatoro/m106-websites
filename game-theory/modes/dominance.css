@@ -1,16 +1,16 @@
 /* Dominance mode: one row per strategy pair. */
 
 .dominance-group h3 {
-  margin: 12px 0 6px;
-  color: var(--color-text-secondary);
+  margin: var(--space-md) 0 var(--space-xs);
+  font-size: var(--font-size-body);
 }
 
 .dominance-pair {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-sm);
-  margin: 6px 0;
+  gap: var(--space-sm) 12px;
+  margin: var(--space-sm) 0;
 }
 
 .dominance-pair label {
@@ -22,8 +22,10 @@
   max-width: 100%;
 }
 
-/* After submitting: the right answer, green if it was theirs, red if not.
-   (Disabled, but kept readable.) */
+/* After submitting: each menu shows the right answer, with a check if it
+   was theirs and a cross if not. (Disabled, but kept readable.)
+   TODO(refactor): the check and cross aren't read by screen readers; the
+   feedback only says how many were right. */
 .dominance-pair select:disabled {
   opacity: 1;
   color: var(--color-text);
@@ -37,4 +39,17 @@
 .dominance-pair select.is-wrong {
   border-color: var(--color-incorrect);
   background: var(--color-incorrect-bg);
+}
+
+.dominance-pair:has(select.is-right, select.is-wrong)::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  background: var(--color-correct);
+  mask: var(--icon-check) center / contain no-repeat;
+}
+
+.dominance-pair:has(select.is-wrong)::after {
+  background: var(--color-incorrect);
+  mask-image: var(--icon-cross);
 }

@@ -105,7 +105,7 @@ test('all three kinds of part 2, scoring, reset', async () => {
   // Part 1 wrong: half the question lost, no part 2.
   const g = await graphOnScreen(page);
   await page.click(`.part1 .choice-btn[data-answer="${isEulerian(g) ? 'no' : 'yes'}"]`);
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.equal(await page.locator('.part2:not([hidden])').count(), 0);
   const points = questions;
   questions++;
@@ -130,7 +130,7 @@ test('part 2 wrong answers and input mistakes', async () => {
       assert.match(await page.locator('.part2-circuit .input-error').innerText(), /Type the circuit/);
       await page.fill('.circuit-input', 'AB');
       await page.press('.circuit-input', 'Enter');
-      assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+      assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
       kinds.add('circuit');
     } else if (!g.directed) {
       await page.click('.part1 .choice-btn[data-answer="no"]');
@@ -143,13 +143,13 @@ test('part 2 wrong answers and input mistakes', async () => {
       // Nothing added: still not Eulerian.
       await page.click('.edge-remove');
       await page.click('.part2-eulerize [type="submit"]');
-      assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+      assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
       assert.match(await page.locator('.feedback-message').innerText(), /still not Eulerian/);
       kinds.add('eulerize');
     } else {
       await page.click('.part1 .choice-btn[data-answer="no"]');
       await page.click('.part2-identify [type="submit"]');
-      assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+      assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
     }
     await page.click('.feedback-next');
   }

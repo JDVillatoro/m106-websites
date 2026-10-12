@@ -51,7 +51,7 @@ test('answer, feedback, score', async () => {
   const next = await correctAnswer(page);
   await page.fill('#degree-answer', '{99}');
   await page.click('.degree-submit');
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.equal(await page.locator('.feedback-message').innerText(), `The correct degree sequence was ${next}.`);
 
   await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');

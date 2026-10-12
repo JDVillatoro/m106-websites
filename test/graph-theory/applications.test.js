@@ -98,7 +98,7 @@ test('both puzzles: optimal, one too many, conflict; scoring and reset', async (
   for (let i = 0; i < c.n; i++) await page.selectOption(`#app-${i}`, { index: 1 });
   await page.click('.assign-form [type="submit"]');
   questions++;
-  assert.equal(await page.locator('.feedback-title').innerText(), 'Incorrect');
+  assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.match(await page.locator('.feedback-message').innerText(), /doesn't work because/);
   assert.equal(await page.locator('.assign-rows select.is-invalid').count(), 2);
 

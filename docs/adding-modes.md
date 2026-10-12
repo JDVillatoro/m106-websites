@@ -129,7 +129,11 @@ the pieces:
 - `feedbackHtml()` in the template, then `showFeedback(el, { correct,
   messageHtml })` and `hideFeedback(el)`. With `feedbackHtml({ retryLabel })`
   and `showFeedback(..., { canRetry: true })` it also offers "try again"
-  (Hamiltonian uses this).
+  (Hamiltonian uses this). The block shows an icon and its title ("Correct"
+  or "Not quite", or `title`) in green or red.
+- Buttons are outlined; give the main action (Submit) `.primary-btn` to
+  fill it. Don't color buttons green or red: those mean only right and
+  wrong answers, always with an icon or words as well.
 - `.choice-row` with `.choice-btn` buttons; `lockChoices(row, chosen,
   correct)` after an answer, `resetChoices(row)` for the next question.
 - Forms: `.answer-row` for label + input + button, and
@@ -213,8 +217,9 @@ for two graphs on a page). The topic page links `lib/graph-view.css` in its
 
 `renderPayoffMatrix(element, { rows, cols, payoffs })` from
 `game-theory/lib/matrix-view.js` draws a matrix and returns its cells by
-`"row-col"` key, for marking them (`is-selected`, `is-missed`, `is-crossed`,
-`is-answer`, `is-highlighted`, styled in `lib/matrix-view.css`). Options:
+`"row-col"` key, for marking them (`is-selected`, `is-correct`, `is-missed`,
+`is-crossed`, `is-answer`, `is-highlighted`, styled in `lib/matrix-view.css`
+with icons, outlines or crossing out as well as color). Options:
 `onCellClick` (cells become clickable and keyboard-usable), `rowLabels`,
 `colLabels`, `playerLabels`, `editable` (text boxes, as in Play).
 
