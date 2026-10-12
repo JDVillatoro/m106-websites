@@ -8,8 +8,12 @@
 //
 // Names starting with "_" are private helpers and aren't exported.
 //
-// TODO(refactor): the Applications puzzle code below still belongs in its mode
-// (see legacy/graph-theory/notes/WORK_SESSION_HANDOFF_2026-03-10.md).
+// This file is for graph math that any mode can use. Puzzle design (what
+// kinds of graphs a mode asks about, difficulty tuning, wording) belongs in
+// the mode's file.
+// TODO(refactor): the Applications puzzle code below (generateApplicationsPuzzle,
+// validateApplicationsAssignment and their helpers) belongs in
+// modes/applications.js.
 //
 // GRAPH OBJECT SHAPE
 // ------------------
@@ -2353,12 +2357,11 @@ export function generateIsoPuzzle() {
 // Hamiltonian graph puzzle helpers
 // =============================================================================
 //
-// TODO(refactor): this section was written before the 2026-03-10 refactor (see
-// notes/WORK_SESSION_HANDOFF_2026-03-10.md). Its helpers still take (edges, n)
-// instead of a graph object, and the puzzle generation and validation here are
-// Hamiltonian-mode policy that the target architecture puts in
-// hamiltonian-mode.js. Only the shared helpers (cut vertices, leaves,
-// bipartite parts) belong in graph.js.
+// TODO(refactor): this section was written before graph functions switched to
+// taking a graph object, so its helpers still take (edges, n). Its puzzle
+// generation and validation are Hamiltonian-mode design and belong in
+// modes/hamiltonian.js; only the shared helpers (cut vertices, leaves,
+// bipartite parts) belong here.
 
 // ---------------------------------------------------------------------------
 // Property detection helpers for Hamiltonian analysis

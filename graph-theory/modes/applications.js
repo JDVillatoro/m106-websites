@@ -3,7 +3,7 @@
 // Ported from legacy/graph-theory/applications-mode.js; spec in applications.md.
 // Puzzle generation and checking are still in lib/graph.js
 // (generateApplicationsPuzzle, validateApplicationsAssignment).
-// TODO(refactor): move them here, as the old handoff notes planned.
+// TODO(refactor): move them here (docs/merge-history.md, "Still to do").
 
 import { vertexId, generateApplicationsPuzzle, validateApplicationsAssignment } from '../lib/graph.js';
 import { escapeHtml, feedbackHtml, showFeedback, hideFeedback, loadStylesheet } from '../../shared/js/ui.js';

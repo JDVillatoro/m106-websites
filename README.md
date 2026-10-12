@@ -1,18 +1,22 @@
 # M106 websites
 
-Interactive practice website for M106 (IU): a hub page linking to one page
+Interactive practice website for M106 (IU), published at
+<https://jdvillatoro.github.io/m106-websites/>: a hub page linking to one page
 per topic, each with several practice modes. Plain HTML/CSS/JavaScript, no
 build step.
 
+| Topic | Modes |
+|---|---|
+| Graph theory | Make a Graph, Degree Sequences, Eulerian Graphs, Isomorphism, Planar Graphs, Graph Coloring, Applications, Hamiltonian Graphs |
+| Game theory | Play, Best Response, Dominance Relations, Nash Equilibria, Expected Payoff, Indifference |
+
 | Folder | Contents |
 |---|---|
-| `graph-theory/`, `game-theory/` | Topic pages (being filled in). |
+| `graph-theory/`, `game-theory/` | Topic pages: `modes/` has one file per mode, `lib/` the topic's math. |
 | `shared/` | Styles and code used by every page. |
 | `vendor/` | Copies of outside libraries (Cytoscape). |
 | `test/` | Tests (`npm test`). |
-| `legacy/` | The two old sites, kept until their modes are moved over. |
-
-The two old sites are being merged into this one; see [PLAN.md](PLAN.md).
+| `docs/` | [How to add modes and topics](docs/adding-modes.md); [how the two old sites were merged](docs/merge-history.md). |
 
 ## Running locally
 
@@ -29,15 +33,22 @@ browsers don't load JavaScript modules from `file://` addresses.
 npm test
 ```
 
-runs unit tests for the math code and a browser test that clicks through
-every page in headless Chromium. The dev container installs what they need;
+runs unit tests for the math code and browser tests that click through every
+mode in headless Chromium. The dev container installs what they need;
 elsewhere, run `npm ci` and `npx playwright install --with-deps chromium`
-first. The site itself doesn't use `package.json` and has no build step.
+first. The site itself doesn't use `package.json`.
+
+## Publishing
+
+GitHub Pages serves `main` from the repo root, so pushing to `main`
+publishes. `.nojekyll` makes Pages serve the files as they are.
 
 ## History
 
-Both sites were separate repos on IU GitHub (`jvillato/M106-Graph-Theory`,
-`jvillato/M106-Game-Theory`). They were imported here with `git subtree`, so
-their full commit history is kept. Older commits show the files at the top
-level rather than in their folder; use `git log --follow <file>` to see a
-file's full history.
+The site started as two separate repos on IU GitHub
+(`jvillato/M106-Graph-Theory`, `jvillato/M106-Game-Theory`), imported here
+with `git subtree` (full history kept; use `git log --follow <file>`) and
+merged into one site in October 2026: see
+[docs/merge-history.md](docs/merge-history.md).
+
+The site is under the MIT license: see [LICENSE](LICENSE).

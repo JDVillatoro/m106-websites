@@ -32,11 +32,6 @@
   color: var(--color-text-muted);
 }
 
-.topic-card .legacy-link {
-  margin-top: var(--space-sm);
-  font-size: 14px;
-}
-
 /* Mode tabs ------------------------------------------------------------ */
 .mode-tabs {
   display: flex;

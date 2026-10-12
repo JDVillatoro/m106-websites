@@ -5,7 +5,7 @@
 // mode's state survives switching tabs. The URL hash names the open mode
 // (graph-theory/#eulerian), so modes can be linked to and Back works.
 //
-// The mode format is described in PLAN.md ("How a mode works").
+// The mode format is described in docs/adding-modes.md ("A mode").
 
 import { createStorage } from './storage.js';
 import { createScore } from './score.js';

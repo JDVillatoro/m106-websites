@@ -91,13 +91,3 @@ test('pages fit a phone screen', async () => {
     await close();
   }
 });
-
-test('old sites still load', async () => {
-  // Their console isn't checked: the old graph theory site loads Cytoscape
-  // from unpkg, which may be unreachable.
-  for (const [path, title] of [['legacy/graph-theory/', 'M106: Graph Theory'], ['legacy/game-theory/', 'Game Theory']]) {
-    const { page, close } = await site.openPage(path);
-    assert.equal(await page.locator('h1').innerText(), title);
-    await close();
-  }
-});

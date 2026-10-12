@@ -2,8 +2,8 @@
    Other stylesheets use only these variables, so changing the look of the
    site should mostly mean editing this file.
 
-   These values reproduce the look of the old sites (legacy/).
-   TODO: visual redesign once the migration is done (see PLAN.md). */
+   These values reproduce the look of the two original sites.
+   TODO: visual redesign (see docs/merge-history.md, "Still to do"). */
 
 :root {
   /* Colors */

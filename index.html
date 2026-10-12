@@ -27,7 +27,6 @@
       <li class="topic-card">
         <h2><a href="${escapeHtml(t.id)}/">${escapeHtml(t.title)}</a></h2>
         <p>${escapeHtml(t.description)}</p>
-        ${t.legacyHref ? `<p class="legacy-link"><a href="${escapeHtml(t.legacyHref)}">Old version</a></p>` : ''}
       </li>`).join('');
   </script>
 </body>

@@ -1,5 +1,5 @@
 // Graph theory modes, in tab order. The first one opens by default.
-// To add a mode, write modes/<name>.js and add a line here (see PLAN.md).
+// To add a mode, write modes/<name>.js and add a line here (see docs/adding-modes.md).
 
 export default [
   { id: 'make',         title: 'Make a Graph',       load: () => import('./modes/make.js') },
