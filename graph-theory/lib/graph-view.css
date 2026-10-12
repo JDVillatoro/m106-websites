@@ -22,8 +22,17 @@
   border-radius: 6px;
 }
 
+/* Shorter, for pages that show two graphs. */
+.graph-view.is-compact .graph-viewport {
+  height: 380px;
+}
+
 @media (max-width: 720px) {
   .graph-viewport {
     height: 420px;
+  }
+
+  .graph-view.is-compact .graph-viewport {
+    height: 340px;
   }
 }

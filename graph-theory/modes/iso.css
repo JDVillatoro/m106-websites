@@ -1,0 +1,28 @@
+/* Isomorphism mode: graph headings and the vertex mapping rows. */
+
+.graph-label {
+  text-align: center;
+  margin: 16px 0 6px;
+  font-size: 16px;
+  color: var(--color-text-muted);
+}
+
+.mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0;
+}
+
+.mapping-row label {
+  min-width: 40px;
+}
+
+.mapping-row select {
+  min-width: 80px;
+}
+
+.part2-mapping .primary-btn,
+.part2-reason .primary-btn {
+  margin-top: var(--space-sm);
+}

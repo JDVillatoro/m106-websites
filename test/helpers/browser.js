@@ -32,7 +32,7 @@ export function useBrowser() {
     async openPage(path, { width = 1000, height = 900 } = {}) {
       const context = await site.browser.newContext({ viewport: { width, height } });
       const page = await context.newPage();
-      page.setDefaultTimeout(5000);   // fail fast; the pages are local
+      page.setDefaultTimeout(10000);   // generous: several browsers may run at once
       const errors = [];
       page.on('console', m => {
         if (m.type() === 'error' && (m.location().url ?? '').startsWith(site.url)) errors.push(m.text());

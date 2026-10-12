@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseDegreeSequence } from '../../graph-theory/modes/degree.js';
 import {
-  useBrowser, scoreText, checkScoreSavedAndReset, describedGraph, graphPlacement, assertGraphFits,
+  useBrowser, expectTab, scoreText, checkScoreSavedAndReset, describedGraph, graphPlacement, assertGraphFits,
 } from '../helpers/browser.js';
 
 test('reading typed degree sequences', () => {
@@ -76,14 +76,15 @@ test('zoom buttons, and switching tabs keeps the graph', async () => {
   const { page, errors, close } = await site.openPage('graph-theory/#degree');
   await page.waitForSelector('.graph-viewport canvas');
   const description = (await describedGraph(page)).text;
-  const box = () => page.locator('.graph-viewport').boundingBox();
+  const box = () => page.locator('.mode-panel:not([hidden]) .graph-viewport').boundingBox();
   const before = await box();
   await page.click('.zoom-in');
   await page.click('.zoom-out');
 
-  await page.click('.mode-tab >> text=About');
+  await page.click('.mode-tab >> text=Make a Graph');
+  await expectTab(page, 'Make a Graph');
   await page.click('.mode-tab >> text=Degree Sequences');
-  await page.waitForSelector('.mode-panel:not([hidden]) .graph-viewport');
+  await expectTab(page, 'Degree Sequences');
   const after = await box();
   assert.equal(Math.round(after.width), Math.round(before.width));
   assert.ok(after.height > 300);

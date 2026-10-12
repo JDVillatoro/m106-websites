@@ -6,11 +6,10 @@
 // an ES module: every public name is exported, unchanged. No DOM code here,
 // so the functions can be tested in Node (test/graph.test.js).
 //
-// TODO(refactor): names starting with "_" are private helpers, but the old
-// modes use three of them (_toEdges, _randInt, _edgeKey), so those are
-// exported too. Rename them, or move them to the modes, when those modes are
-// ported. The Applications puzzle code below still belongs in its mode (see
-// legacy/graph-theory/notes/WORK_SESSION_HANDOFF_2026-03-10.md).
+// Names starting with "_" are private helpers and aren't exported.
+//
+// TODO(refactor): the Applications puzzle code below still belongs in its mode
+// (see legacy/graph-theory/notes/WORK_SESSION_HANDOFF_2026-03-10.md).
 //
 // GRAPH OBJECT SHAPE
 // ------------------
@@ -510,7 +509,7 @@ function _simpleGraph(n, targetEdges) {
 }
 
 /** Convert index-pair edges to "vN" edge objects. */
-export function _toEdges(indexEdges, extraProps = {}) {
+function _toEdges(indexEdges, extraProps = {}) {
     return indexEdges.map(({ s, t }) => ({
         source: vertexId(s),
         target: vertexId(t),
@@ -964,11 +963,11 @@ export function getMismatchedVertices(graph) {
 // Planar graph puzzle helpers
 // =============================================================================
 
-export function _randInt(min, max) {
+function _randInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-export function _edgeKey(a, b) {
+function _edgeKey(a, b) {
     return a < b ? `${a}-${b}` : `${b}-${a}`;
 }
 
@@ -2892,7 +2891,8 @@ export function generateHamiltonianPuzzle() {
         isHamiltonian: true,
         strategy,
         nonHamiltonianReasons: [],
-        startVertex: g.startVertex || null,
+        // ?? not ||: start vertex 0 (A) is valid. The old site lost it ("Start at vertex undefined").
+        startVertex: g.startVertex ?? null,
         sortedEdgeCycleKeys: g.sortedEdgeCycleKeys || null,
         showWeights: strategy === 'nearest_neighbor' || strategy === 'sorted_edge',
     };

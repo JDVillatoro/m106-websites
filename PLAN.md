@@ -1,6 +1,6 @@
 # Plan: merge the two sites into one
 
-Status: steps 1–3 done on 2026-10-12. Turning on GitHub Pages (end of
+Status: steps 1–4 done on 2026-10-12. Turning on GitHub Pages (end of
 step 1) is still to do.
 
 The old sites are in `legacy/graph-theory/` and `legacy/game-theory/`,
@@ -287,12 +287,40 @@ a placeholder "About" mode that links there too.
    - Nash: "equilibria" instead of "equilibriums"; cells are locked after
      submitting (they could still be toggled) and can be chosen with the
      keyboard.
-4. **Remaining graph theory modes**, one at a time: make, eulerian, iso,
-   planar, coloring, applications, hamiltonian. Check each in the browser.
-   Remove hidden links between modes as they come up (for example,
-   `updateGraphAria` in `script.js` calls the make mode's
-   `refreshAltTextPanel`; `render.js` no longer does, so the make mode must
-   update its own alt-text panel).
+4. **Remaining graph theory modes.** *Done.* Make, eulerian, iso, planar,
+   coloring, applications, hamiltonian, each with its spec (`*.md`) moved
+   next to it and its own test file. The graph theory "About" placeholder is
+   gone; the tabs are in the old order, with Make a Graph first.
+   Bugs in the old site, fixed:
+   - Planar: Part 2 (counting vertices, edges, faces) never submitted; it
+     checked a `planarCounts` field that an earlier refactor removed.
+   - Hamiltonian: about 1 nearest-neighbor puzzle in 5 started at vertex A
+     and lost it ("Start at vertex undefined"), so no answer was accepted
+     (`||` instead of `??` in `generateHamiltonianPuzzle`).
+   - Hamiltonian: after a wrong cycle there was no way to move on except
+     Reset; now there are both "Let me try again" and "Next question", as
+     the spec says.
+   - Applications: about 1 interference puzzle in 150 showed rounded
+     distances that contradicted its own answer; those are now skipped.
+   - Applications: the spec file started with leftover AI chat text.
+
+   Differences from the old modes, on purpose:
+   - All: Part 1 stays on screen after answering, with the choice colored,
+     and one feedback block replaces the per-part ones. Empty or incomplete
+     answers get a message and aren't scored.
+   - Hamiltonian: the non-Hamiltonian reason can't be retried (retrying
+     let students guess all three options for full points). Revealing the
+     weights no longer redraws the graph and moves the vertices.
+   - Eulerian: an Eulerization naming a vertex that doesn't exist gets a
+     message and the form stays open (the old "Try Again" there started a
+     new question).
+   - Make a Graph: the unused "MCS Graph" randomize option is gone; new
+     vertices get letters instead of blank names.
+   - Narrow screens: smaller tabs, so several fit per line.
+
+   Left as it was, for you to decide:
+   - Isomorphism: the reason "Different number of triangles/squares" only
+     checks triangles (`TODO(refactor)` in `modes/iso.js`).
 5. **Remaining game theory modes**, one at a time: play, best response,
    dominance, expected payoff, indifference. This means splitting the
    2,261-line `script.js`. Matrix drawing that several modes share goes to

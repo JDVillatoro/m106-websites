@@ -1,0 +1,58 @@
+/* Applications mode: committee list, distance table, assignment rows. */
+
+.app-intro,
+.app-details,
+.app-instructions {
+  margin-top: 8px;
+}
+
+.committee-name {
+  margin: 10px 0 4px;
+  font-size: 1rem;
+}
+
+.committee-members {
+  margin-bottom: 8px;
+}
+
+.distance-table-wrap {
+  overflow-x: auto;
+  margin-top: 10px;
+}
+
+.distance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.distance-table th,
+.distance-table td {
+  border: 1px solid var(--color-tab);
+  padding: 6px;
+  text-align: center;
+}
+
+.distance-table tbody th {
+  text-align: left;
+}
+
+.assign-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 6px 0;
+}
+
+.assign-row label {
+  min-width: 220px;
+}
+
+.assign-row select {
+  min-width: 190px;
+}
+
+.assign-form .primary-btn {
+  margin-top: var(--space-sm);
+}

@@ -85,22 +85,24 @@ function announce(text) {
  * @param {object} [options]
  * @param {string} [options.label]  accessible name of the graph area
  * @param {boolean} [options.zoomButtons]
+ * @param {boolean} [options.compact]  shorter area, e.g. for two graphs on one page
  * @returns {{
  *   cy: object,
  *   draw: (graph: object, options?: {announce?: boolean}) => void,
  *   drawCircle: (graph: object, vertexOrder?: number[], options?: {announce?: boolean}) => void,
  *   describe: (graph: object, options?: {announce?: boolean}) => void,
+ *   setEdgeLabels: (graph: object, options?: {announce?: boolean}) => void,
  *   refresh: () => void,
  * }}
  */
-export function createGraphView(parent, { label = 'Graph diagram', zoomButtons = true } = {}) {
+export function createGraphView(parent, { label = 'Graph diagram', zoomButtons = true, compact = false } = {}) {
   if (typeof cytoscape !== 'function') {
     throw new Error('Cytoscape is not loaded: the page needs <script src="../vendor/cytoscape.min.js">.');
   }
 
   const descId = `graph-description-${nextViewId++}`;
   const wrapper = document.createElement('div');
-  wrapper.className = 'graph-view';
+  wrapper.className = compact ? 'graph-view is-compact' : 'graph-view';
   wrapper.innerHTML = `
     <div class="graph-area" role="img" aria-describedby="${descId}">
       <div class="graph-viewport"></div>
@@ -177,6 +179,22 @@ export function createGraphView(parent, { label = 'Graph diagram', zoomButtons =
 
     /** Update the screen-reader description without redrawing. */
     describe,
+
+    /**
+     * Show `graph`'s edge labels (e.g. weights revealed after a first answer)
+     * without moving any vertex. `graph` must be the one last drawn.
+     */
+    setEdgeLabels(graph, options) {
+      cy.batch(() => {
+        graph.edges.forEach((e, idx) => {
+          const edge = cy.getElementById(`e${idx}_${e.source}_${e.target}`);
+          const label = e.label && String(e.label).trim() !== '' ? String(e.label).trim() : null;
+          if (label === null) edge.removeData('label');
+          else edge.data('label', label);
+        });
+      });
+      describe(graph, options);
+    },
 
     /**
      * Fit the graph to its area again. Size changes are handled automatically;

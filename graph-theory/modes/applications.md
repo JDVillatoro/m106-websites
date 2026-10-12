@@ -1,10 +1,4 @@
-The user just wants a reorganized plain-text document, not a Word file. I'll restructure it directly.
-
-Here's your reorganized document:
-
----
-
-# Puzzle Mode Specification
+# Applications Mode Specification
 
 ## Overview
 

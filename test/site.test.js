@@ -25,16 +25,20 @@ test('hub lists the topics and links to them', async () => {
 test('topic page: tabs, URL hash and Back button', async () => {
   const { page, errors, close } = await site.openPage('graph-theory/');
   await page.waitForSelector('.mode-tab');
-  assert.deepEqual(await page.locator('.mode-tab').allInnerTexts(), ['About', 'Degree Sequences']);
-  await expectTab(page, 'About');
+  assert.deepEqual(await page.locator('.mode-tab').allInnerTexts(), [
+    'Make a Graph', 'Degree Sequences', 'Eulerian Graphs', 'Isomorphism', 'Planar Graphs',
+    'Graph Coloring', 'Applications', 'Hamiltonian Graphs',
+  ]);
+  await expectTab(page, 'Make a Graph');
 
   await page.click('.mode-tab >> text=Degree Sequences');
-  await page.waitForSelector('.graph-viewport canvas');
+  await expectTab(page, 'Degree Sequences');
+  await page.waitForSelector('.mode-panel:not([hidden]) .graph-viewport canvas');
   assert.equal(new URL(page.url()).hash, '#degree');
   assert.equal(await page.title(), 'Degree Sequences – Graph Theory – M106');
 
   await page.goBack();
-  await expectTab(page, 'About');
+  await expectTab(page, 'Make a Graph');
   await page.goForward();
   await expectTab(page, 'Degree Sequences');
   // Each mode's panel is built once and kept; only one is visible.
@@ -42,7 +46,7 @@ test('topic page: tabs, URL hash and Back button', async () => {
   assert.equal(await page.locator('.mode-panel:not([hidden])').count(), 1);
 
   await page.goto(site.url + 'graph-theory/#no-such-mode');
-  await expectTab(page, 'About');
+  await expectTab(page, 'Make a Graph');
   assert.deepEqual(errors, []);
   await close();
 });
@@ -56,13 +60,16 @@ test('a mode that fails to load does not break the others', async () => {
   await page.waitForSelector('.mode-error');
   assert.match(await page.locator('.mode-error').innerText(), /didn't load/);
 
-  await page.click('.mode-tab >> text=About');
-  await page.waitForSelector('.mode-panel:not([hidden]) .info');
+  await page.click('.mode-tab >> text=Make a Graph');
+  await page.waitForSelector('.mode-panel:not([hidden]) .graph-viewport canvas');
   await context.close();
 });
 
 test('pages fit a phone screen', async () => {
-  const pages = ['', 'graph-theory/', 'graph-theory/#degree', 'game-theory/', 'game-theory/#nash'];
+  const pages = [
+    '', 'game-theory/', 'game-theory/#nash',
+    ...['make', 'degree', 'eulerian', 'iso', 'planar', 'coloring', 'applications', 'hamiltonian'].map(m => `graph-theory/#${m}`),
+  ];
   for (const path of pages) {
     const { page, errors, close } = await site.openPage(path, { width: 375, height: 800 });
     await page.waitForSelector('.topic-card, .mode-panel:not([hidden]) .info');

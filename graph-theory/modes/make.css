@@ -1,0 +1,145 @@
+/* Make a Graph: toolbar, alt text box, and the graph editor. */
+
+.make-toolbar {
+  margin-bottom: var(--space-sm);
+}
+
+.panel {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--color-surface-muted);
+  border-radius: var(--radius-md);
+}
+
+/* Alt text ------------------------------------------------------------- */
+.alt-text-box {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+}
+
+.alt-text-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 12px;
+  color: var(--color-text-subtle);
+}
+
+.alt-text-output {
+  display: block;
+  width: 100%;
+  font-size: 14px;
+  resize: vertical;
+  border: none;
+  border-radius: 0 0 6px 6px;
+  background: transparent;
+}
+
+/* Editor --------------------------------------------------------------- */
+.editor-help {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  margin: 6px 0 12px;
+}
+
+.directed-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.editor-heading {
+  margin: 12px 0 8px;
+  font-size: 1.05rem;
+}
+
+.editor hr {
+  margin: 12px 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.vertex-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vertex-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vertex-number {
+  min-width: 28px;
+  text-align: right;
+  color: var(--color-text-muted);
+}
+
+.vertex-name {
+  flex: 1;
+  min-width: 180px;
+}
+
+.edge-list-header,
+.edge-row {
+  display: grid;
+  grid-template-columns: 140px 140px 1fr 90px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 8px;
+}
+
+.edge-list-header {
+  border-bottom: 1px solid var(--color-border);
+  font-weight: 600;
+}
+
+.edge-row {
+  background: var(--color-surface);
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.edge-row select,
+.edge-row input[type="text"] {
+  width: 100%;
+}
+
+.edge-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Column names inside each row, shown only on narrow screens. */
+.col-label {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .edge-list-header {
+    display: none;
+  }
+
+  .edge-row {
+    grid-template-columns: 1fr;
+  }
+
+  .edge-col {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .col-label {
+    display: inline-block;
+    width: 4rem;
+    font-weight: 600;
+  }
+}

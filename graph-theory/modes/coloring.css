@@ -1,0 +1,21 @@
+/* Coloring mode: one row per vertex with its color menu. */
+
+.color-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 6px 0;
+}
+
+.color-row label {
+  min-width: 90px;
+}
+
+.color-row select {
+  min-width: 180px;
+}
+
+.coloring-form .primary-btn {
+  margin-top: var(--space-sm);
+}
