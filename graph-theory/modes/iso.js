@@ -15,8 +15,9 @@ export const ISO_REASON_LABELS = {
   diff_edges: 'Different number of edges',
   diff_degree_seq: 'Different degree sequences',
   diff_components: 'Different number of connected components',
-  // TODO(refactor): checkNeitherReason only compares triangles, not squares.
-  diff_triangles: 'Different number of triangles/squares',
+  diff_triangles: 'Different number of triangles',
+  // TODO: add a "different number of squares" reason (needs a square count in
+  // lib/graph.js, a checkNeitherReason case, and a generator in _neitherByReason).
 };
 
 const COPY = {

@@ -17,6 +17,9 @@
   --color-danger: #e74c3c;
   --color-danger-hover: #c0392b;
   --color-danger-bg: #f8d7da;
+  --color-warning: #e67e22;
+  --color-highlight: #ffc107;
+  --color-highlight-bg: #fff3cd;
 
   --color-text: #333;
   --color-text-muted: #555;

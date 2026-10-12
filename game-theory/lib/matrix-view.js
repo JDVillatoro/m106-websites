@@ -33,6 +33,11 @@ export function strategyLabel(index, player, count) {
  * @param {string[]} [options.colLabels]  TeX; default strategyLabel(j, 2, cols)
  * @param {(key: string, cell: HTMLElement) => void} [options.onCellClick]
  *   If given, payoff cells can be chosen by click, Enter or Space.
+ * @param {[string, string]} [options.playerLabels]  default ['Player 1', 'Player 2']
+ * @param {boolean} [options.editable]
+ *   Show text boxes instead of values: strategy names (class
+ *   strategy-name-input, data-player 1|2, data-index) and payoffs (class
+ *   payoff-input, data-key "row-col", data-player p1|p2). The caller reads them.
  * @returns {Map<string, HTMLElement>}  payoff cells by "row-col" key
  */
 export function renderPayoffMatrix(container, {
@@ -40,34 +45,45 @@ export function renderPayoffMatrix(container, {
   rowLabels = Array.from({ length: rows }, (_, i) => strategyLabel(i, 1, rows)),
   colLabels = Array.from({ length: cols }, (_, j) => strategyLabel(j, 2, cols)),
   onCellClick,
+  playerLabels = ['Player 1', 'Player 2'],
+  editable = false,
 }) {
   clearMath(container);
   const clickable = typeof onCellClick === 'function';
 
-  const header = colLabels.map(l => `<th scope="col">${escapeHtml(l)}</th>`).join('');
+  const label = (tex, player, index) => (editable
+    ? `<input type="text" class="strategy-name-input" data-player="${player}" data-index="${index}"
+         value="${escapeHtml(tex)}" aria-label="Player ${player} strategy ${index + 1} name">`
+    : escapeHtml(tex));
+  const payoff = (key, player, value, where) => (editable
+    ? `<input type="text" class="payoff-input" data-key="${key}" data-player="${player}"
+         value="${escapeHtml(value)}" aria-label="${escapeHtml(where)}: ${player === 'p1' ? 'Player 1' : 'Player 2'}'s payoff">`
+    : `<span class="payoff">${escapeHtml(value)}</span>`);
+
+  const header = colLabels.map((l, j) => `<th scope="col">${label(l, 2, j)}</th>`).join('');
   const body = Array.from({ length: rows }, (_, i) => {
     const cells = Array.from({ length: cols }, (_, j) => {
       const key = `${i}-${j}`;
       const { p1, p2 } = payoffs[key];
-      const spoken = `${plainMath(rowLabels[i])} and ${plainMath(colLabels[j])}: `
-        + `Player 1 gets ${p1}, Player 2 gets ${p2}`;
+      const where = `${plainMath(rowLabels[i])} and ${plainMath(colLabels[j])}`;
+      const spoken = `${where}: Player 1 gets ${p1}, Player 2 gets ${p2}`;
       const attrs = clickable
         ? ` tabindex="0" role="button" aria-pressed="false" aria-label="${escapeHtml(spoken)}"`
         : '';
       return `
         <td class="matrix-cell${clickable ? ' is-clickable' : ''}" data-key="${key}"${attrs}>
-          <span class="payoff">${escapeHtml(p1)}</span>
-          <span class="payoff">${escapeHtml(p2)}</span>
+          ${payoff(key, 'p1', p1, where)}
+          ${payoff(key, 'p2', p2, where)}
         </td>`;
     }).join('');
-    return `<tr><th scope="row" class="row-label">${escapeHtml(rowLabels[i])}</th>${cells}</tr>`;
+    return `<tr><th scope="row" class="row-label">${label(rowLabels[i], 1, i)}</th>${cells}</tr>`;
   }).join('');
 
   container.innerHTML = `
     <div class="payoff-matrix">
-      <div class="player-label player2-label">Player 2</div>
+      <div class="player-label player2-label">${escapeHtml(playerLabels[1])}</div>
       <div class="matrix-table-row">
-        <div class="player-label player1-label">Player 1</div>
+        <div class="player-label player1-label">${escapeHtml(playerLabels[0])}</div>
         <table>
           <thead><tr><td></td>${header}</tr></thead>
           <tbody>${body}</tbody>

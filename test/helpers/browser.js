@@ -26,12 +26,14 @@ export function useBrowser() {
 
     /**
      * Open `path` (relative to the site root) in a fresh browser context, so
-     * localStorage starts empty. `errors` collects errors from the site's own
+     * localStorage starts empty. `mathjax: false` blocks MathJax. `errors` collects errors from the site's own
      * files; errors from outside (such as a CDN being unreachable) are ignored.
      */
-    async openPage(path, { width = 1000, height = 900 } = {}) {
+    async openPage(path, { width = 1000, height = 900, mathjax = true } = {}) {
       const context = await site.browser.newContext({ viewport: { width, height } });
       const page = await context.newPage();
+      // Without MathJax, labels stay as TeX text ("\\(A\\)"), which tests can read.
+      if (!mathjax) await page.route('**/mathjax@*/**', route => route.abort());
       page.setDefaultTimeout(10000);   // generous: several browsers may run at once
       const errors = [];
       page.on('console', m => {

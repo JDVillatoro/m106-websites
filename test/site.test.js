@@ -51,6 +51,17 @@ test('topic page: tabs, URL hash and Back button', async () => {
   await close();
 });
 
+test('game theory tabs', async () => {
+  const { page, errors, close } = await site.openPage('game-theory/');
+  await page.waitForSelector('.mode-tab');
+  assert.deepEqual(await page.locator('.mode-tab').allInnerTexts(), [
+    'Play', 'Best Response', 'Dominance Relations', 'Nash Equilibria', 'Expected Payoff', 'Indifference',
+  ]);
+  await expectTab(page, 'Play');
+  assert.deepEqual(errors, []);
+  await close();
+});
+
 test('a mode that fails to load does not break the others', async () => {
   const context = await site.browser.newContext();
   const page = await context.newPage();
@@ -67,7 +78,8 @@ test('a mode that fails to load does not break the others', async () => {
 
 test('pages fit a phone screen', async () => {
   const pages = [
-    '', 'game-theory/', 'game-theory/#nash',
+    '',
+    ...['play', 'best-response', 'dominance', 'nash', 'expected-payoff', 'indifference'].map(m => `game-theory/#${m}`),
     ...['make', 'degree', 'eulerian', 'iso', 'planar', 'coloring', 'applications', 'hamiltonian'].map(m => `graph-theory/#${m}`),
   ];
   for (const path of pages) {

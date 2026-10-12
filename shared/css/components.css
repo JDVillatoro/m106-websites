@@ -132,6 +132,10 @@
   width: 90px;
 }
 
+.answer-row + .answer-row {
+  margin-top: var(--space-sm);
+}
+
 /* Message about badly formatted input, shown under the answer row. */
 .input-error {
   color: var(--color-danger);

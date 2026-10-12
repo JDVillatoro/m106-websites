@@ -1,0 +1,40 @@
+/* Dominance mode: one row per strategy pair. */
+
+.dominance-group h3 {
+  margin: 12px 0 6px;
+  color: var(--color-text-muted);
+}
+
+.dominance-pair {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 6px 0;
+}
+
+.dominance-pair label {
+  min-width: 90px;
+}
+
+.dominance-pair select {
+  min-width: 240px;
+  max-width: 100%;
+}
+
+/* After submitting: the right answer, green if it was theirs, red if not.
+   (Disabled, but kept readable.) */
+.dominance-pair select:disabled {
+  opacity: 1;
+  color: var(--color-text);
+}
+
+.dominance-pair select.is-right {
+  border-color: var(--color-success);
+  background: var(--color-success-bg);
+}
+
+.dominance-pair select.is-wrong {
+  border-color: var(--color-danger);
+  background: var(--color-danger-bg);
+}

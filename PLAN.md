@@ -1,6 +1,6 @@
 # Plan: merge the two sites into one
 
-Status: steps 1–4 done on 2026-10-12. Turning on GitHub Pages (end of
+Status: steps 1–5 done on 2026-10-12. Turning on GitHub Pages (end of
 step 1) is still to do.
 
 The old sites are in `legacy/graph-theory/` and `legacy/game-theory/`,
@@ -199,8 +199,14 @@ A game mode calls `renderPayoffMatrix(element, { rows, cols, payoffs })` from
 mode can mark them. With `onCellClick`, cells can be chosen by mouse or
 keyboard. Labels default to A, B, C / X, Y, Z (`strategyLabel`) and are TeX,
 typeset by MathJax through `shared/js/math.js`. Cell markings shared between
-modes (`is-selected`, `is-missed`, `is-crossed`) are in `lib/matrix-view.css`.
-`game-theory/modes/nash.js` is the example.
+modes (`is-selected`, `is-missed`, `is-crossed`, `is-answer`, `is-highlighted`)
+are in `lib/matrix-view.css`. `playerLabels` changes "Player 1"/"Player 2", and
+`editable: true` shows text boxes for payoffs and strategy names (used by
+Play). `game-theory/modes/nash.js` is the simplest example.
+
+Text with TeX outside the matrix (prompts, buttons) is typeset with
+`typeset(elements)` from `shared/js/math.js`, after `clearMath` on the old
+content. Calls are queued, so they never overlap.
 ### Adding a mode
 
 1. Write `<topic>/modes/<name>.js`.
@@ -245,8 +251,10 @@ Scores are saved under `m106:<topic>:<mode>:score`.
 Each ported mode gets its own test file in `test/<topic>/`: answer right,
 answer wrong, check the feedback, and `checkScoreSavedAndReset`. The tests
 work out the right answer from the page itself (the graph's screen-reader
-description, the payoffs in the matrix) using the `lib/` functions. New math
-in `lib/` gets unit tests.
+description, the payoffs in the matrix) using the `lib/` functions or small
+solvers in `test/helpers/`. Game theory tests open pages with
+`{ mathjax: false }`, so labels stay readable TeX like `\(A\)`. New math in
+`lib/` gets unit tests.
 
 ## Outside libraries
 
@@ -318,15 +326,34 @@ a placeholder "About" mode that links there too.
      vertices get letters instead of blank names.
    - Narrow screens: smaller tabs, so several fit per line.
 
-   Left as it was, for you to decide:
-   - Isomorphism: the reason "Different number of triangles/squares" only
-     checks triangles (`TODO(refactor)` in `modes/iso.js`).
-5. **Remaining game theory modes**, one at a time: play, best response,
-   dominance, expected payoff, indifference. This means splitting the
-   2,261-line `script.js`. Matrix drawing that several modes share goes to
-   `lib/matrix-view.js`; where modes differ, the code stays in the mode.
-6. **Clean up.** Delete `legacy/`, the placeholder modes and the
-   `legacyHref` entries in `topics.js`. Write `ADDING_MODES.md` for the new
+   - Isomorphism: the reason "Different number of triangles/squares" is now
+     "Different number of triangles", which is what it checked. A squares
+     reason is a TODO in `modes/iso.js`.
+5. **Remaining game theory modes.** *Done.* Play, best response, dominance,
+   expected payoff and indifference, one file each; `script.js` is no longer
+   used. The game theory "About" placeholder is gone; the tabs are in the
+   old order, with Play first.
+   Bugs in the old site, fixed:
+   - Indifference: the answer shown after a question was wrong about 1 time
+     in 14 (7/13 shown as "6/11"), and answers within 0.02 were accepted
+     (2/7 for 5/17). The answers are fractions with small denominators, so
+     both are now exact.
+   - Play: after "Update Dimensions", payoffs typed into the new matrix were
+     thrown away (all zeros). Payoffs that aren't numbers were shown but
+     played as 0; they now get a message. The matrix was keyed by strategy
+     names, so two strategies with the same name clashed.
+
+   Differences from the old modes, on purpose:
+   - All: strategy labels in prompts, buttons and feedback are typeset too;
+     empty answers get a message and aren't scored.
+   - Best response: after a wrong answer the best-response cells stay
+     highlighted (they used to flash for 3 seconds).
+   - Dominance: every pair must be answered before submitting. Still scored
+     all or nothing.
+   - Play: "Update dimensions" keeps the editor open for the new matrix; only
+     the last outcome played stays highlighted.
+6. **Clean up.** Delete `legacy/` and the `legacyHref` entries in
+   `topics.js` (the placeholder modes are already gone). Write `ADDING_MODES.md` for the new
    setup (based on the "How a mode works" section above). Update `README.md`
    and `CLAUDE.md`. Retire the old handoff notes.
 
