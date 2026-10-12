@@ -1,0 +1,202 @@
+/* Components shared by every page: hub cards, mode tabs, mode panels,
+   buttons, feedback and the scoreboard. */
+
+/* Hub: one card per topic --------------------------------------------- */
+.topic-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-lg);
+  list-style: none;
+}
+
+.topic-card {
+  background: var(--color-surface-tint);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+}
+
+.topic-card h2 {
+  margin-bottom: var(--space-sm);
+}
+
+.topic-card h2 a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.topic-card h2 a:hover {
+  text-decoration: underline;
+}
+
+.topic-card p {
+  color: var(--color-text-muted);
+}
+
+.topic-card .legacy-link {
+  margin-top: var(--space-sm);
+  font-size: 14px;
+}
+
+/* Mode tabs ------------------------------------------------------------ */
+.mode-tabs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.mode-tab {
+  padding: 10px var(--space-xl);
+  border-radius: var(--radius-sm);
+  background: var(--color-tab);
+  color: var(--color-text-muted);
+  font-weight: bold;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mode-tab:hover {
+  opacity: 0.9;
+}
+
+.mode-tab[aria-current="page"] {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+/* Mode panel (one per mode, built by topic-shell.js) ------------------- */
+.mode-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.mode-status {
+  color: var(--color-text-subtle);
+  font-style: italic;
+}
+
+.mode-error {
+  background: var(--color-danger-bg);
+  border-left: 4px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  padding: var(--space-lg);
+}
+
+/* Blocks inside a mode -------------------------------------------------- */
+
+/* Short explanation of what to do; shown at the top of a mode. */
+.info {
+  background: var(--color-surface-tint);
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xl);
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.section {
+  margin-bottom: var(--space-xl);
+}
+
+/* Buttons --------------------------------------------------------------- */
+
+/* Submit, Next and other main actions. */
+.primary-btn {
+  background: var(--color-accent-strong);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: var(--color-accent-strong-hover);
+}
+
+.reset-btn {
+  background: var(--page-background);
+  padding: 12px 24px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.reset-btn:hover:not(:disabled) {
+  background: var(--page-background);
+}
+
+/* A row of answer choices. */
+.choice-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.choice-btn {
+  padding: 12px 32px;
+  font-weight: bold;
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(102, 126, 234, 0.25);
+}
+
+.choice-btn.is-selected {
+  box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.35);
+}
+
+.choice-btn.is-correct,
+.choice-btn.is-correct:hover:not(:disabled) {
+  background: var(--color-success);
+}
+
+.choice-btn.is-wrong,
+.choice-btn.is-wrong:hover:not(:disabled) {
+  background: var(--color-danger);
+}
+
+/* Feedback after an answer ---------------------------------------------- */
+.feedback {
+  background: var(--color-surface-muted);
+  padding: var(--space-lg);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xl);
+}
+
+.feedback.is-correct {
+  background: var(--color-success-bg);
+  border-left: 4px solid var(--color-success);
+}
+
+.feedback.is-incorrect {
+  background: var(--color-danger-bg);
+  border-left: 4px solid var(--color-danger);
+}
+
+.feedback h2 {
+  margin-bottom: var(--space-sm);
+}
+
+.feedback .primary-btn {
+  margin-top: var(--space-md);
+}
+
+/* Scoreboard (exercises only) ------------------------------------------- */
+.scoreboard {
+  background: var(--color-surface-tint);
+  padding: var(--space-lg);
+  border-radius: var(--radius-sm);
+}
+
+.scoreboard-values {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.scoreboard-values p {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--color-accent);
+}
+
+.scoreboard-values span {
+  color: var(--color-accent-strong);
+}

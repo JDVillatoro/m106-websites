@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>M106 Practice</title>
+  <link rel="stylesheet" href="shared/css/tokens.css">
+  <link rel="stylesheet" href="shared/css/base.css">
+  <link rel="stylesheet" href="shared/css/components.css">
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <h1>M106 Practice</h1>
+      <p class="info">Choose a topic to practice.</p>
+    </header>
+    <main>
+      <ul class="topic-list" id="topic-list"></ul>
+    </main>
+  </div>
+
+  <script type="module">
+    import topics from './topics.js';
+    import { escapeHtml } from './shared/js/ui.js';
+
+    document.getElementById('topic-list').innerHTML = topics.map(t => `
+      <li class="topic-card">
+        <h2><a href="${escapeHtml(t.id)}/">${escapeHtml(t.title)}</a></h2>
+        <p>${escapeHtml(t.description)}</p>
+        ${t.legacyHref ? `<p class="legacy-link"><a href="${escapeHtml(t.legacyHref)}">Old version</a></p>` : ''}
+      </li>`).join('');
+  </script>
+</body>
+</html>
