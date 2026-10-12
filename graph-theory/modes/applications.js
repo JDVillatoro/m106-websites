@@ -5,7 +5,9 @@
 // validateApplicationsAssignment) were moved here unchanged from lib/graph.js,
 // except that they use the local helpers below instead of graph.js's private ones.
 
-import { shuffle, vertexId, vertexIndex, generatePlanarGraph, chromaticNumber } from '../lib/graph.js';
+import { shuffle, vertexId, vertexIndex } from '../lib/graph/core.js';
+import { generatePlanarGraph } from '../lib/graph/planar.js';
+import { chromaticNumber } from '../lib/graph/coloring.js';
 import { escapeHtml, feedbackHtml, showFeedback, hideFeedback, loadStylesheet } from '../../shared/js/ui.js';
 
 const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;

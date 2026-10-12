@@ -7,9 +7,10 @@
 // ones. Cut vertices, leaves and bipartite parts are graph math and stay there.
 
 import {
-  shuffle, makeLabels, vertexId, vertexIndex, vertexLabel, generateSimpleGraph,
+  shuffle, makeLabels, vertexId, vertexIndex, vertexLabel,
   cutVertices, leafVertices, bipartiteParts,
-} from '../lib/graph.js';
+} from '../lib/graph/core.js';
+import { generateSimpleGraph } from '../lib/graph/generate.js';
 import { createGraphView } from '../lib/render.js';
 import {
   escapeHtml, feedbackHtml, showFeedback, hideFeedback, lockChoices, resetChoices,

@@ -2,7 +2,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeLabels, vertexId } from '../../graph-theory/lib/graph.js';
+import { makeLabels, vertexId } from '../../graph-theory/lib/graph/core.js';
 import { generateIsoPuzzle, checkNeitherReason } from '../../graph-theory/modes/iso.js';
 import { useBrowser, scoreText, checkScoreSavedAndReset } from '../helpers/browser.js';
 import { graphOnScreen } from '../helpers/graph-on-screen.js';

@@ -1,7 +1,8 @@
 // Degree Sequences: read a graph and type its degree sequence.
 // Ported from legacy/graph-theory/degree-mode.js.
 
-import { generateSimpleGraph, degreeSequence, vertexId } from '../lib/graph.js';
+import { degreeSequence, vertexId } from '../lib/graph/core.js';
+import { generateSimpleGraph } from '../lib/graph/generate.js';
 import { createGraphView } from '../lib/render.js';
 import { escapeHtml, feedbackHtml, showFeedback, hideFeedback } from '../../shared/js/ui.js';
 

@@ -3,7 +3,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { makeLabels, vertexId } from '../../graph-theory/lib/graph.js';
+import { makeLabels, vertexId } from '../../graph-theory/lib/graph/core.js';
 import { graphToDescription } from '../../graph-theory/lib/render.js';
 
 test('screen reader description', () => {

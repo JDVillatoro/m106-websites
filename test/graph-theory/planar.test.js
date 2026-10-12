@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { generatePlanarPuzzle } from '../../graph-theory/modes/planar.js';
-import { isConnected } from '../../graph-theory/lib/graph.js';
+import { isConnected } from '../../graph-theory/lib/graph/core.js';
 import { useBrowser, scoreText, checkScoreSavedAndReset } from '../helpers/browser.js';
 import { graphOnScreen, containsK5, containsK33 } from '../helpers/graph-on-screen.js';
 

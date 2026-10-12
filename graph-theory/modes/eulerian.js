@@ -7,10 +7,12 @@
 
 import {
   vertexIndex, vertexLabel, shuffle,
-  generateEulerianDigraph, generateEulerianSimpleGraph, generateEulerianMultigraph,
   isConnected, isStronglyConnected, getOddVertices, getDirectedDegrees,
+} from '../lib/graph/core.js';
+import {
+  generateEulerianDigraph, generateEulerianSimpleGraph, generateEulerianMultigraph,
   getMismatchedVertices, minEulerizeEdges,
-} from '../lib/graph.js';
+} from '../lib/graph/eulerian.js';
 import { createGraphView } from '../lib/render.js';
 import {
   escapeHtml, feedbackHtml, showFeedback, hideFeedback, lockChoices, resetChoices, loadStylesheet,

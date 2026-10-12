@@ -19,7 +19,8 @@ changed on purpose, and what's still to do.
 - `graph-theory/`, `game-theory/`: topic pages. Each has `index.html`,
   `modes.js` (one line per mode), `modes/` (one file per mode, plus its CSS
   and spec `.md` if any) and `lib/` (the topic's math, plus drawing code).
-  `lib/graph.js` is being cleaned up: see `docs/graph_cleanup_plan.md`.
+  Graph theory's math is in `lib/graph/`, one file per subject (`core.js`
+  describes the graph object); modes import from the file they need.
 - `vendor/`: pinned copies of Cytoscape and its SVG plugin.
 - `test/`: `npm test` runs Node unit tests and Playwright browser tests (the
   site served under `/m106-websites/`, as on GitHub Pages): `site.test.js`
@@ -34,7 +35,7 @@ changed on purpose, and what's still to do.
 
 - Links and imports are relative (`./`, `../`), never starting with `/`: on
   GitHub Pages the site lives under `/m106-websites/`.
-- `lib/graph.js` and `lib/game.js` are math only (no page code); puzzle
+- `lib/graph/` and `lib/game.js` are math only (no page code); puzzle
   design, wording and scoring belong in the mode's file.
 - Code that doesn't fit, where the fix isn't obvious, gets a
   `TODO(refactor):` comment instead of a guess. Find them with

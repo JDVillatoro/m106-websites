@@ -2,9 +2,8 @@
 // faces; if not, say whether it contains K5 or K3,3.
 // Ported from legacy/graph-theory/planar-mode.js; spec in planar.md.
 
-import {
-  shuffle, generatePlanarGraph, generateNonPlanarGraph, vertexCount, edgeCount, faceCount,
-} from '../lib/graph.js';
+import { shuffle, vertexCount, edgeCount } from '../lib/graph/core.js';
+import { generatePlanarGraph, generateNonPlanarGraph, faceCount } from '../lib/graph/planar.js';
 import { createGraphView } from '../lib/render.js';
 import {
   escapeHtml, feedbackHtml, showFeedback, hideFeedback, lockChoices, resetChoices,

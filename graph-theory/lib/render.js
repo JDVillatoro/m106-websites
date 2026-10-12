@@ -10,7 +10,7 @@
 // - lib/graph-view.css, before any graph area is built: Cytoscape measures its
 //   area straight away, so the area's size must already be styled.
 
-import { vertexId, vertexIndex, vertexLabel } from './graph.js';
+import { vertexId, vertexIndex, vertexLabel } from './graph/core.js';
 
 // ---------------------------------------------------------------------------
 // Graph description (for screen readers / alt text)

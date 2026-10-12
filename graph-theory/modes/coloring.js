@@ -4,9 +4,11 @@
 // Puzzle generation (up to getGreedyVertexOrder) is copied unchanged, except
 // that it uses the local helpers below instead of graph.js's private ones.
 
+import { shuffle, vertexId } from '../lib/graph/core.js';
+import { generatePlanarGraph } from '../lib/graph/planar.js';
 import {
-  shuffle, vertexId, generatePlanarGraph, chromaticNumber, validateGraphColoring, validateGreedyColoring,
-} from '../lib/graph.js';
+  chromaticNumber, validateGraphColoring, validateGreedyColoring,
+} from '../lib/graph/coloring.js';
 import { createGraphView } from '../lib/render.js';
 import { escapeHtml, feedbackHtml, showFeedback, hideFeedback, loadStylesheet } from '../../shared/js/ui.js';
 

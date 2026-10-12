@@ -4,12 +4,15 @@
 // reason check (from ISO_PUZZLE_N_RANGE to generateIsoPuzzle) were moved here
 // unchanged from lib/graph.js, except that _isoBaseGraph calls
 // generateSimpleGraph instead of graph.js's private helpers. The invariants and
-// the witness check (verifyIsomorphismWitness) are graph math and stay there.
+// the witness check (verifyIsomorphismWitness) are graph math: lib/graph/iso.js.
 
 import {
-  shuffle, makeLabels, vertexId, vertexIndex, vertexLabel, degreeSequence, generateSimpleGraph,
-  countTriangles, componentCount, graphInvariants, applyPermutation, verifyIsomorphismWitness,
-} from '../lib/graph.js';
+  shuffle, makeLabels, vertexId, vertexIndex, vertexLabel, degreeSequence, componentCount,
+} from '../lib/graph/core.js';
+import { generateSimpleGraph } from '../lib/graph/generate.js';
+import {
+  countTriangles, graphInvariants, applyPermutation, verifyIsomorphismWitness,
+} from '../lib/graph/iso.js';
 import { createGraphView } from '../lib/render.js';
 import {
   escapeHtml, feedbackHtml, showFeedback, hideFeedback, lockChoices, resetChoices, loadStylesheet,
@@ -23,7 +26,7 @@ export const ISO_REASON_LABELS = {
   diff_components: 'Different number of connected components',
   diff_triangles: 'Different number of triangles',
   // TODO: add a "different number of squares" reason (needs a square count in
-  // lib/graph.js, a checkNeitherReason case, and a generator in _neitherByReason
+  // lib/graph/iso.js, a checkNeitherReason case, and a generator in _neitherByReason
   // below).
 };
 

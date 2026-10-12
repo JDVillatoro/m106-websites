@@ -2,10 +2,13 @@
 // and download the drawing. Not scored.
 // Ported from legacy/graph-theory/make-mode.js.
 
+import { vertexId, makeLabels } from '../lib/graph/core.js';
 import {
-  vertexId, makeLabels, generateRandomGraph, generateSimpleGraph,
-  generateMSCDigraph, generateEulerianDigraph, generateEulerianSimpleGraph, generateEulerianMultigraph,
-} from '../lib/graph.js';
+  generateRandomGraph, generateSimpleGraph, generateMSCDigraph,
+} from '../lib/graph/generate.js';
+import {
+  generateEulerianDigraph, generateEulerianSimpleGraph, generateEulerianMultigraph,
+} from '../lib/graph/eulerian.js';
 import { createGraphView, graphToDescription } from '../lib/render.js';
 import { escapeHtml, loadStylesheet } from '../../shared/js/ui.js';
 

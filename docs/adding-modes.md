@@ -14,14 +14,16 @@ topic page; an **exercise** is a mode that keeps score.
 - **Relative paths only** (`./`, `../`) in links, imports and stylesheets.
   The site lives at `https://jdvillatoro.github.io/m106-websites/`, so a path
   starting with `/` breaks there. The tests catch this.
-- **Math in `lib/`, puzzles in modes.** `lib/graph.js` and `lib/game.js` hold
+- **Math in `lib/`, puzzles in modes.** `lib/graph/` and `lib/game.js` hold
   math any mode can use, with no page code, so Node can test them. What
   kinds of questions a mode asks, difficulty, wording and scoring belong in the
   mode's file. Some duplication between modes is fine if it keeps them
-  independent.
+  independent. `lib/graph/` has one file per subject (`core.js`,
+  `generate.js`, `eulerian.js`, `planar.js`, `coloring.js`, `iso.js`); modes
+  import from the file they need, and never names starting with `_`.
 - **Graph functions take a whole graph object**
   (`{ n, names, directed, edgeLabel, edges }`, described at the top of
-  `lib/graph.js`), not pieces like `edges, n`.
+  `lib/graph/core.js`), not pieces like `edges, n`.
 - **User-facing text** goes in one `COPY` object at the top of each mode file.
 - Code that doesn't fit, where the fix isn't obvious, gets a
   `TODO(refactor):` comment: `git grep 'TODO(refactor)'`.
@@ -243,8 +245,10 @@ Every exercise shows **Questions**, **Points** (fractions allowed) and
 `npm test` runs everything in `test/` (Node's test runner; browser tests use
 Playwright with headless Chromium, which the dev container installs).
 
-- `test/<topic>/graph.test.js`, `game.test.js`: the `lib/` math, with small
-  examples checked by hand and many runs of the random generators.
+- `test/graph-theory/graph/<file>.test.js` (one per `lib/graph/` file; small
+  graphs in `test/helpers/small-graphs.js`) and `test/game-theory/game.test.js`:
+  the `lib/` math, with small examples checked by hand and many runs of the
+  random generators.
 - `test/<topic>/<mode>.test.js`: one per mode. Unit tests for what the mode
   exports, then browser tests: answer right, answer wrong, bad input, and
   `checkScoreSavedAndReset`. Tests work out the right answer from what's on
