@@ -26,6 +26,10 @@ keeping to `docs/design.md` (pass 6) and `docs/merge-history.md`.
 | Score | Shown as points out of questions: "3 / 4 points" (points can be 2.5). "No score" before the first question. No percentage anywhere: it reads like completion. The score box sits beside the mode (below it on phones), with "Reset score" as a small link-style button inside it. |
 | Feedback | Border, light background, an icon, and a word ("Correct", "Not quite") as its first line, so it never depends on color alone. |
 | Dark mode | Not now. |
+| Publishing | No students use the site yet, so each pass can go to `main` when it's done, even if the site looks half-finished in between. |
+| Name and footer | No changes: the site stays "M106 Practice", and there is no footer. |
+| Add and remove buttons | No longer green and red; green and red mean only correct and incorrect. |
+| Links | Both must be linkable: the mode list (`graph-theory/`) and each mode (`graph-theory/#degree`). |
 
 ## How to work
 
@@ -123,8 +127,6 @@ expected.
 - [ ] Shared header, built in one place (`shared/js/`) for the hub and topic
       pages: crimson top line, "M106 Practice" with the crimson block
       (links to the hub), topic links on the right with `aria-current`.
-      Shared footer: "M106 Practice · Scores are saved in this browser
-      only."
 - [ ] Hub (`index.html`): title, one-line intro, topic cards (title as a
       link, description, number of modes). Cards are links big enough to tap.
 
@@ -134,6 +136,8 @@ This pass changes behavior: update `test/site.test.js` and the helpers in
 `test/helpers/browser.js` that find tabs, the scoreboard and its text.
 
 - [ ] `modes.js`: add a one-line `description` to each mode, for the cards.
+      Draft them and list them all in the report: Joel reviews this wording
+      before it's published.
 - [ ] `topic-shell.js`: no hash shows the mode list (cards: title,
       description, the saved score as "3 / 4 points", "No score", or "Tool"
       for modes without a score). A hash shows that mode with breadcrumb
@@ -148,17 +152,19 @@ This pass changes behavior: update `test/site.test.js` and the helpers in
       `document.title`, so screen reader users hear where they are.
 - [ ] Scoreboard as in Decisions; `score.js` keeps `percent` only if
       something still uses it.
-- [ ] Old links: `graph-theory/` used to open the first mode; it now shows
-      the list. Check nothing in the repo or course materials relies on
-      that (ask Joel).
+- [ ] Links: `graph-theory/` (no hash) shows the list and `#<mode id>`
+      opens that mode, both from a fresh page load and with Back/Forward.
+      Test both. An unknown hash shows the list.
 
 ## Pass 6: remaining accessibility, and keeping it consistent
 
-- [ ] Graph Coloring palette (`COLORING_BASE` in `graph-theory/modes/coloring.js`):
-      keep the color names (they are the answer letters R, G, B, Y, P, O) but
-      choose shades that are easier to tell apart with color blindness, and
-      show the color's letter inside each colored vertex so color isn't the
-      only signal. Check with a color-blindness simulator.
+- [ ] Graph Coloring (`COLORING_BASE` in `graph-theory/modes/coloring.js`)
+      is meant not to rely on color: vertices already show their color's
+      letter (`3: R`, or `3: A` in greedy questions) and colors are chosen by
+      name from menus. Keep that and the names. Check: the label is readable
+      on every fill (4.5:1; change shades or use a white label on dark
+      fills), the graph's text description includes each vertex's color, and
+      the shades still look like their names.
 - [ ] Keyboard check of every mode, especially clicking vertices and edges
       in Make a Graph, Coloring and Hamiltonian: list what can't be done
       without a mouse, with `TODO(refactor):` comments where the fix isn't
