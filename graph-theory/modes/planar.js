@@ -29,7 +29,10 @@ export function generatePlanarPuzzle() {
     return { ...graph, isPlanar: true, obstruction: null };
   }
   const obstruction = (n >= 6 && Math.random() < 0.5) ? 'K3,3' : 'K5';
-  const graph = generateNonPlanarGraph(n, obstruction, PLANAR_MODE_CONFIG.nonPlanarExtraEdgeSlackMax);
+  const graph = generateNonPlanarGraph(
+    n, obstruction, PLANAR_MODE_CONFIG.nonPlanarExtraEdgeSlackMax,
+    PLANAR_MODE_CONFIG.planarExtraEdgeFactorMin, PLANAR_MODE_CONFIG.planarExtraEdgeFactorMax,
+  );
   return { ...graph, isPlanar: false, obstruction };
 }
 

@@ -1085,10 +1085,13 @@ function _injectK33(indexEdges, n) {
  * @param {number} n
  * @param {'K5'|'K3,3'} type
  * @param {number} nonPlanarExtraEdgeSlackMax
+ * @param {number} planarExtraEdgeFactorMin  for the planar base (see generatePlanarGraph)
+ * @param {number} planarExtraEdgeFactorMax
  * @returns {object}
  */
-export function generateNonPlanarGraph(n, type, nonPlanarExtraEdgeSlackMax) {
-    const base = generatePlanarGraph(n, 1.14, 1.55);
+export function generateNonPlanarGraph(n, type, nonPlanarExtraEdgeSlackMax,
+                                       planarExtraEdgeFactorMin, planarExtraEdgeFactorMax) {
+    const base = generatePlanarGraph(n, planarExtraEdgeFactorMin, planarExtraEdgeFactorMax);
     let indexEdges = base.edges.map(e => ({ s: vertexIndex(e.source), t: vertexIndex(e.target) }));
     const baseEdgeCount = indexEdges.length;
 
@@ -1138,35 +1141,11 @@ function _makeNumberNames(n) {
     return Array.from({ length: n }, (_, i) => String(i + 1));
 }
 
-function _dedupeIndexEdges(indexEdges) {
-    const seen = new Set();
-    const out = [];
-    for (const e of indexEdges) {
-        const key = _edgeKey(e.s, e.t);
-        if (e.s === e.t || seen.has(key)) continue;
-        seen.add(key);
-        out.push({ s: Math.min(e.s, e.t), t: Math.max(e.s, e.t) });
-    }
-    return out;
-}
-
-function _buildAdjFromIndexEdges(indexEdges, n) {
-    const adj = Array.from({ length: n }, () => new Set());
-    for (const { s, t } of indexEdges) {
-        if (s === t) continue;
-        adj[s].add(t);
-        adj[t].add(s);
-    }
-    return adj;
-}
-
-function _isColorableWithK(indexEdges, n, k) {
+// Can the vertices be colored with k colors so that neighbors differ?
+// adj is from _buildAdjList, which drops self-loops and repeated edges.
+function _isColorableWithK(adj, k) {
     if (k <= 0) return false;
-    const adj = _buildAdjFromIndexEdges(indexEdges, n);
-
-    for (let i = 0; i < n; i++) {
-        if (adj[i].has(i)) return false;
-    }
+    const n = adj.length;
 
     const order = Array.from({ length: n }, (_, i) => i)
         .sort((a, b) => adj[b].size - adj[a].size);
@@ -1195,13 +1174,10 @@ function _isColorableWithK(indexEdges, n, k) {
 
 export function chromaticNumber(graph, maxColors = 6) {
     if (!graph || !Array.isArray(graph.edges)) return null;
-    const n = Number(graph.n) || 0;
-    const indexEdges = _dedupeIndexEdges(
-        graph.edges.map(e => ({ s: vertexIndex(e.source), t: vertexIndex(e.target) }))
-    );
+    const adj = _buildAdjList(graph);
 
     for (let k = 1; k <= maxColors; k++) {
-        if (_isColorableWithK(indexEdges, n, k)) return k;
+        if (_isColorableWithK(adj, k)) return k;
     }
     return null;
 }
@@ -1506,18 +1482,15 @@ export function verifyIsomorphismWitness(g1, g2, nameMap) {
 // =============================================================================
 // Cut vertices, leaves, bipartite parts (used by the Hamiltonian mode)
 // =============================================================================
-//
-// TODO(refactor): written before graph functions switched to taking a graph
-// object, so these still take (edges, n) (docs/graph_cleanup_plan.md, pass 3).
 
 /**
  * Return indices of all cut vertices in an undirected graph.
  * A cut vertex is a vertex whose removal increases connected-component count.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {number[]}
  */
-export function cutVertices(edges, n) {
+export function cutVertices(graph) {
+    const { edges, n } = graph;
     if (n <= 2) return [];
     const result = [];
     for (let v = 0; v < n; v++) {
@@ -1545,24 +1518,23 @@ export function cutVertices(edges, n) {
 
 /**
  * Return indices of all leaf vertices (degree 1) in an undirected graph.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {number[]}
  */
-export function leafVertices(edges, n) {
-    const deg = getDegrees({ edges, n });
+export function leafVertices(graph) {
+    const deg = getDegrees(graph);
     return deg.reduce((acc, d, i) => { if (d === 1) acc.push(i); return acc; }, []);
 }
 
 /**
  * Test whether an undirected graph is bipartite using BFS 2-coloring.
  * Returns the two parts as arrays of vertex indices, or null if not bipartite.
- * @param {Edge[]} edges
- * @param {number} n
+ * @param {object} graph
  * @returns {[number[], number[]]|null}
  */
-export function bipartiteParts(edges, n) {
-    const adj = _buildAdjList({ edges, n });
+export function bipartiteParts(graph) {
+    const n = Number(graph?.n) || 0;
+    const adj = _buildAdjList(graph);
     const color = new Array(n).fill(-1);
     const parts = [[], []];
     for (let start = 0; start < n; start++) {

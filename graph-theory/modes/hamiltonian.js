@@ -496,9 +496,10 @@ export function generateHamiltonianPuzzle() {
         const edges = toEdges(indexEdges);
 
         // Compute valid reasons for this specific graph
-        const leaves = leafVertices(edges, n);
-        const cutVerts = cutVertices(edges, n);
-        const bipParts = bipartiteParts(edges, n);
+        const graph = { n, names, directed: false, edgeLabel: null, edges };
+        const leaves = leafVertices(graph);
+        const cutVerts = cutVertices(graph);
+        const bipParts = bipartiteParts(graph);
 
         const reasons = [];
         if (leaves.length > 0) reasons.push('leaf');
@@ -509,7 +510,7 @@ export function generateHamiltonianPuzzle() {
         if (reasons.length === 0) reasons.push('cut_vertex');
 
         return {
-            n, names, directed: false, edgeLabel: null, edges,
+            ...graph,
             isHamiltonian: false,
             strategy: null,
             hamiltonianCycle: null,

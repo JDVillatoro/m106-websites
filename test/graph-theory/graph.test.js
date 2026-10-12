@@ -103,12 +103,11 @@ test('isomorphism helpers', () => {
 });
 
 test('cut vertices, leaves, bipartite parts', () => {
-  // These still take (edges, n); see docs/graph_cleanup_plan.md, pass 3.
-  assert.deepEqual(g.cutVertices(kite.edges, 4), [2]);
-  assert.deepEqual(g.cutVertices(square.edges, 4), []);
-  assert.deepEqual(g.leafVertices(kite.edges, 4), [3]);
-  assert.deepEqual(g.bipartiteParts(square.edges, 4), [[0, 2], [1, 3]]);
-  assert.equal(g.bipartiteParts(triangle.edges, 3), null);
+  assert.deepEqual(g.cutVertices(kite), [2]);
+  assert.deepEqual(g.cutVertices(square), []);
+  assert.deepEqual(g.leafVertices(kite), [3]);
+  assert.deepEqual(g.bipartiteParts(square), [[0, 2], [1, 3]]);
+  assert.equal(g.bipartiteParts(triangle), null);
 });
 
 test('random graph: requested number of components', () => {
@@ -139,7 +138,7 @@ test('planar graph: connected, at most 3n - 6 edges', () => {
 
 test('non-planar graph: contains enough edges for K5 or K3,3', () => {
   for (let i = 0; i < REPEAT; i++) {
-    assert.ok(g.edgeCount(g.generateNonPlanarGraph(7, 'K5', 3)) >= 10);
-    assert.ok(g.edgeCount(g.generateNonPlanarGraph(7, 'K3,3', 3)) >= 9);
+    assert.ok(g.edgeCount(g.generateNonPlanarGraph(7, 'K5', 3, 1.14, 1.55)) >= 10);
+    assert.ok(g.edgeCount(g.generateNonPlanarGraph(7, 'K3,3', 3, 1.14, 1.55)) >= 9);
   }
 });

@@ -102,15 +102,21 @@ says what was moved.
 Exported functions take a graph object (`{ n, names, directed, edgeLabel,
 edges }`), not `edges, n`.
 
-- [ ] `cutVertices`, `leafVertices`, `bipartiteParts` take `(edges, n)`:
-      make them take a graph (they were renamed and exported in pass 2).
-- [ ] `generateNonPlanarGraph`: pass the planar base's edge factors in
-      instead of the fixed `1.14, 1.55` (see pass 2).
-- [ ] Coloring helpers `_dedupeIndexEdges`, `_buildAdjFromIndexEdges`,
-      `_isColorableWithK` work on index pairs; `_buildAdjFromIndexEdges`
-      looks like a copy of `_buildAdjList`. Reuse what exists.
-- [ ] Private helpers inside one generator may keep index pairs if that's
-      simpler; the rule is about what's exported.
+- [x] `cutVertices`, `leafVertices`, `bipartiteParts` take a graph. The
+      Hamiltonian mode builds the graph object once and returns it spread
+      into the puzzle. Their `TODO(refactor)` is gone.
+- [x] `generateNonPlanarGraph(n, type, nonPlanarExtraEdgeSlackMax,
+      planarExtraEdgeFactorMin, planarExtraEdgeFactorMax)`: the planar base's
+      factors are now parameters (no defaults, so the numbers live only in
+      `PLANAR_MODE_CONFIG`), passed in by `modes/planar.js`.
+- [x] Coloring helpers: `_dedupeIndexEdges` and `_buildAdjFromIndexEdges`
+      removed; `chromaticNumber` builds its adjacency with `_buildAdjList`
+      (which also drops self-loops and repeated edges) and passes it to
+      `_isColorableWithK(adj, k)`. Its self-loop check was dead (loops were
+      already dropped), so it went too.
+- [x] Checked the other exports: every one that takes an existing graph
+      takes a graph object; the generators take `n` and parameters and
+      return one.
 
 ## Pass 4: split into files
 
@@ -131,5 +137,5 @@ edges }`), not `edges, n`.
 
 - `makeLabels` goes on past H: A–Z, then AA–ZZ, then numbers above 702.
 - `_reachableCount` takes a start vertex (`_reachableCount(graph, start = 0)`).
-- Most of the switch to whole graph objects happened during the merge; the
-  Hamiltonian section and coloring helpers are what's left (pass 3).
+- Most of the switch to whole graph objects happened during the merge; pass 3
+  finished it.
