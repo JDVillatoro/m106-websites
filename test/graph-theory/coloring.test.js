@@ -82,7 +82,7 @@ test('both cases: colors show on the graph, scoring, reset', async () => {
     questions++;
     assert.equal(await page.locator('.feedback-title').innerText(), 'Correct',
       await page.locator('.feedback-message').innerText());
-    assert.equal(await scoreText(page), `Questions: ${questions} Points: ${questions} Score: 100%`);
+    assert.equal(await scoreText(page), `${questions} / ${questions} points`);
     await page.click('.feedback-next');
   }
   assert.equal(seen.size, 2);
@@ -95,11 +95,11 @@ test('missing colors, then a conflict', async () => {
   const { page, errors, close } = await site.openPage('graph-theory/#coloring');
   await page.waitForSelector('.graph-viewport canvas');
   for (let i = 0; i < 20; i++) {
-    if (/greedy/.test(await page.locator('.coloring-title').innerText())) { await page.click('.reset-btn'); continue; }
+    if (/greedy/.test(await page.locator('.coloring-title').innerText())) { await page.click('.scoreboard:not([hidden]) .reset-btn'); continue; }
     await page.click('.coloring-form [type="submit"]');
     assert.equal(await page.locator('.coloring-form .input-error').innerText(), 'Choose a color for every vertex.');
     assert.equal(await page.locator('select.is-invalid').count(), await page.locator('.color-rows select').count());
-    assert.equal(await scoreText(page), 'Questions: 0 Points: 0 Score: 0%');
+    assert.equal(await scoreText(page), 'No score');
 
     // Everything red: adjacent vertices clash.
     const count = await page.locator('.color-rows select').count();

@@ -114,7 +114,7 @@ test('equal, isomorphic and neither: scoring and reset', async () => {
     }
     assert.equal(await page.locator('.feedback-title').innerText(), 'Correct',
       await page.locator('.feedback-message').innerText());
-    assert.equal(await scoreText(page), `Questions: ${questions} Points: ${questions} Score: 100%`);
+    assert.equal(await scoreText(page), `${questions} / ${questions} points`);
     await page.click('.feedback-next');
   }
   assert.equal(seen.size, 3);
@@ -145,10 +145,10 @@ test('missing answers and wrong answers', async () => {
       await page.click('.part2-reason [type="submit"]');
       assert.equal(await page.locator('.part2-reason .input-error').innerText(), 'Pick a reason before submitting.');
       seen.add('reason');
-      await page.click('.reset-btn');
+      await page.click('.scoreboard:not([hidden]) .reset-btn');
       continue;
     } else {
-      await page.click('.reset-btn');
+      await page.click('.scoreboard:not([hidden]) .reset-btn');
       continue;
     }
     await page.click('.feedback-next');

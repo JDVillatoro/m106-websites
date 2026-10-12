@@ -3,7 +3,8 @@
 Interactive practice website for M106: plain HTML/CSS/JavaScript with native
 ES modules, no build step, no framework, published with GitHub Pages from
 `main` at https://jdvillatoro.github.io/m106-websites/. A hub page links to
-topics (graph theory, game theory); each topic page has tabs for its modes.
+topics (graph theory, game theory); each topic page lists its modes and opens
+one at a time (`graph-theory/#degree`).
 
 Read `docs/adding-modes.md` before changing or adding a mode: it describes
 the mode format, the shared helpers and the tests.
@@ -17,7 +18,7 @@ changed on purpose, and what's still to do.
   every page; `shared/js/topic-shell.js` builds a topic page from its
   `modes.js`, and `shared/js/site-header.js` the header on every page.
 - `graph-theory/`, `game-theory/`: topic pages. Each has `index.html`,
-  `modes.js` (one line per mode), `modes/` (one file per mode, plus its CSS
+  `modes.js` (one entry per mode), `modes/` (one file per mode, plus its CSS
   and spec `.md` if any) and `lib/` (the topic's math, plus drawing code).
   Graph theory's math is in `lib/graph/`, one file per subject (`core.js`
   describes the graph object); modes import from the file they need.
@@ -53,7 +54,7 @@ changed on purpose, and what's still to do.
   - one mode: `node --test test/<topic>/<mode>.test.js`
   - a topic's `lib/`: `node --test "test/<topic>/**/*.test.js"`
   - `shared/`, `index.html`, `topics.js`, a `modes.js`: `npm test`
-  - add `test/site.test.js` if a change could affect tabs or layout.
+  - add `test/site.test.js` if a change could affect navigation or layout.
   Run the full `npm test` before saying work is done: pushing to `main`
   publishes. Look at changed pages too (`node test/screenshots.js`, desktop
   and phone width): tests have missed layout bugs before.

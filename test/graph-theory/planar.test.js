@@ -57,7 +57,7 @@ test('both kinds of part 2, scoring, reset', async () => {
     }
     assert.equal(await page.locator('.feedback-title').innerText(), 'Correct',
       await page.locator('.feedback-message').innerText());
-    assert.equal(await scoreText(page), `Questions: ${questions} Points: ${questions} Score: 100%`);
+    assert.equal(await scoreText(page), `${questions} / ${questions} points`);
     await page.click('.feedback-next');
   }
   assert.equal(seen.size, 2);

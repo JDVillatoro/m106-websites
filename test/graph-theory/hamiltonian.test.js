@@ -80,7 +80,7 @@ test('every kind of part 2, weights revealed in place, scoring, reset', async ()
     assert.equal(await page.locator('.feedback-title').innerText(), 'Correct',
       await page.locator('.feedback-message').innerText());
     assert.ok(await page.locator('.feedback-retry').isHidden());
-    assert.equal(await scoreText(page), `Questions: ${questions} Points: ${questions} Score: 100%`);
+    assert.equal(await scoreText(page), `${questions} / ${questions} points`);
     await page.click('.feedback-next');
   }
   assert.equal(seen.size, 4, `only saw ${[...seen]}`);
@@ -95,10 +95,10 @@ test('wrong cycle: try again on the same graph, then right', async () => {
   for (let i = 0; i < 40; i++) {
     const g = await graphOnScreen(page);
     const cycle = hamiltonianCycle(g);
-    if (!cycle) { await page.click('.feedback-next').catch(() => {}); await page.click('.reset-btn'); continue; }
+    if (!cycle) { await page.click('.feedback-next').catch(() => {}); await page.click('.scoreboard:not([hidden]) .reset-btn'); continue; }
     await page.click('.part1 .choice-btn[data-answer="yes"]');
     const instructions = await page.locator('.cycle-instructions').innerText();
-    if (!/Specify a Hamiltonian cycle/.test(instructions)) { await page.click('.reset-btn'); continue; }
+    if (!/Specify a Hamiltonian cycle/.test(instructions)) { await page.click('.scoreboard:not([hidden]) .reset-btn'); continue; }
 
     await page.press('.cycle-input', 'Enter');
     assert.equal(await page.locator('.part2-cycle .input-error').innerText(), 'Type the cycle first.');
@@ -106,14 +106,14 @@ test('wrong cycle: try again on the same graph, then right', async () => {
     await page.press('.cycle-input', 'Enter');
     assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
     assert.match(await page.locator('.feedback-message').innerText(), /doesn't visit vertex/);
-    assert.equal(await scoreText(page), 'Questions: 1 Points: 0.5 Score: 50%');
+    assert.equal(await scoreText(page), '0.5 / 1 points');
 
     await page.click('.feedback-retry');
     assert.ok(await page.locator('.feedback').isHidden());
     await page.fill('.cycle-input', cycle.join(''));
     await page.press('.cycle-input', 'Enter');
     assert.equal(await page.locator('.feedback-title').innerText(), 'Correct');
-    assert.equal(await scoreText(page), 'Questions: 1 Points: 1 Score: 100%');
+    assert.equal(await scoreText(page), '1 / 1 points');
     assert.deepEqual(errors, []);
     await close();
     return;
@@ -126,10 +126,10 @@ test('wrong reason is final', async () => {
   await page.waitForSelector('.graph-viewport canvas');
   for (let i = 0; i < 60; i++) {
     const g = await graphOnScreen(page);
-    if (hamiltonianCycle(g)) { await page.click('.reset-btn'); continue; }
+    if (hamiltonianCycle(g)) { await page.click('.scoreboard:not([hidden]) .reset-btn'); continue; }
     const reasons = nonHamiltonianReasons(g);
     const wrong = ['leaf', 'cut_vertex', 'bipartite_unequal'].find(r => !reasons.includes(r));
-    if (!wrong) { await page.click('.reset-btn'); continue; }
+    if (!wrong) { await page.click('.scoreboard:not([hidden]) .reset-btn'); continue; }
     await page.click('.part1 .choice-btn[data-answer="no"]');
     await page.click(`.part2-why .choice-btn[data-answer="${wrong}"]`);
     assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');

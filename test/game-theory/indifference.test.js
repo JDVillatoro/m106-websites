@@ -67,7 +67,7 @@ test('right, wrong, bad input; scoring and reset', async () => {
   const shown = (await page.locator('.feedback-message').innerText()).match(/is (\d+)\/(\d+)/);
   assert.ok(Math.abs(shown[1] / shown[2] - p) < 1e-9);
 
-  await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');
+  await checkScoreSavedAndReset(page, '1 / 2 points');
   assert.deepEqual(errors, []);
   await close();
 });

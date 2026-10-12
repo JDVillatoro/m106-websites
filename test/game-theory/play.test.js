@@ -17,7 +17,7 @@ test('opponent: the best average column, or sometimes random', () => {
 const site = useBrowser();
 
 test("starts with the Prisoner's Dilemma; playing rounds, history, clearing", async () => {
-  const { page, errors, close } = await site.openPage('game-theory/', { mathjax: false });
+  const { page, errors, close } = await site.openPage('game-theory/#play', { mathjax: false });
   await page.waitForSelector('.strategy-btn');
   assert.deepEqual(await page.locator('.strategy-btn').allInnerTexts(), ['\\(\\text{Loyal}\\)', '\\(\\text{Betray}\\)']);
   assert.equal(await page.locator('.mode-panel:not([hidden]) .scoreboard').count(), 0);

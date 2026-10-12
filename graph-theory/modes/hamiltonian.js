@@ -23,7 +23,6 @@ const simpleIndexEdges = n => generateSimpleGraph(n).edges.map(e => ({ s: vertex
 const strong = text => `<strong>${escapeHtml(text)}</strong>`;
 
 const COPY = {
-  info: 'Can you tell if this graph is Hamiltonian? If so, find a Hamiltonian cycle!',
   promptTitle: 'Here is a graph...',
   promptSubtitle: "Can you tell if it's a Hamiltonian graph?",
   hint: 'Hint: try clicking and dragging the vertices to get a better look.',
@@ -883,7 +882,6 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.promptTitle}</h2>
         <p class="subtitle">${COPY.promptSubtitle}</p>

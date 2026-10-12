@@ -25,7 +25,6 @@ const ORGANIZATIONS = [
 const TIME_SLOTS = ['9am-10am', '10am-11am', '11am-12pm', '1pm-2pm', '2pm-3pm', '3pm-4pm', '4pm-5pm'];
 
 const COPY = {
-  info: 'Solve real-world optimization puzzles modeled by graphs.',
   scheduling: {
     prompt: 'Can you find the optimal schedule?',
     subtitle: 'Schedule committee meetings with as few time slots as possible.',
@@ -638,7 +637,6 @@ export default {
     organization = ORGANIZATIONS[Math.floor(Math.random() * ORGANIZATIONS.length)];
     loadStylesheet(new URL('./applications.css', import.meta.url));
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2 class="app-title"></h2>
         <p class="subtitle app-subtitle"></p>

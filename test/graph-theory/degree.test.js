@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { parseDegreeSequence } from '../../graph-theory/modes/degree.js';
 import {
-  useBrowser, expectTab, scoreText, checkScoreSavedAndReset, describedGraph, graphPlacement, assertGraphFits,
+  useBrowser, expectMode, scoreText, checkScoreSavedAndReset, describedGraph, graphPlacement, assertGraphFits,
 } from '../helpers/browser.js';
 
 test('reading typed degree sequences', () => {
@@ -32,7 +32,7 @@ test('answer, feedback, score', async () => {
   await page.fill('#degree-answer', 'two, three');
   await page.press('#degree-answer', 'Enter');
   assert.match(await page.locator('.input-error').innerText(), /whole numbers/);
-  assert.equal(await scoreText(page), 'Questions: 0 Points: 0 Score: 0%');
+  assert.equal(await scoreText(page), 'No score');
 
   // Correct, typed in a different order: Enter submits.
   const answer = await correctAnswer(page);
@@ -42,7 +42,7 @@ test('answer, feedback, score', async () => {
   assert.equal(await page.locator('.feedback-title').innerText(), 'Correct');
   assert.equal(await page.locator('.input-error').innerText(), '');
   assert.ok(await page.locator('#degree-answer').isDisabled());
-  assert.equal(await scoreText(page), 'Questions: 1 Points: 1 Score: 100%');
+  assert.equal(await scoreText(page), '1 / 1 points');
 
   // Wrong: the feedback shows the right answer.
   await page.click('.feedback-next');
@@ -54,7 +54,7 @@ test('answer, feedback, score', async () => {
   assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.equal(await page.locator('.feedback-message').innerText(), `The correct degree sequence was ${next}.`);
 
-  await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');
+  await checkScoreSavedAndReset(page, '1 / 2 points');
   assert.deepEqual(errors, []);
   await close();
 });
@@ -72,7 +72,7 @@ test('graph is drawn inside its area, also after resizing', async () => {
   await close();
 });
 
-test('zoom buttons, and switching tabs keeps the graph', async () => {
+test('zoom buttons, and switching modes keeps the graph', async () => {
   const { page, errors, close } = await site.openPage('graph-theory/#degree');
   await page.waitForSelector('.graph-viewport canvas');
   const description = (await describedGraph(page)).text;
@@ -81,10 +81,10 @@ test('zoom buttons, and switching tabs keeps the graph', async () => {
   await page.click('.zoom-in');
   await page.click('.zoom-out');
 
-  await page.click('.mode-tab >> text=Make a Graph');
-  await expectTab(page, 'Make a Graph');
-  await page.click('.mode-tab >> text=Degree Sequences');
-  await expectTab(page, 'Degree Sequences');
+  await page.click('.mode-nav a >> text=Make a Graph');
+  await expectMode(page, 'Make a Graph');
+  await page.click('.mode-nav a >> text=Degree Sequences');
+  await expectMode(page, 'Degree Sequences');
   const after = await box();
   assert.equal(Math.round(after.width), Math.round(before.width));
   assert.ok(after.height > 300);

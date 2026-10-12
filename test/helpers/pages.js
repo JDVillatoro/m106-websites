@@ -20,11 +20,12 @@ export async function sitePages() {
 
 /**
  * Wait until a page from sitePages() has drawn its content: the hub's topic
- * cards, or the open mode (its intro, and its graph if it has one). Then give
+ * cards, a topic's mode cards, or the open mode (its content, and its graph if
+ * it has one). Then give
  * MathJax (loaded from a CDN) a moment, without failing if it never loads.
  */
 export async function waitForPage(page) {
-  await page.waitForSelector('.topic-card, .mode-panel:not([hidden]) .info, .mode-panel:not([hidden]) .mode-error');
+  await page.waitForSelector('.topic-card, .topic-home:not([hidden]) .mode-card, .mode-panel:not([hidden]) .mode-body > *, .mode-panel:not([hidden]) .mode-error');
   const graph = page.locator('.mode-panel:not([hidden]) .graph-viewport');
   if (await graph.count()) await page.waitForSelector('.mode-panel:not([hidden]) .graph-viewport canvas');
   await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {});

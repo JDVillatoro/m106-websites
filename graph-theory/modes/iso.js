@@ -31,7 +31,6 @@ export const ISO_REASON_LABELS = {
 };
 
 const COPY = {
-  info: 'Are these two graphs equal, isomorphic, or neither?',
   promptTitle: 'Here are two graphs...',
   promptSubtitle: 'Compare their structure and relationships.',
   graph: k => `Graph ${k}`,
@@ -420,7 +419,6 @@ export default {
     score = ctx.score;
     loadStylesheet(new URL('./iso.css', import.meta.url));
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.promptTitle}</h2>
         <p class="subtitle">${COPY.promptSubtitle}</p>

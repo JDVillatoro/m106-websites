@@ -36,7 +36,6 @@ export function generatePlanarPuzzle() {
 }
 
 const COPY = {
-  info: 'Can you tell if this graph is planar?',
   promptTitle: 'Here is a graph...',
   promptSubtitle: "Can you tell if it's a planar graph?",
   hint: 'Hint: try clicking and dragging the vertices to see if you can untangle the graph.',
@@ -124,7 +123,6 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.promptTitle}</h2>
         <p class="subtitle">${COPY.promptSubtitle}</p>

@@ -349,7 +349,6 @@ export function validateEulerization(graph, addedEdges) {
 // ---------------------------------------------------------------------------
 
 const COPY = {
-  info: 'Is the graph Eulerian? If so, find an Eulerian circuit. If not, identify or fix the problem!',
   promptTitle: 'Here is a graph...',
   promptSubtitle: 'Is it Eulerian?',
   hint: 'Hint: you can click and drag vertices to get a better look.',
@@ -529,7 +528,6 @@ export default {
     score = ctx.score;
     loadStylesheet(new URL('./eulerian.css', import.meta.url));
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.promptTitle}</h2>
         <p class="subtitle">${COPY.promptSubtitle}</p>

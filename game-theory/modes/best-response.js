@@ -9,7 +9,6 @@ import { escapeHtml, feedbackHtml, showFeedback, hideFeedback } from '../../shar
 const playerName = p => `Player ${p}`;
 
 const COPY = {
-  info: 'Practice identifying best responses!',
   matrixTitle: 'Payoff matrix',
   prompt: (fixed, label, response) =>
     `${playerName(fixed)} picks <strong>${escapeHtml(label)}</strong>. What are ${playerName(response)}'s best responses?`,
@@ -105,7 +104,6 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="question">
         <div class="section">
           <h2>${COPY.matrixTitle}</h2>

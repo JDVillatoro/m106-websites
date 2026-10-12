@@ -26,7 +26,7 @@ test('all right, one wrong, incomplete; scoring and reset', async () => {
 
   await page.click('.dom-submit');
   assert.equal(await page.locator('.input-error').innerText(), 'Choose a relation for every pair.');
-  assert.equal(await scoreText(page), 'Questions: 0 Points: 0 Score: 0%');
+  assert.equal(await scoreText(page), 'No score');
 
   let pairs = await answers(page);
   assert.equal(await page.locator('.pairs select').count(), pairs.length);
@@ -46,7 +46,7 @@ test('all right, one wrong, incomplete; scoring and reset', async () => {
   assert.equal(await page.inputValue(pairs[0].id), pairs[0].answer);
   assert.match(await page.locator(pairs[0].id).getAttribute('class'), /is-wrong/);
 
-  await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');
+  await checkScoreSavedAndReset(page, '1 / 2 points');
   assert.deepEqual(errors, []);
   await close();
 });

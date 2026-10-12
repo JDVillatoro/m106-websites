@@ -22,7 +22,6 @@ const GENERATORS = {
 };
 
 const COPY = {
-  info: 'Create and edit graphs!',
   edit: 'Edit graph',
   download: 'Download',
   altText: 'Alt text',
@@ -189,7 +188,6 @@ export default {
     root = el;
     loadStylesheet(new URL('./make.css', import.meta.url));
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="button-row make-toolbar">
         <button type="button" class="add-btn edit-btn">${COPY.edit}</button>
         <button type="button" class="add-btn download-btn">${COPY.download}</button>

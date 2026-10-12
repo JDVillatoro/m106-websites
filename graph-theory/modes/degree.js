@@ -7,7 +7,6 @@ import { createGraphView } from '../lib/render.js';
 import { escapeHtml, feedbackHtml, showFeedback, hideFeedback } from '../../shared/js/ui.js';
 
 const COPY = {
-  info: 'Determine the degree sequence of the graph!',
   promptTitle: 'Here is a graph...',
   promptSubtitle: 'Can you determine the degree sequence?',
   hint: 'Hint: you can click and drag vertices to get a better look.',
@@ -104,7 +103,6 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.promptTitle}</h2>
         <p class="subtitle">${COPY.promptSubtitle}</p>

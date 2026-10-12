@@ -8,7 +8,6 @@ import { typeset, clearMath, parseFraction, decimalToFraction } from '../../shar
 import { escapeHtml, feedbackHtml, showFeedback, hideFeedback } from '../../shared/js/ui.js';
 
 const COPY = {
-  info: 'Find the indifference probability for mixed strategies!',
   matrixTitle: 'Payoff matrix',
   prompt: 'Find the indifference strategy.',
   questionTitle: 'Question',
@@ -92,7 +91,6 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.matrixTitle}</h2>
         <p class="subtitle">${COPY.prompt}</p>

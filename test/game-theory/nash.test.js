@@ -28,7 +28,7 @@ test('select the equilibria, feedback, score', async () => {
   for (const key of equilibria) await cell(page, key).click();
   await page.click('.nash-submit');
   assert.equal(await page.locator('.feedback-title').innerText(), 'Correct');
-  assert.equal(await scoreText(page), 'Questions: 1 Points: 1 Score: 100%');
+  assert.equal(await scoreText(page), '1 / 1 points');
 
   // Wrong answer: select every cell that isn't an equilibrium, plus none of
   // the equilibria. Missed ones get outlined, wrong ones crossed out.
@@ -50,7 +50,7 @@ test('select the equilibria, feedback, score', async () => {
   await first.click({ force: true });   // force: Playwright won't click aria-disabled cells
   assert.equal(await first.getAttribute('aria-pressed'), pressed);
 
-  await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');
+  await checkScoreSavedAndReset(page, '1 / 2 points');
   assert.deepEqual(errors, []);
   await close();
 });

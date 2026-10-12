@@ -238,26 +238,58 @@ Done. Notes:
 This pass changes behavior: update `test/site.test.js` and the helpers in
 `test/helpers/browser.js` that find tabs, the scoreboard and its text.
 
-- [ ] `modes.js`: add a one-line `description` to each mode, for the cards.
+- [x] `modes.js`: add a one-line `description` to each mode, for the cards.
       Draft them and list them all in the report: Joel reviews this wording
       before it's published.
-- [ ] `topic-shell.js`: no hash shows the mode list (cards: title,
+- [x] `topic-shell.js`: no hash shows the mode list (cards: title,
       description, the saved score as "3 / 4 points", "No score", or "Tool"
       for modes without a score). A hash shows that mode with breadcrumb
       (M106 Practice / Graph Theory / Degree Sequences), "Mode 2 of 8", title
       (`h1`), and previous/next links. Modes still load once and keep their
       state when you switch.
-- [ ] Wide screens: mode list beside the mode (current one marked with
+- [x] Wide screens: mode list beside the mode (current one marked with
       `aria-current` and a crimson bar), score box above it. Phones: the
       list isn't repeated below the mode; "← Graph Theory" goes back to the
       cards.
-- [ ] When the mode changes, move focus to its `h1` and update
+- [x] When the mode changes, move focus to its `h1` and update
       `document.title`, so screen reader users hear where they are.
-- [ ] Scoreboard as in Decisions; `score.js` keeps `percent` only if
+- [x] Scoreboard as in Decisions; `score.js` keeps `percent` only if
       something still uses it.
-- [ ] Links: `graph-theory/` (no hash) shows the list and `#<mode id>`
+- [x] Links: `graph-theory/` (no hash) shows the list and `#<mode id>`
       opens that mode, both from a fresh page load and with Back/Forward.
       Test both. An unknown hash shows the list.
+
+Done. Notes:
+
+- Descriptions are drafts for Joel to review (listed in the pass 5 report).
+  `tool: true` in `modes.js` marks Make a Graph and Play, so their cards say
+  "Tool" without loading them; the shell logs an error (which fails the
+  browser tests) if it doesn't match the mode's `scored`.
+- The mode list's cards work like the hub's: the title link covers the
+  card. No intro line under the title (Joel: the hub already gives the
+  number of modes, and where scores are saved doesn't need saying).
+- Each mode is described once: the shell shows its `description` under the
+  title (`.mode-intro`), the same sentence as on its card, and the modes'
+  own intro lines (`COPY.info`, `.info` at the top of each mode) are gone
+  (Joel: card and intro should agree). Tests wait for `.mode-body > *`
+  instead of the old intro.
+- Layout: a grid with the mode and previous/next on the left, the score box
+  and mode list on the right; at 900px and below one column (mode, score
+  box, previous/next), the breadcrumb and mode list hidden, "← Graph
+  Theory" shown. Score box heading stays "Score".
+- The score box lives in the side column, one per loaded exercise, shown
+  with its mode. Old toolbar with Reset above the mode is gone; Reset is in
+  the box. `score.js` lost `percent`; `describeScore()` gives the text, unit
+  tested in `test/shared/score.test.js`.
+- Focus moves to the `h1` on in-page navigation only, not on first load.
+  The skip link now moves focus itself: following `#app` would have changed
+  the hash, which picks the view.
+- Tests: `expectTab` became `expectMode` and `expectModeList`; score text is
+  "1 / 2 points" or "No score". `test/helpers/pages.js` waits for visible
+  mode cards only (a hidden list stays in the page while a mode is open).
+  axe's MathJax entry no longer applies to `game-theory/` (it shows the
+  list now, not Play).
+
 
 ## Pass 6: remaining accessibility, and keeping it consistent
 

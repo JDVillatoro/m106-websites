@@ -29,7 +29,7 @@ const WIDTHS = [1280, 390];
 const EXPECTED = [
   {
     rule: 'button-name',
-    pages: ['game-theory', 'game-theory-play', 'game-theory-best-response'],
+    pages: ['game-theory-play', 'game-theory-best-response'],
     mathJax: true,
     why: 'Strategy buttons whose label is typeset by MathJax have an empty accessible name in Chromium (the label is a math child), and MathJax adds a focusable element inside the button.',
   },

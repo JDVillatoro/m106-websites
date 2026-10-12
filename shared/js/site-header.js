@@ -32,5 +32,14 @@ export function addSiteHeader({ home, current = null, contentId = 'app' }) {
         </ul>
       </nav>
     </div>`;
+  // Move focus without changing the URL: on topic pages the hash picks the
+  // mode, so following "#app" would switch views.
+  header.querySelector('.skip-link').addEventListener('click', event => {
+    const target = document.getElementById(contentId);
+    if (!target) return;
+    event.preventDefault();
+    if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+    target.focus();
+  });
   document.body.prepend(header);
 }

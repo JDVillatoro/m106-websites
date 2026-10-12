@@ -1,4 +1,6 @@
-// Score for one exercise: questions answered, points earned, and the percent.
+// Score for one exercise: questions answered and points earned (0 to 1 per
+// question, so 2.5 is possible). Shown as points out of questions, never as a
+// percent, which reads like how much is done.
 // The score is saved with the mode's storage, so it survives a page reload.
 
 /**
@@ -18,7 +20,6 @@ export function createScore(storage) {
   return {
     get questions() { return questions; },
     get points() { return points; },
-    get percent() { return questions === 0 ? 0 : Math.round((points / questions) * 100); },
 
     /** Count one question and add the points earned for it (0 to 1). */
     record(earned = 0) {
@@ -47,4 +48,15 @@ export function createScore(storage) {
       listeners.push(fn);
     },
   };
+}
+
+/**
+ * A score as text: "No score" before the first question, else points out of
+ * questions, "2.5 / 4 points" (at most two decimals, no trailing zeros).
+ *
+ * @param {{questions: number, points: number}} score
+ */
+export function describeScore({ questions, points }) {
+  if (!questions) return 'No score';
+  return `${Number(points.toFixed(2))} / ${questions} points`;
 }

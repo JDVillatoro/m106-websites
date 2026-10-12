@@ -51,7 +51,7 @@ test('right, wrong, nothing selected; scoring and reset', async () => {
   assert.match(await page.locator('.feedback-message').innerText(), /best responses? (is|are)/);
   assert.equal(await page.locator('.matrix-cell.is-answer').count(), q.best.length);
 
-  await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');
+  await checkScoreSavedAndReset(page, '1 / 2 points');
   assert.deepEqual(errors, []);
   await close();
 });

@@ -102,8 +102,7 @@ test('both puzzles: optimal, one too many, conflict; scoring and reset', async (
   assert.match(await page.locator('.feedback-message').innerText(), /doesn't work because/);
   assert.equal(await page.locator('.assign-rows select.is-invalid').count(), 2);
 
-  const pct = Math.round(points / questions * 100);
-  assert.equal(await scoreText(page), `Questions: ${questions} Points: ${points} Score: ${pct}%`);
+  assert.equal(await scoreText(page), `${points} / ${questions} points`);
   await checkScoreSavedAndReset(page, await scoreText(page));
   assert.deepEqual(errors, []);
   await close();
@@ -116,7 +115,7 @@ test('missing choices', async () => {
   await page.click('.assign-form [type="submit"]');
   assert.equal(await page.locator('.assign-form .input-error').innerText(), 'Make a choice for every row.');
   assert.ok(await page.locator('.feedback').isHidden());
-  assert.equal(await scoreText(page), 'Questions: 0 Points: 0 Score: 0%');
+  assert.equal(await scoreText(page), 'No score');
   assert.deepEqual(errors, []);
   await close();
 });

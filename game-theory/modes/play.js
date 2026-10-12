@@ -49,7 +49,6 @@ export function opponentChoice(game, random = Math.random) {
 }
 
 const COPY = {
-  info: 'Play against the opponent by choosing your strategy. Edit the payoff matrix to try different games!',
   edit: 'Edit payoff matrix',
   done: 'Done editing',
   rows: 'Your strategies:',
@@ -207,7 +206,6 @@ export default {
     root = el;
     loadStylesheet(new URL('./play.css', import.meta.url));
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
 
       <div class="section">
         <div class="button-row">

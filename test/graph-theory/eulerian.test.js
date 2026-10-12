@@ -97,7 +97,7 @@ test('all three kinds of part 2, scoring, reset', async () => {
     }
     assert.equal(await page.locator('.feedback-title').innerText(), 'Correct',
       await page.locator('.feedback-message').innerText());
-    assert.equal(await scoreText(page), `Questions: ${questions} Points: ${questions} Score: 100%`);
+    assert.equal(await scoreText(page), `${questions} / ${questions} points`);
     await page.click('.feedback-next');
   }
   assert.equal(seen.size, 3, `only saw ${[...seen]}`);
@@ -109,7 +109,7 @@ test('all three kinds of part 2, scoring, reset', async () => {
   assert.equal(await page.locator('.part2:not([hidden])').count(), 0);
   const points = questions;
   questions++;
-  assert.equal(await scoreText(page), `Questions: ${questions} Points: ${points} Score: ${Math.round(points / questions * 100)}%`);
+  assert.equal(await scoreText(page), `${points} / ${questions} points`);
 
   await checkScoreSavedAndReset(page, await scoreText(page));
   assert.deepEqual(errors, []);

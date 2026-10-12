@@ -1,5 +1,5 @@
-/* Components shared by every page: site header, hub cards, mode tabs, mode
-   panels, buttons, feedback and the scoreboard. */
+/* Components shared by every page: site header, hub cards, the topic
+   page's mode list and mode layout, buttons, feedback and the score box. */
 
 /* Site header (site-header.js) ----------------------------------------- */
 .site-banner {
@@ -152,42 +152,234 @@
   font-weight: 600;
 }
 
-/* Mode tabs ------------------------------------------------------------ */
-.mode-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 var(--space-xs);
-  margin-bottom: var(--space-lg);
-  border-bottom: 1px solid var(--color-border);
+/* Topic page: the mode list (topic-shell.js) ---------------------------- */
+.mode-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--space-md);
+  list-style: none;
 }
 
-.mode-tab {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--control-height);
-  padding: 0 12px;
-  font-weight: 600;
+/* Like the hub's cards: the title's link covers the card. */
+.mode-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: start;
+  align-items: baseline;
+  gap: 0 var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.mode-card:hover {
+  border-color: var(--color-action);
+  box-shadow: inset 0 0 0 1px var(--color-action);
+}
+
+.mode-card:has(a:focus-visible) {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.mode-card h2 {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.mode-card h2 a {
   text-decoration: none;
-  white-space: nowrap;
 }
 
-.mode-tab:hover {
+.mode-card h2 a::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+}
+
+.mode-card h2 a:focus-visible {
+  outline: none;
+}
+
+.mode-card:hover h2 a {
   text-decoration: underline;
 }
 
-.mode-tab[aria-current="page"] {
-  color: var(--color-text);
-  box-shadow: inset 0 -3px 0 var(--color-brand);
+.mode-card-score {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-/* Mode panel (one per mode, built by topic-shell.js) ------------------- */
-.mode-toolbar {
+.mode-card-description {
+  grid-column: 1 / -1;
+  color: var(--color-text-secondary);
+}
+
+/* Topic page: one mode -------------------------------------------------- */
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin-bottom: var(--space-md);
+  color: var(--color-text-secondary);
+}
+
+.breadcrumb li + li::before {
+  content: '/';
+  padding: 0 var(--space-sm);
+}
+
+/* Phones: instead of the breadcrumb. */
+.mode-back-link {
+  display: none;
+}
+
+.mode-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 17.5rem;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "main aside"
+    "pager aside";
+  gap: 0 var(--space-xxl);
+}
+
+.mode-main {
+  grid-area: main;
+  min-width: 0;
+}
+
+.mode-position {
+  color: var(--color-brand);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mode-title {
+  margin-bottom: var(--space-sm);
+}
+
+.mode-aside {
+  grid-area: aside;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.score-slot:empty {
+  display: none;
+}
+
+/* Small headings in the side column. */
+.mode-aside h2 {
+  margin-bottom: var(--space-sm);
+  font-family: var(--font-body);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.mode-nav ol {
+  list-style: none;
+  border-top: 1px solid var(--color-border);
+}
+
+.mode-nav li {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.mode-nav a {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  margin-bottom: var(--space-md);
+  min-height: var(--control-height);
+  padding: var(--space-xs) 12px;
+  text-decoration: none;
 }
 
+.mode-nav a:hover {
+  text-decoration: underline;
+}
+
+.mode-nav a[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 700;
+  box-shadow: inset 3px 0 0 var(--color-brand);
+}
+
+.mode-pager {
+  grid-area: pager;
+  align-self: start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.pager-link {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-sm) 0;
+  text-decoration: none;
+}
+
+.pager-next {
+  margin-left: auto;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.pager-label {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.pager-title {
+  font-weight: 600;
+}
+
+.pager-link:hover .pager-title {
+  text-decoration: underline;
+}
+
+/* Narrower screens: one column; the score box goes below the mode, the
+   mode list isn't repeated, and "← Graph Theory" replaces the breadcrumb. */
+@media (max-width: 900px) {
+  .mode-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    grid-template-areas:
+      "main"
+      "aside"
+      "pager";
+  }
+
+  .mode-nav,
+  .breadcrumb {
+    display: none;
+  }
+
+  .mode-back-link {
+    display: inline-flex;
+  }
+
+  .score-slot {
+    margin-top: var(--space-lg);
+  }
+}
+
+/* Mode panel (one per mode) --------------------------------------------- */
 .mode-status {
   color: var(--color-text-secondary);
 }
@@ -459,35 +651,26 @@ select.is-invalid {
   color: var(--color-incorrect);
 }
 
-/* Scoreboard (exercises only) ------------------------------------------- */
+/* Score box (exercises only; topic-shell.js) ----------------------------- */
 .scoreboard {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-md) var(--space-lg);
 }
 
-.scoreboard h2 {
-  font-size: var(--font-size-xl);
-  margin-bottom: var(--space-sm);
-}
-
-.scoreboard-values {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-sm) var(--space-xl);
-}
-
-.scoreboard-values p {
+.scoreboard-value {
   color: var(--color-text-secondary);
 }
 
-.scoreboard-values span {
+.scoreboard-points {
+  font-family: var(--font-heading);
+  font-size: var(--font-size-h1);
+  font-weight: 600;
+  line-height: 1.1;
   color: var(--color-text);
-  font-weight: 700;
 }
 
-/* Narrow screens: the header lines up with the page; smaller tabs, so
-   several fit on a line. */
+/* Narrow screens: the header lines up with the page. */
 @media (max-width: 720px) {
   .site-banner-inner {
     padding: var(--space-xs) var(--space-md);
@@ -495,11 +678,6 @@ select.is-invalid {
   }
 
   .site-topics a {
-    padding: 0 var(--space-sm);
-    font-size: var(--font-size-sm);
-  }
-
-  .mode-tab {
     padding: 0 var(--space-sm);
     font-size: var(--font-size-sm);
   }

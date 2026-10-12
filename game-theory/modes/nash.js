@@ -6,7 +6,6 @@ import { renderPayoffMatrix } from '../lib/matrix-view.js';
 import { feedbackHtml, showFeedback, hideFeedback } from '../../shared/js/ui.js';
 
 const COPY = {
-  info: 'Identify all pure Nash equilibria!',
   matrixTitle: 'Payoff matrix',
   instructions: 'Select all pure Nash equilibria by clicking the matching outcomes. If there are none, submit without selecting any.',
   submit: 'Submit answer',
@@ -70,7 +69,6 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.matrixTitle}</h2>
         <p class="subtitle">${COPY.instructions}</p>

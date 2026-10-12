@@ -95,6 +95,12 @@ a:hover {
   outline-offset: 2px;
 }
 
+/* Headings and the content area get focus from code (topic pages, skip
+   link) to tell screen readers where they are; they aren't controls. */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
 /* Form controls */
 label {
   color: var(--color-text);

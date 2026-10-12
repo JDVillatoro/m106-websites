@@ -4,8 +4,9 @@ How the site is put together, and how to add to it. For how it got this way,
 see [merge-history.md](merge-history.md).
 
 The site is a **hub** page linking to **topics** (graph theory, game theory).
-Each topic page has tabs for its **modes**. A mode is anything that runs in a
-topic page; an **exercise** is a mode that keeps score.
+Each topic page lists its **modes** as cards and opens one at a time. A mode
+is anything that runs in a topic page; an **exercise** is a mode that keeps
+score.
 
 ## Rules
 
@@ -35,7 +36,7 @@ index.html, topics.js         hub page and its list of topics
 shared/
   css/tokens.css              every color, font and size, as CSS variables
   css/base.css                page layout, headings, form controls
-  css/components.css          header, tabs, buttons, feedback, scoreboard, forms
+  css/components.css          header, mode list, buttons, feedback, score box, forms
   js/site-header.js           the header on every page (topics from topics.js)
   js/topic-shell.js           builds a topic page from its modes.js
   js/ui.js                    feedback block, choice buttons, small helpers
@@ -43,7 +44,7 @@ shared/
   js/math.js                  MathJax typesetting; fractions
 <topic>/
   index.html                  links the CSS, starts the shell
-  modes.js                    the topic's modes, in tab order
+  modes.js                    the topic's modes, in order
   lib/                        the topic's math, and its drawing code
   modes/<name>.js             one file per mode (+ .css, + .md spec if any)
 vendor/                       Cytoscape and its SVG plugin; fonts/
@@ -69,21 +70,35 @@ docs/                         this file and the merge history
 </script>
 ```
 
-`modes.js` lists the modes in tab order (the first opens by default). Titles
-are given here so the tabs can be drawn before any mode is loaded:
+`modes.js` lists the modes in order. Titles and descriptions are given here
+so the mode list can be drawn before any mode is loaded; `tool: true` marks a
+mode that isn't scored (its card says "Tool"; the shell reports an error if
+this doesn't match the mode's `scored`):
 
 ```js
 export default [
-  { id: 'make',   title: 'Make a Graph',     load: () => import('./modes/make.js') },
-  { id: 'degree', title: 'Degree Sequences', load: () => import('./modes/degree.js') },
+  { id: 'make', title: 'Make a Graph', tool: true, load: () => import('./modes/make.js'),
+    description: 'Draw your own graph, then download it or get a text description.' },
+  { id: 'degree', title: 'Degree Sequences', load: () => import('./modes/degree.js'),
+    description: 'Write the degree sequence of a graph.' },
 ];
 ```
 
-The shell (`shared/js/topic-shell.js`) draws the header and tabs, keeps the
-open mode in the URL (`graph-theory/#degree`, so Back works and modes can be
-linked to), loads each mode the first time its tab is opened and then keeps
-it, adds the scoreboard and Reset button for exercises, and shows an error in
-a mode's panel if it fails to load, without breaking the others.
+The shell (`shared/js/topic-shell.js`) adds the site header, and shows one of
+two views, chosen by the URL so both can be linked to and Back works:
+
+- `graph-theory/` (or an unknown hash): the mode list, a card per mode with
+  its description and saved score ("3 / 4 points", "No score", "Tool").
+- `graph-theory/#degree`: that mode, with a breadcrumb, "Mode 2 of 8", its
+  title as the page's `h1`, previous/next links, and beside it (below it on
+  narrow screens) the score box with "Reset score" and the list of modes.
+  Focus moves to the `h1` when the mode changes, for screen readers.
+
+It loads each mode the first time it's opened and then keeps it, and shows
+an error in a mode's panel if it fails to load, without breaking the others.
+The mode's title is the shell's `h1`, with its description from `modes.js`
+under it (the same sentence as on its card), so a mode starts with its own
+content and its headings start at `h2`.
 
 ## A mode
 
@@ -91,12 +106,12 @@ A mode file's default export:
 
 ```js
 export default {
-  scored: true,           // an exercise: the shell adds a scoreboard and Reset
+  scored: true,           // an exercise: the shell adds a score box and Reset
 
-  // Once, the first time the tab is opened. `root` is an empty element.
+  // Once, the first time the mode is opened. `root` is an empty element.
   mount(root, ctx) { ... },
 
-  // Each time the tab is shown again (optional).
+  // Each time the mode is shown again (optional).
   show() { ... },
 
   // When Reset is pressed (exercises; optional). The shell has already
@@ -110,7 +125,7 @@ export default {
 - `ctx.score` (exercises): `record(points)` counts one question and adds
   `points` (0 to 1); `addPoints(points)` adds to the current question, for
   questions in parts (Part 1 worth 0.5 with `record(0.5)`, Part 2 with
-  `addPoints(0.5)`). The shell saves the score and redraws the scoreboard.
+  `addPoints(0.5)`). The shell saves the score and redraws the score box.
 - `ctx.storage`: `get(name, fallback)`, `set(name, value)`, `remove(name)`
   for anything else to keep in the browser, under the mode's own name.
 
@@ -148,7 +163,7 @@ A small example to start from (`modes/degree.js` is the full version):
 import { feedbackHtml, showFeedback, hideFeedback, escapeHtml } from '../../shared/js/ui.js';
 
 const COPY = {
-  info: 'What is 2 + 2?',
+  question: 'What is 2 + 2?',
   submit: 'Submit',
   empty: 'Type a number first.',
   wrong: n => `The answer is ${n}.`,
@@ -179,8 +194,8 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <form class="section quiz-form">
+        <p class="subtitle">${COPY.question}</p>
         <div class="answer-row">
           <input type="text" class="answer" aria-label="Answer">
           <button type="submit" class="primary-btn">${COPY.submit}</button>
@@ -260,7 +275,9 @@ Playwright with headless Chromium, which the dev container installs).
   `checkScoreSavedAndReset`. Tests work out the right answer from what's on
   the page (`test/helpers/graph-on-screen.js`, `matrix-on-screen.js`), using
   solvers written independently of the site's code.
-- `test/site.test.js`: hub, tabs, Back button, error handling, phone width.
+- `test/site.test.js`: hub, header, mode list and mode pages, links and
+  Back button, error handling, phone width.
+- `test/shared/`: unit tests for `shared/js/` (fractions, score).
 - `test/accessibility.test.js`: axe-core's WCAG 2.2 A/AA checks on every
   page (from `topics.js` and each `modes.js`, so new modes are included), at
   desktop and phone width. Its `EXPECTED` list holds the failures the site
@@ -293,10 +310,10 @@ page names (`hub`, `graph-theory`, `graph-theory-degree`) to save only those.
 **A new mode:**
 
 1. Write `<topic>/modes/<name>.js` (and `.css`, and an `.md` spec if useful).
-2. Add a line to `<topic>/modes.js`.
+2. Add an entry to `<topic>/modes.js`, with a one-line description.
 3. Put new math in `<topic>/lib/`, with unit tests.
 4. Add `test/<topic>/<name>.test.js`, and the mode to the phone-width list
-   in `test/site.test.js` (and the tab list there).
+   in `test/site.test.js` (and the list of mode titles there).
 5. `npm test`; look at the mode at desktop and phone width.
 
 **A new topic:**

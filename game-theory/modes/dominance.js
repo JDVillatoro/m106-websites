@@ -8,7 +8,6 @@ import { typeset, clearMath, plainMath } from '../../shared/js/math.js';
 import { escapeHtml, feedbackHtml, showFeedback, hideFeedback, loadStylesheet } from '../../shared/js/ui.js';
 
 const COPY = {
-  info: 'Identify dominance relations!',
   matrixTitle: 'Payoff matrix',
   prompt: 'Identify dominance relations for each strategy pair.',
   questionsTitle: 'Dominance relations',
@@ -108,7 +107,6 @@ export default {
     score = ctx.score;
     loadStylesheet(new URL('./dominance.css', import.meta.url));
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.matrixTitle}</h2>
         <p class="subtitle">${COPY.prompt}</p>

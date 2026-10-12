@@ -173,7 +173,6 @@ function getGreedyVertexOrder(puzzle) {
 // ---------------------------------------------------------------------------
 
 const COPY = {
-  info: 'Can you color the graph?',
   promptTitle: 'Here is a graph...',
   promptSubtitle: 'Can you color the graph?',
   hint: 'Hint: it can be helpful to arrange the vertices in a way where there are not too many crossings.',
@@ -279,7 +278,6 @@ export default {
     score = ctx.score;
     loadStylesheet(new URL('./coloring.css', import.meta.url));
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.promptTitle}</h2>
         <p class="subtitle">${COPY.promptSubtitle}</p>

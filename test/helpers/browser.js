@@ -59,24 +59,29 @@ export function useBrowser() {
   return site;
 }
 
-/** Wait until the tab named `title` is the open one (hash changes are handled asynchronously). */
-export function expectTab(page, title) {
-  return page.waitForSelector(`.mode-tab[aria-current="page"]:text-is("${title}")`);
+/** Wait until the mode named `title` is the open one (hash changes are handled asynchronously). */
+export function expectMode(page, title) {
+  return page.waitForSelector(`.mode-view:not([hidden]) .mode-title:text-is("${title}")`);
 }
 
-/** The scoreboard as one line, e.g. 'Questions: 2 Points: 1 Score: 50%'. */
+/** Wait until the topic page shows its list of modes. */
+export function expectModeList(page) {
+  return page.waitForSelector('.topic-home:not([hidden]) .mode-card');
+}
+
+/** The open mode's score as one line, e.g. '1 / 2 points' or 'No score'. */
 export async function scoreText(page) {
-  return (await page.locator('.mode-panel:not([hidden]) .scoreboard-values').innerText()).replace(/\s+/g, ' ');
+  return (await page.locator('.scoreboard:not([hidden]) .scoreboard-value').innerText()).replace(/\s+/g, ' ').trim();
 }
 
 /** Check a scored mode's score survives a reload and that Reset clears it. */
 export async function checkScoreSavedAndReset(page, expected) {
   assert.equal(await scoreText(page), expected);
   await page.reload();
-  await page.waitForSelector('.mode-panel:not([hidden]) .scoreboard-values');
+  await page.waitForSelector('.scoreboard:not([hidden]) .scoreboard-value');
   assert.equal(await scoreText(page), expected);
-  await page.click('.mode-panel:not([hidden]) .reset-btn');
-  assert.equal(await scoreText(page), 'Questions: 0 Points: 0 Score: 0%');
+  await page.click('.scoreboard:not([hidden]) .reset-btn');
+  assert.equal(await scoreText(page), 'No score');
   assert.ok(await page.locator('.mode-panel:not([hidden]) .feedback').isHidden());
 }
 

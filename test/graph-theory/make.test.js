@@ -8,12 +8,11 @@ import { graphOnScreen } from '../helpers/graph-on-screen.js';
 const site = useBrowser();
 
 test('opens with a random graph, not scored', async () => {
-  const { page, errors, close } = await site.openPage('graph-theory/');
+  const { page, errors, close } = await site.openPage('graph-theory/#make');
   await page.waitForSelector('.graph-viewport canvas');
   const g = await graphOnScreen(page);
   assert.equal(g.names.length, 5);
-  assert.equal(await page.locator('.mode-panel:not([hidden]) .scoreboard').count(), 0);
-  assert.equal(await page.locator('.mode-panel:not([hidden]) .reset-btn').count(), 0);
+  assert.equal(await page.locator('.scoreboard:not([hidden])').count(), 0);
   assert.deepEqual(errors, []);
   await close();
 });

@@ -54,7 +54,7 @@ test('right, wrong, empty; scoring and reset', async () => {
   assert.equal(await page.locator('.feedback-title').innerText(), 'Not quite');
   assert.equal(await page.locator('.feedback-message').innerText(), `The correct expected payoff is ${right.toFixed(2)}.`);
 
-  await checkScoreSavedAndReset(page, 'Questions: 2 Points: 1 Score: 50%');
+  await checkScoreSavedAndReset(page, '1 / 2 points');
   assert.deepEqual(errors, []);
   await close();
 });

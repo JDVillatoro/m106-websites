@@ -11,7 +11,6 @@ import { escapeHtml, feedbackHtml, showFeedback, hideFeedback } from '../../shar
 export const EP_TOLERANCE = 0.01;
 
 const COPY = {
-  info: 'Calculate expected payoffs for mixed strategies!',
   matrixTitle: 'Payoff matrix',
   prompt: 'Calculate the expected payoff.',
   questionTitle: 'Question',
@@ -89,7 +88,6 @@ export default {
     root = el;
     score = ctx.score;
     root.innerHTML = `
-      <div class="info"><p>${COPY.info}</p></div>
       <div class="section">
         <h2>${COPY.matrixTitle}</h2>
         <p class="subtitle">${COPY.prompt}</p>
