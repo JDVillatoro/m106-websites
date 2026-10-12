@@ -5,8 +5,9 @@ export default {
   mount(root) {
     root.innerHTML = `
       <div class="info">
-        <p>The game theory modes are being moved to this new site.
-        Until they're done, use the <a href="../legacy/game-theory/">old version</a>.</p>
+        <p>The game theory modes are being moved to this new site. Nash
+        Equilibria is here already; for the others, use the
+        <a href="../legacy/game-theory/">old version</a> for now.</p>
       </div>`;
   },
 };

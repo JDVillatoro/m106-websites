@@ -29,6 +29,14 @@
   --color-tab: #ddd;
   --color-border: #d6dbe9;
 
+  /* Graph drawings (graph-theory/lib/render.js reads these for Cytoscape) */
+  --graph-area-border: rgba(0, 0, 0, 0.12);
+  --graph-node-fill: #fff;
+  --graph-node-border: #333;
+  --graph-node-label: #333;
+  --graph-edge: #888;
+  --graph-edge-label: #fff;
+
   --page-background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-strong) 100%);
 
   /* Type */

@@ -8,6 +8,8 @@ build step.
 |---|---|
 | `graph-theory/`, `game-theory/` | Topic pages (being filled in). |
 | `shared/` | Styles and code used by every page. |
+| `vendor/` | Copies of outside libraries (Cytoscape). |
+| `test/` | Tests (`npm test`). |
 | `legacy/` | The two old sites, kept until their modes are moved over. |
 
 The two old sites are being merged into this one; see [PLAN.md](PLAN.md).
@@ -20,6 +22,17 @@ serves the repo at <http://localhost:8080/>, which opens the hub page.
 Any static web server works too, e.g. `python3 -m http.server 8080` from the
 repo root. Opening `index.html` directly from disk doesn't work, because
 browsers don't load JavaScript modules from `file://` addresses.
+
+## Tests
+
+```
+npm test
+```
+
+runs unit tests for the math code and a browser test that clicks through
+every page in headless Chromium. The dev container installs what they need;
+elsewhere, run `npm ci` and `npx playwright install --with-deps chromium`
+first. The site itself doesn't use `package.json` and has no build step.
 
 ## History
 

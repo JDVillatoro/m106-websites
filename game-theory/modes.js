@@ -2,5 +2,6 @@
 // To add a mode, write modes/<name>.js and add a line here (see PLAN.md).
 
 export default [
-  { id: 'about', title: 'About', load: () => import('./modes/placeholder.js') },
+  { id: 'about', title: 'About',          load: () => import('./modes/placeholder.js') },
+  { id: 'nash',  title: 'Nash Equilibria', load: () => import('./modes/nash.js') },
 ];

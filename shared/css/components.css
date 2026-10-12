@@ -101,6 +101,48 @@
   margin-bottom: var(--space-xl);
 }
 
+/* Smaller line under a heading. */
+.subtitle {
+  color: var(--color-text-subtle);
+  font-style: italic;
+  margin-bottom: var(--space-sm);
+}
+
+/* Tip shown below a graph or matrix. */
+.hint {
+  color: var(--color-text-subtle);
+  text-align: center;
+  margin-bottom: var(--space-lg);
+}
+
+/* Label, text box and button on one line (wraps on narrow screens). */
+.answer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.answer-row input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* Message about badly formatted input, shown under the answer row. */
+.input-error {
+  color: var(--color-danger);
+  margin-top: var(--space-sm);
+}
+
+.input-error:empty {
+  display: none;
+}
+
+input.is-invalid {
+  border-color: var(--color-danger);
+  outline: 2px solid var(--color-danger);
+}
+
 /* Buttons --------------------------------------------------------------- */
 
 /* Submit, Next and other main actions. */

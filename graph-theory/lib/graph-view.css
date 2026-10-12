@@ -1,0 +1,29 @@
+/* Graph areas built by render.js (createGraphView). */
+
+.graph-viewport {
+  width: 100%;
+  height: 520px;
+  margin-top: 12px;
+  border-radius: var(--radius-lg);
+  border: 2px solid var(--graph-area-border);
+  background: transparent;
+}
+
+.zoom-controls {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-sm);
+  margin: 12px 0 18px;
+}
+
+.zoom-controls button {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 6px;
+}
+
+@media (max-width: 720px) {
+  .graph-viewport {
+    height: 420px;
+  }
+}

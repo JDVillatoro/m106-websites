@@ -6,16 +6,19 @@
   - Purpose: derived from immediate JSDoc near the function
   - Usage: definition + invocation sites with context
 
-  Usage:
-    node update-graph-md-refs.js
+  Usage sites are searched for in all of graph-theory/, and shown relative to
+  it (e.g. `lib/graph.js:43`, `modes/eulerian.js:120`).
+
+  Usage (from any folder):
+    node graph-theory/lib/update-graph-md-refs.js
 */
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'node:fs';
+import path from 'node:path';
 
-const ROOT = process.cwd();
-const GRAPH_JS = path.join(ROOT, 'graph.js');
-const GRAPH_MD = path.join(ROOT, 'graph.md');
+const ROOT = path.resolve(import.meta.dirname, '..');   // graph-theory/
+const GRAPH_JS = path.join(ROOT, 'lib', 'graph.js');
+const GRAPH_MD = path.join(ROOT, 'lib', 'graph.md');
 
 function escapeRegExp(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -174,7 +177,7 @@ function buildUsages(fnMeta, files) {
 
   for (const m of fnMeta) {
     usageMap.get(m.name).push({
-      file: 'graph.js',
+      file: 'lib/graph.js',
       line: m.line,
       context: 'defined',
     });
@@ -186,7 +189,7 @@ function buildUsages(fnMeta, files) {
     const rel = path.relative(ROOT, absFile).split(path.sep).join('/');
 
     // graph.md is generated documentation, not a code usage site.
-    if (rel === 'graph.md') continue;
+    if (rel === 'lib/graph.md') continue;
 
     let txt;
     try {
@@ -210,7 +213,7 @@ function buildUsages(fnMeta, files) {
           continue;
         }
 
-        if (rel === 'graph.js' && line === metaByName.get(name).line) {
+        if (rel === 'lib/graph.js' && line === metaByName.get(name).line) {
           continue;
         }
 
@@ -279,7 +282,7 @@ function updateGraphMd(mdText, fnMeta, usages) {
     const fn = fnMap.get(fnName);
     const signatureLine = `- Signature: \`${fn.signature}\``;
     const purposeLine = `- Purpose: ${fn.purpose}`;
-    const usageEntries = usages.get(fnName) || [{ file: 'graph.js', line: fn.line, context: 'defined' }];
+    const usageEntries = usages.get(fnName) || [{ file: 'lib/graph.js', line: fn.line, context: 'defined' }];
     const usageLine = `- Usage: ${usageEntries.map((u) => `\`${u.file}:${u.line} (${u.context})\``).join(', ')}`;
 
     let signatureIdx = -1;
@@ -342,10 +345,10 @@ function updateGraphMd(mdText, fnMeta, usages) {
 
 function main() {
   if (!fs.existsSync(GRAPH_JS)) {
-    throw new Error('graph.js not found in current directory');
+    throw new Error(`${GRAPH_JS} not found`);
   }
   if (!fs.existsSync(GRAPH_MD)) {
-    throw new Error('graph.md not found in current directory');
+    throw new Error(`${GRAPH_MD} not found`);
   }
 
   const jsText = fs.readFileSync(GRAPH_JS, 'utf8');

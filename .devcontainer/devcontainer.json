@@ -1,7 +1,8 @@
 {
   "name": "M106 websites",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
-  // Node, for helper scripts such as graph-theory/update-graph-md-refs.js.
+  // Node, for the tests (npm test) and helper scripts such as
+  // graph-theory/lib/update-graph-md-refs.js.
   "features": {
     "ghcr.io/devcontainers/features/node:1": {}
   },
@@ -21,6 +22,10 @@
   // Serve the whole repo at http://localhost:8080/ (each site in its own
   // folder, e.g. /graph-theory/). The log is shown by .vscode/tasks.json.
   "forwardPorts": [8080],
+  // Runs once, when the container is created: installs the test tools
+  // (package.json) and headless Chromium with the Linux libraries it needs,
+  // for the browser test in test/. Run the tests with `npm test`.
+  "postCreateCommand": "npm ci && npx playwright install --with-deps chromium",
   "postStartCommand": "setsid -f python3 -m http.server 8080 --directory ${containerWorkspaceFolder} > /tmp/server.log 2>&1",
   "customizations": {
     "vscode": {

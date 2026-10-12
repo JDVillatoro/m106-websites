@@ -5,8 +5,9 @@ export default {
   mount(root) {
     root.innerHTML = `
       <div class="info">
-        <p>The graph theory modes are being moved to this new site.
-        Until they're done, use the <a href="../legacy/graph-theory/">old version</a>.</p>
+        <p>The graph theory modes are being moved to this new site. Degree
+        Sequences is here already; for the others, use the
+        <a href="../legacy/graph-theory/">old version</a> for now.</p>
       </div>`;
   },
 };

@@ -43,6 +43,10 @@ export function feedbackHtml({ nextLabel = 'Next question' } = {}) {
 /**
  * Add a stylesheet to the page once. Resolve the URL from the calling module:
  *   loadStylesheet(new URL('./coloring.css', import.meta.url))
+ *
+ * The stylesheet loads in the background. Don't use this for styles that
+ * code measures straight away (such as the height of a Cytoscape area); link
+ * those from the topic's index.html instead.
  */
 export function loadStylesheet(url) {
   const href = String(url);
