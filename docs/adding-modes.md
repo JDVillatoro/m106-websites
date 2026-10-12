@@ -255,12 +255,21 @@ Playwright with headless Chromium, which the dev container installs).
   the page (`test/helpers/graph-on-screen.js`, `matrix-on-screen.js`), using
   solvers written independently of the site's code.
 - `test/site.test.js`: hub, tabs, Back button, error handling, phone width.
+- `test/accessibility.test.js`: axe-core's WCAG 2.2 A/AA checks on every
+  page (from `topics.js` and each `modes.js`, so new modes are included), at
+  desktop and phone width. Its `EXPECTED` list holds the failures the site
+  has now; a new failure, or an expected one that's gone, fails the test.
+- `test/css.test.js`: stylesheets other than `tokens.css` have no raw colors
+  or font names.
 
 Browser tests serve the repo under `/m106-websites/` like GitHub Pages
 (`test/helpers/static-server.js`) and fail on any console error from the
 site's own files. Game theory tests use `openPage(path, { mathjax: false })`
 so labels stay as readable TeX. The tests have missed layout problems before,
-so also look at changed pages, at desktop and phone width.
+so also look at changed pages, at desktop and phone width:
+`node test/screenshots.js before` (and `after`, once changed) saves every
+page at 1280 and 390 pixels wide in `screenshots/<name>/` (gitignored); add
+page names (`hub`, `graph-theory`, `graph-theory-degree`) to save only those.
 
 ## Outside libraries
 

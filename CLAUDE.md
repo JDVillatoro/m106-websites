@@ -25,7 +25,10 @@ changed on purpose, and what's still to do.
 - `test/`: `npm test` runs Node unit tests and Playwright browser tests (the
   site served under `/m106-websites/`, as on GitHub Pages): `site.test.js`
   for shared behavior, `test/<topic>/<mode>.test.js` per mode, helpers in
-  `test/helpers/`. `package.json` exists only for this.
+  `test/helpers/`; `accessibility.test.js` (axe-core) and `css.test.js`
+  (tokens only) cover every page and stylesheet. `node test/screenshots.js
+  <name>` saves every page at desktop and phone width in `screenshots/<name>/`.
+  `package.json` exists only for this.
 - `.devcontainer/`: serves the repo root at http://localhost:8080/ with
   Python's built-in web server; log in `/tmp/server.log` (shown by
   `.vscode/tasks.json`). Has Node and the Claude Code extension; installs
@@ -51,8 +54,8 @@ changed on purpose, and what's still to do.
   - `shared/`, `index.html`, `topics.js`, a `modes.js`: `npm test`
   - add `test/site.test.js` if a change could affect tabs or layout.
   Run the full `npm test` before saying work is done: pushing to `main`
-  publishes. Look at changed pages too (screenshots, desktop and phone
-  width): tests have missed layout bugs before.
+  publishes. Look at changed pages too (`node test/screenshots.js`, desktop
+  and phone width): tests have missed layout bugs before.
 - Line endings are LF (`.gitattributes`).
 
 ## History

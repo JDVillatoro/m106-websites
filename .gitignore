@@ -13,3 +13,6 @@ desktop.ini
 
 # Misc
 .env
+
+# Screenshots from test/screenshots.js
+screenshots/

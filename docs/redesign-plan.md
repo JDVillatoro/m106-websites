@@ -56,20 +56,40 @@ keeping to `docs/design.md` (pass 6) and `docs/merge-history.md`.
 
 ## Pass 1: safety net
 
-- [ ] Screenshot script (`test/screenshots.js`, run with
+- [x] Screenshot script (`test/screenshots.js`, run with
       `node test/screenshots.js`, not part of `npm test`): hub, each topic
       page, and every mode, at 1280 and 390 wide, into a gitignored folder.
       Used for before/after comparisons in every pass.
-- [ ] Automated accessibility checks: add `axe-core` as a dev dependency and
+- [x] Automated accessibility checks: add `axe-core` as a dev dependency and
       a browser test that runs it on the hub and every mode (WCAG 2.2 A/AA
       rules). Known failures from the current look (e.g. accent contrast) are
       listed in the test as expected, so the test passes now and each later
       pass removes items from that list.
-- [ ] Test that CSS files other than `tokens.css` contain no raw colors (hex,
+- [x] Test that CSS files other than `tokens.css` contain no raw colors (hex,
       `rgb()`, `hsl()`) and no font families. Plain Node, no new dependency.
       Current exceptions listed in the test (the `rgba(...)` shadows in
       `components.css`); pass 2 removes them. Coloring's palette is in JS and
       handled in pass 6.
+
+Done. Notes:
+
+- Pages come from `topics.js` and each `modes.js` (`test/helpers/pages.js`),
+  so new modes get screenshots and axe checks without editing the tests.
+  `node test/screenshots.js before`, then `after`; `screenshots/` is
+  gitignored.
+- axe-core 4.14.0, pinned. The test runs at both widths and also fails when
+  an expected failure stops happening, so each pass has to shrink the list.
+- Besides contrast (everywhere except the hub, whose gradient axe can't
+  measure), axe found three problems a restyle won't fix, left for pass 6:
+  - Play and Best Response: strategy buttons labeled by MathJax have an
+    empty accessible name in Chromium, and MathJax puts a focusable element
+    inside each button.
+  - Nash: clickable payoff cells show "0 1" but are named "A and X: Player 1
+    gets 0, Player 2 gets 1" (WCAG 2.5.3, label in name).
+  - Applications: the distance table scrolls sideways on phones but can't be
+    reached with the keyboard.
+- No raw colors or font names in CSS outside `tokens.css` except the three
+  shadows the plan expected.
 
 ## Pass 2: tokens and fonts
 
@@ -171,8 +191,9 @@ This pass changes behavior: update `test/site.test.js` and the helpers in
       obvious.
 - [ ] Check every page at 400% zoom (or 320px wide): no sideways scrolling
       except inside graph areas and matrices.
-- [ ] Empty pass 1's list of expected axe failures; anything left gets a
-      comment saying why.
+- [ ] Empty pass 1's list of expected axe failures (`EXPECTED` in
+      `test/accessibility.test.js`), including the three non-contrast ones
+      in pass 1's notes; anything left gets a comment saying why.
 - [ ] `docs/design.md`: the rules for future modes (tokens only; use shared
       components before writing new CSS; mode CSS is layout only; feedback,
       buttons and focus look the same everywhere; 44px targets; never color
