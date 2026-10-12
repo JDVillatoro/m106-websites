@@ -1,11 +1,10 @@
 {
   "name": "m106-websites",
   "private": true,
-  "description": "M106 practice website. The site itself has no build step; this file is only for tests and dev scripts.",
+  "description": "M106 practice website. The site itself has no build step; this file is only for tests.",
   "type": "module",
   "scripts": {
-    "test": "node --test --test-concurrency=4 \"test/**/*.test.js\"",
-    "graph-docs": "node graph-theory/lib/update-graph-md-refs.js"
+    "test": "node --test --test-concurrency=4 \"test/**/*.test.js\""
   },
   "devDependencies": {
     "playwright": "1.63.0"

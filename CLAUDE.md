@@ -19,8 +19,7 @@ changed on purpose, and what's still to do.
 - `graph-theory/`, `game-theory/`: topic pages. Each has `index.html`,
   `modes.js` (one line per mode), `modes/` (one file per mode, plus its CSS
   and spec `.md` if any) and `lib/` (the topic's math, plus drawing code).
-  `graph-theory/lib/graph.md` documents `lib/graph.js`; refresh it with
-  `npm run graph-docs`.
+  `lib/graph.js` is being cleaned up: see `docs/graph_cleanup_plan.md`.
 - `vendor/`: pinned copies of Cytoscape and its SVG plugin.
 - `test/`: `npm test` runs Node unit tests and Playwright browser tests (the
   site served under `/m106-websites/`, as on GitHub Pages): `site.test.js`
@@ -40,8 +39,15 @@ changed on purpose, and what's still to do.
 - Code that doesn't fit, where the fix isn't obvious, gets a
   `TODO(refactor):` comment instead of a guess. Find them with
   `git grep 'TODO(refactor)'`.
-- Run `npm test` after changes, and look at changed pages too (screenshots,
-  desktop and phone width): tests have missed layout bugs before.
+- While working, run only the tests a change can affect (modes import only
+  their topic's `lib/` and `shared/`, never each other):
+  - one mode: `node --test test/<topic>/<mode>.test.js`
+  - a topic's `lib/`: `node --test "test/<topic>/**/*.test.js"`
+  - `shared/`, `index.html`, `topics.js`, a `modes.js`: `npm test`
+  - add `test/site.test.js` if a change could affect tabs or layout.
+  Run the full `npm test` before saying work is done: pushing to `main`
+  publishes. Look at changed pages too (screenshots, desktop and phone
+  width): tests have missed layout bugs before.
 - Line endings are LF (`.gitattributes`).
 
 ## History

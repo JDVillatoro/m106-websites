@@ -1,8 +1,7 @@
 {
   "name": "M106 websites",
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
-  // Node, for the tests (npm test) and helper scripts such as
-  // graph-theory/lib/update-graph-md-refs.js.
+  // Node, for the tests (npm test).
   "features": {
     "ghcr.io/devcontainers/features/node:1": {}
   },

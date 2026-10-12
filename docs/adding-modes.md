@@ -275,7 +275,6 @@ so also look at changed pages, at desktop and phone width.
 4. Add `test/<topic>/<name>.test.js`, and the mode to the phone-width list
    in `test/site.test.js` (and the tab list there).
 5. `npm test`; look at the mode at desktop and phone width.
-6. Graph theory: `npm run graph-docs` refreshes `lib/graph.md`.
 
 **A new topic:**
 
